@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { X, Upload, Image as ImageIcon } from 'lucide-react'
 import { useAdmin } from '@/hooks/useAdmin'
 import toast from 'react-hot-toast'
@@ -271,10 +272,12 @@ export default function AdminForm({ product, onClose, onSuccess }: AdminFormProp
             <div className="flex items-center gap-4">
               {imagePreview && (
                 <div className="relative w-32 h-32 rounded-lg overflow-hidden bg-gray-200">
-                  <img
+                  <Image
                     src={imagePreview}
                     alt="Preview"
-                    className="w-full h-full object-cover"
+                    fill
+                    className="object-cover"
+                    sizes="128px"
                   />
                 </div>
               )}
