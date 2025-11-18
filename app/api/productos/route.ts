@@ -47,10 +47,12 @@ export async function GET(request: Request) {
     const productosFormateados = productos.map((p: any) => ({
       ...p,
       id: p.id,
-      imagenPrincipal: p.imagen_principal || '/images/default-product.svg',
-      imagenes: p.imagenes_sec || [],
+      imagenPrincipal: p.imagen_principal || p.imagenPrincipal || '/images/default-product.svg',
+      imagenes: p.imagenes_sec || p.imagenes || [],
       tags: p.tags || [],
       stock: p.stock || {},
+      createdAt: p.created_at || p.createdAt,
+      updatedAt: p.updated_at || p.updatedAt,
     }))
 
     return NextResponse.json(productosFormateados)

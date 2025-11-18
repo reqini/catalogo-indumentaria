@@ -90,9 +90,9 @@ export default function Carousel() {
           className="relative w-full h-full"
         >
           <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-black/30 z-10" />
-          {currentBanner.imagen && (
+          {(currentBanner.imagen || currentBanner.imagenUrl || currentBanner.imagen_url) && (
             <Image
-              src={currentBanner.imagen}
+              src={currentBanner.imagen || currentBanner.imagenUrl || currentBanner.imagen_url}
               alt={currentBanner.titulo || 'Banner'}
               fill
               className="object-cover"

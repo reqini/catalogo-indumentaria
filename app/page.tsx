@@ -256,12 +256,43 @@ export default function Home() {
     },
   ]
 
-  const handleNewsletter = (e: React.FormEvent) => {
+  const [newsletterLoading, setNewsletterLoading] = useState(false)
+  const [newsletterSuccess, setNewsletterSuccess] = useState(false)
+
+  const handleNewsletter = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (newsletterEmail) {
-      localStorage.setItem('newsletter_email', newsletterEmail)
-      alert('¡Gracias por suscribirte!')
+    if (!newsletterEmail) return
+
+    setNewsletterLoading(true)
+    setNewsletterSuccess(false)
+
+    try {
+      const response = await fetch('/api/newsletter', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: newsletterEmail }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Error al suscribirse')
+      }
+
+      setNewsletterSuccess(true)
       setNewsletterEmail('')
+      
+      // Ocultar mensaje de éxito después de 3 segundos
+      setTimeout(() => {
+        setNewsletterSuccess(false)
+      }, 3000)
+    } catch (error: any) {
+      console.error('Error en newsletter:', error)
+      alert(error.message || 'Error al suscribirse. Intenta nuevamente.')
+    } finally {
+      setNewsletterLoading(false)
     }
   }
 
