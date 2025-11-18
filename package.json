@@ -11,6 +11,8 @@
     "init-saas": "node scripts/init-saas.mjs",
     "test-atlas": "node scripts/test-atlas-connection.mjs",
     "migrate-to-atlas": "node scripts/migrate-to-atlas.mjs",
+    "test-supabase": "node scripts/test-supabase.mjs",
+    "migrate-to-supabase": "node scripts/migrate-to-supabase.mjs",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
