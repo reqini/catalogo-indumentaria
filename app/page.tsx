@@ -181,18 +181,18 @@ export default function Home() {
   const [collections, setCollections] = useState([
     {
       name: 'Running',
-      image: '/images/collection-running.jpg',
-      link: '/catalogo?categoria=running',
+      image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-4.0.3&auto=format&fit=crop&w=1080&q=80',
+      link: '/catalogo?categoria=Running',
     },
     {
       name: 'Lifestyle',
-      image: '/images/collection-lifestyle.jpg',
-      link: '/catalogo?categoria=lifestyle',
+      image: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=1080&q=80',
+      link: '/catalogo?categoria=Lifestyle',
     },
     {
       name: 'Training',
-      image: '/images/collection-training.jpg',
-      link: '/catalogo?categoria=training',
+      image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1080&q=80',
+      link: '/catalogo?categoria=Training',
     },
   ])
 

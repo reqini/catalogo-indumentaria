@@ -10,7 +10,17 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-producti
 export async function POST(request: Request) {
   try {
     await connectDB()
-    const body = await request.json()
+    
+    let body
+    try {
+      body = await request.json()
+    } catch (e) {
+      return NextResponse.json(
+        { error: 'Cuerpo de solicitud inválido' },
+        { status: 400 }
+      )
+    }
+    
     const { email, password } = loginSchema.parse(body)
 
     // Buscar tenant (usuario)

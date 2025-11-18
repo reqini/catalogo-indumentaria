@@ -40,14 +40,14 @@ export default function Carousel() {
   const getDefaultBanners = () => [
     {
       id: '1',
-      imagen: '/banner-1.jpg',
+      imagen: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80',
       titulo: 'Nueva Colección',
       subtitulo: 'Descubrí las últimas tendencias',
       link: '/catalogo',
     },
     {
       id: '2',
-      imagen: '/banner-2.jpg',
+      imagen: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80',
       titulo: 'Ofertas Especiales',
       subtitulo: 'Hasta 50% OFF',
       link: '/catalogo?precio=asc',
