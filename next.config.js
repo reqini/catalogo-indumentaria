@@ -16,12 +16,11 @@ const nextConfig = {
   poweredByHeader: false,
   generateEtags: true,
   swcMinify: true,
-  // Asegurar que PostCSS se procese correctamente
   webpack: (config, { isServer }) => {
     // No interferir con el procesamiento de CSS de Next.js
-    // Next.js maneja PostCSS y Tailwind automáticamente
+    // Next.js maneja PostCSS y Tailwind automáticamente cuando detecta postcss.config.js
+    // Solo aplicar MiniCssExtractPlugin si es absolutamente necesario para otros plugins
     if (!isServer) {
-      // Solo para plugins específicos que lo requieran
       const hasMiniCssExtract = config.plugins.some(
         (plugin) => plugin && plugin.constructor && plugin.constructor.name === 'MiniCssExtractPlugin'
       )
