@@ -212,15 +212,27 @@ export default function Home() {
             (p.imagenPrincipal || p.imagen_principal)
           )
           
-          // Usar imagen del producto si existe, sino imagen por defecto
-          const imagenReal = productoEjemplo?.imagenPrincipal || 
-                            productoEjemplo?.imagen_principal || 
-                            '/images/default-product.svg'
+          // Usar imagen del producto si existe, sino usar imagen de Unsplash según categoría
+          let imagenReal = productoEjemplo?.imagenPrincipal || productoEjemplo?.imagen_principal
+          
+          // Si no hay imagen del producto, usar imagen de Unsplash según categoría
+          if (!imagenReal || imagenReal === '/images/default-product.svg') {
+            const categoriaLower = cat.toLowerCase()
+            if (categoriaLower === 'running') {
+              imagenReal = 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-4.0.3&auto=format&fit=crop&w=1080&q=80'
+            } else if (categoriaLower === 'training') {
+              imagenReal = 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1080&q=80'
+            } else if (categoriaLower === 'lifestyle') {
+              imagenReal = 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=1080&q=80'
+            } else {
+              imagenReal = 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=1080&q=80'
+            }
+          }
           
           return {
             name: cat.charAt(0).toUpperCase() + cat.slice(1),
             image: imagenReal,
-            link: `/catalogo?categoria=${cat.toLowerCase()}`,
+            link: `/catalogo?categoria=${encodeURIComponent(cat)}`,
           }
         })
         
