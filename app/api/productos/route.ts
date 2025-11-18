@@ -148,6 +148,21 @@ export async function POST(request: Request) {
       })
     }
 
+    // Registrar en historial
+    try {
+      await registrarHistorial({
+        producto_id: producto.id,
+        tenant_id: tenant.tenantId,
+        accion: 'crear',
+        usuario_id: tenant.tenantId,
+        datos_anteriores: null,
+        datos_nuevos: producto,
+      })
+    } catch (historialError) {
+      console.error('Error registrando historial:', historialError)
+      // No fallar si el historial falla
+    }
+
     // Formatear respuesta
     const productoFormateado = {
       ...producto,

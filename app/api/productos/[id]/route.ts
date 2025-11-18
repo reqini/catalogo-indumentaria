@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { productoSchema } from '@/utils/validations'
 import { getTenantFromToken } from '@/lib/supabase-helpers'
 import { getProductoById, updateProducto, deleteProducto } from '@/lib/supabase-helpers'
+import { registrarHistorial, detectarCambios } from '@/lib/historial-helpers'
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
@@ -82,7 +83,29 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       updateData.id_mercado_pago = validatedData.idMercadoPago || validatedData.id_mercado_pago
     }
 
+    // Detectar cambios para historial
+    const cambios = detectarCambios(productoExistente, updateData)
+    const primerCambio = cambios[0]
+
     const producto = await updateProducto(params.id, updateData)
+
+    // Registrar en historial
+    try {
+      await registrarHistorial({
+        producto_id: params.id,
+        tenant_id: tenant.tenantId,
+        accion: 'editar',
+        usuario_id: tenant.tenantId,
+        datos_anteriores: productoExistente,
+        datos_nuevos: updateData,
+        campo_modificado: primerCambio?.campo,
+        valor_anterior: primerCambio?.anterior?.toString(),
+        valor_nuevo: primerCambio?.nuevo?.toString(),
+      })
+    } catch (historialError) {
+      console.error('Error registrando historial:', historialError)
+      // No fallar si el historial falla
+    }
 
     // Formatear respuesta
     const productoFormateado = {
@@ -127,6 +150,21 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
 
     if (producto.tenant_id !== tenant.tenantId) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
+    }
+
+    // Registrar en historial antes de eliminar
+    try {
+      await registrarHistorial({
+        producto_id: params.id,
+        tenant_id: tenant.tenantId,
+        accion: 'eliminar',
+        usuario_id: tenant.tenantId,
+        datos_anteriores: producto,
+        datos_nuevos: null,
+      })
+    } catch (historialError) {
+      console.error('Error registrando historial:', historialError)
+      // Continuar con la eliminación aunque falle el historial
     }
 
     await deleteProducto(params.id)

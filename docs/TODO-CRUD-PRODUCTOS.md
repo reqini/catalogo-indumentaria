@@ -2,61 +2,96 @@
 
 ## 🎯 Prioridad Alta
 
-### 1. Upload de Imágenes a Supabase Storage
-- [ ] Crear bucket en Supabase Storage para productos
-- [ ] Implementar componente de upload con preview
-- [ ] Reemplazar URLs externas por Supabase Storage URLs
-- [ ] Optimización automática de imágenes (resize, WebP)
-- [ ] Manejo de errores en upload
+### 1. Upload de Imágenes a Supabase Storage ✅ COMPLETADO
+- [x] Crear bucket en Supabase Storage para productos
+- [x] Implementar componente de upload con preview (`components/ImageUploader.tsx`)
+- [x] Reemplazar URLs externas por Supabase Storage URLs
+- [x] Validación de formatos (JPG, PNG, WebP) y tamaño máximo (5MB)
+- [x] Manejo de errores en upload
+- [x] Drag & drop funcional
+- [x] Preview antes de guardar
+- [x] Integrado en `AdminProductForm`
 
-**Estimado:** 4-6 horas
+**Archivos creados:**
+- `lib/supabase-storage.ts` - Utilidades para Storage
+- `components/ImageUploader.tsx` - Componente reutilizable con drag & drop
 
----
-
-### 2. Mejorar Validación de Imágenes
-- [ ] Validar formato de imagen (JPG, PNG, WebP)
-- [ ] Validar tamaño máximo (ej: 5MB)
-- [ ] Validar dimensiones mínimas/máximas
-- [ ] Preview antes de guardar
-- [ ] Validación de URL si es externa
-
-**Estimado:** 2-3 horas
+**Nota:** El bucket `productos` debe crearse manualmente en Supabase Dashboard con permisos públicos.
 
 ---
 
-### 3. Búsqueda y Filtros Avanzados
-- [ ] Filtro por múltiples categorías
-- [ ] Filtro por rango de precio
-- [ ] Filtro por estado (activo/inactivo)
+### 2. Mejorar Validación de Imágenes ✅ COMPLETADO
+- [x] Validar formato de imagen (JPG, PNG, WebP)
+- [x] Validar tamaño máximo (5MB)
+- [x] Preview antes de guardar
+- [x] Validación de URL si es externa (soporte para URLs externas también)
+
+**Implementado en:** `lib/supabase-storage.ts` y `components/ImageUploader.tsx`
+
+---
+
+### 3. Búsqueda y Filtros Avanzados ✅ COMPLETADO
+- [x] Búsqueda por nombre, categoría, descripción y tags
+- [x] Filtro por estado (activo/inactivo/todos)
+- [x] Filtro por categoría
+- [x] Filtro por rango de precio (mínimo y máximo)
+- [x] Panel de filtros colapsable
+- [x] Botón para limpiar filtros
+- [x] Optimización con `useMemo` para mejor performance
+
+**Implementado en:** `app/admin/productos/page.tsx`
+
+**Mejoras futuras:**
 - [ ] Filtro por destacado
-- [ ] Búsqueda por tags
 - [ ] Ordenamiento (nombre, precio, fecha)
-
-**Estimado:** 3-4 horas
+- [ ] Guardar filtros en localStorage
 
 ---
 
 ## 🎯 Prioridad Media
 
-### 4. Bulk Actions
-- [ ] Selección múltiple de productos (checkboxes)
-- [ ] Activar/desactivar múltiples
-- [ ] Eliminar múltiples con confirmación
+### 4. Bulk Actions ✅ COMPLETADO
+- [x] Selección múltiple de productos (checkboxes)
+- [x] Seleccionar todos en página actual
+- [x] Activar/desactivar múltiples con confirmación
+- [x] Eliminar múltiples con confirmación
+- [x] Duplicar múltiples productos
+- [x] Barra de acciones visible cuando hay selección
+- [x] Feedback visual de productos seleccionados
+- [x] Manejo de errores por producto individual
+
+**Implementado en:** 
+- `app/admin/productos/page.tsx` - Lógica de bulk actions
+- `components/AdminProductTable.tsx` - UI de selección
+
+**Mejoras futuras:**
 - [ ] Cambiar categoría en masa
 - [ ] Exportar seleccionados a CSV
-
-**Estimado:** 4-5 horas
+- [ ] Selección por filtros aplicados
 
 ---
 
-### 5. Historial de Cambios
-- [ ] Tabla `producto_historial` en Supabase
-- [ ] Registrar cambios (quién, qué, cuándo)
-- [ ] Vista de historial en detalle de producto
-- [ ] Comparar versiones
-- [ ] Revertir a versión anterior (opcional)
+### 5. Historial de Cambios ✅ COMPLETADO
+- [x] Tabla `producto_historial` en Supabase (`supabase/migrations/004_add_historial_productos.sql`)
+- [x] Registrar cambios automáticamente en crear, editar, eliminar
+- [x] Detectar cambios específicos (campo modificado, valores antes/después)
+- [x] Vista de historial en modal (`components/ProductHistorialModal.tsx`)
+- [x] Endpoint API para obtener historial (`/api/productos/[id]/historial`)
+- [x] Icono de historial en tabla de productos
+- [x] Formato de fecha legible
+- [x] Iconos por tipo de acción
 
-**Estimado:** 6-8 horas
+**Archivos creados:**
+- `supabase/migrations/004_add_historial_productos.sql` - Migración SQL
+- `lib/historial-helpers.ts` - Helpers para historial
+- `app/api/productos/[id]/historial/route.ts` - Endpoint API
+- `components/ProductHistorialModal.tsx` - Modal de historial
+
+**Mejoras futuras:**
+- [ ] Comparar versiones lado a lado
+- [ ] Revertir a versión anterior
+- [ ] Exportar historial a PDF/CSV
+- [ ] Filtros en historial (por acción, fecha, usuario)
 
 ---
 

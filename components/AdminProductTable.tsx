@@ -2,9 +2,10 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
-import { Edit, Trash2, Copy, Plus, Minus, Eye, EyeOff } from 'lucide-react'
+import { Edit, Trash2, Copy, Plus, Minus, Eye, EyeOff, History } from 'lucide-react'
 import { formatPrice } from '@/utils/formatPrice'
 import { getStockStatus } from '@/utils/getStockStatus'
+import ProductHistorialModal from './ProductHistorialModal'
 
 interface AdminProductTableProps {
   products: any[]
@@ -13,6 +14,9 @@ interface AdminProductTableProps {
   onDuplicate?: (product: any) => void
   onStockUpdate: (productId: string, talle: string, cantidad: number) => void
   onToggleActive?: (product: any) => void
+  selectedProducts?: Set<string>
+  onSelectProduct?: (productId: string) => void
+  onSelectAll?: () => void
 }
 
 export default function AdminProductTable({
@@ -22,8 +26,12 @@ export default function AdminProductTable({
   onDuplicate,
   onStockUpdate,
   onToggleActive,
+  selectedProducts = new Set(),
+  onSelectProduct,
+  onSelectAll,
 }: AdminProductTableProps) {
   const [editingStock, setEditingStock] = useState<{ [key: string]: { talle: string; cantidad: number } }>({})
+  const [historialProductId, setHistorialProductId] = useState<string | null>(null)
 
   const handleStockChange = (productId: string, talle: string, newCantidad: number) => {
     setEditingStock((prev) => ({
@@ -63,6 +71,19 @@ export default function AdminProductTable({
         <table className="w-full">
           <thead className="bg-gray-50">
             <tr>
+              {onSelectAll && (
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12">
+                  <input
+                    type="checkbox"
+                    checked={
+                      products.length > 0 &&
+                      products.every((p) => selectedProducts.has(p.id))
+                    }
+                    onChange={onSelectAll}
+                    className="w-4 h-4 text-black border-gray-300 rounded focus:ring-black"
+                  />
+                </th>
+              )}
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Imagen
               </th>
@@ -92,8 +113,23 @@ export default function AdminProductTable({
                 ? 'ultimas-unidades'
                 : 'disponible'
 
+              const isSelected = selectedProducts.has(product.id)
+
               return (
-                <tr key={product.id} className="hover:bg-gray-50">
+                <tr
+                  key={product.id}
+                  className={`hover:bg-gray-50 ${isSelected ? 'bg-blue-50' : ''}`}
+                >
+                  {onSelectProduct && (
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => onSelectProduct(product.id)}
+                        className="w-4 h-4 text-black border-gray-300 rounded focus:ring-black"
+                      />
+                    </td>
+                  )}
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="w-16 h-16 bg-gray-200 rounded-lg overflow-hidden">
                       {(product.imagenPrincipal || product.imagen_principal) ? (
@@ -243,6 +279,14 @@ export default function AdminProductTable({
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setHistorialProductId(product.id)}
+                        className="text-purple-600 hover:text-purple-900"
+                        aria-label="Ver historial"
+                        title="Historial"
+                      >
+                        <History size={18} />
+                      </button>
                       {onToggleActive && (
                         <button
                           onClick={() => onToggleActive(product)}
@@ -288,6 +332,14 @@ export default function AdminProductTable({
           </tbody>
         </table>
       </div>
+
+      {historialProductId && (
+        <ProductHistorialModal
+          productId={historialProductId}
+          productName={products.find((p) => p.id === historialProductId)?.nombre || ''}
+          onClose={() => setHistorialProductId(null)}
+        />
+      )}
     </div>
   )
 }

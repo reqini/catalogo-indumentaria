@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { X, Upload } from 'lucide-react'
+import { X } from 'lucide-react'
 import { createProduct, updateProduct } from '@/utils/api'
+import { useAuthContext } from '@/context/AuthContext'
+import ImageUploader from './ImageUploader'
 import toast from 'react-hot-toast'
 
 interface AdminProductFormProps {
@@ -17,6 +19,7 @@ export default function AdminProductForm({
   onClose,
   onSuccess,
 }: AdminProductFormProps) {
+  const { tenant } = useAuthContext()
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     nombre: '',
@@ -352,32 +355,16 @@ export default function AdminProductForm({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Imagen Principal
-            </label>
-            <div className="flex items-center gap-4">
-              {imagePreview && (
-                <div className="relative w-32 h-32 rounded-lg overflow-hidden bg-gray-200">
-                  <Image
-                    src={imagePreview}
-                    alt="Preview"
-                    fill
-                    className="object-cover"
-                    sizes="128px"
-                  />
-                </div>
-              )}
-              <label className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
-                <Upload size={20} />
-                Subir Imagen
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
-              </label>
-            </div>
+            <ImageUploader
+              value={formData.imagen_principal}
+              onChange={(url) => {
+                setFormData((prev) => ({ ...prev, imagen_principal: url }))
+                setImagePreview(url)
+              }}
+              tenantId={tenant?.tenantId || 'default'}
+              label="Imagen Principal"
+              required
+            />
           </div>
 
           <div>
