@@ -35,6 +35,7 @@ export async function GET(request: Request) {
         // No filtrar por tenantId para mostrar todos los productos públicos
         query.activo = activo !== false
       }
+    }
 
     if (categoria) query.categoria = categoria
     if (color) query.color = color
