@@ -23,7 +23,8 @@ export const productoSchema = z.object({
 export const bannerSchema = z.object({
   titulo: z.string().optional(),
   subtitulo: z.string().optional(),
-  imagen: z.string().min(1, 'La imagen es requerida'),
+  imagen: z.string().optional(), // Para compatibilidad con frontend
+  imagenUrl: z.string().min(1, 'La URL de imagen es requerida'), // Campo del modelo
   link: z.string().optional(),
   activo: z.boolean().default(true),
   orden: z.number().default(0),
