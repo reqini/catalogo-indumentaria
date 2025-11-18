@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { Toaster } from 'react-hot-toast'
 import { CartProvider } from '@/context/CartContext'
@@ -14,8 +14,6 @@ export const metadata: Metadata = {
   description: 'Catálogo premium de indumentaria con las mejores prendas. Running, Training, Lifestyle y más.',
   keywords: 'indumentaria, ropa, running, training, lifestyle, moda, deporte',
   manifest: '/manifest.json',
-  themeColor: '#000000',
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=5',
   icons: {
     icon: '/icon-192x192.png',
     apple: '/icon-192x192.png',
@@ -31,6 +29,13 @@ export const metadata: Metadata = {
     title: 'Catálogo de Indumentaria - Premium Fashion',
     description: 'Descubrí las mejores prendas deportivas y de lifestyle',
   },
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: '#000000',
 }
 
 export default function RootLayout({

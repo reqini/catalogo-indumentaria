@@ -6,6 +6,10 @@ import Banner from '@/models/Banner'
 import { getTenantFromToken } from '@/lib/tenant'
 import mongoose from 'mongoose'
 
+// Forzar ruta dinámica para evitar prerendering
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 export async function GET(request: Request) {
   try {
     await connectDB()

@@ -1,13 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { CheckCircle, Package } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useCart } from '@/hooks/useCart'
 
-export default function PagoSuccessPage() {
+function PagoSuccessContent() {
   const searchParams = useSearchParams()
   const { clearCart } = useCart()
   const [paymentId, setPaymentId] = useState<string | null>(null)
@@ -64,6 +64,20 @@ export default function PagoSuccessPage() {
         </div>
       </motion.div>
     </main>
+  )
+}
+
+export default function PagoSuccessPage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
+          <p className="text-gray-600">Cargando...</p>
+        </div>
+      </main>
+    }>
+      <PagoSuccessContent />
+    </Suspense>
   )
 }
 
