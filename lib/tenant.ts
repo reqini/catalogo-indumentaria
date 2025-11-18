@@ -56,7 +56,7 @@ export async function checkPlanLimits(
   tenantId: string,
   resource: 'productos' | 'banners'
 ): Promise<{ allowed: boolean; current: number; limit: number }> {
-  return await checkPlanLimitsHelper(tenantId, resource)
+  return await checkPlanLimitsFromHelpers(tenantId, resource)
 }
 
 /**

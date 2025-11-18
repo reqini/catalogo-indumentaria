@@ -352,3 +352,48 @@ export async function createStockLog(log: any) {
   return data
 }
 
+// ==================== TENANTS (funciones adicionales) ====================
+
+export async function createTenant(tenant: any) {
+  const { data, error } = await supabaseAdmin
+    .from('tenants')
+    .insert([tenant])
+    .select()
+    .single()
+
+  if (error) {
+    throw error
+  }
+
+  return data
+}
+
+export async function getTenantByEmail(email: string) {
+  const { data, error } = await supabaseAdmin
+    .from('tenants')
+    .select('*')
+    .eq('email', email.toLowerCase())
+    .single()
+
+  if (error) {
+    return null
+  }
+
+  return data
+}
+
+export async function updateTenant(tenantId: string, updates: any) {
+  const { data, error } = await supabaseAdmin
+    .from('tenants')
+    .update(updates)
+    .eq('tenant_id', tenantId)
+    .select()
+    .single()
+
+  if (error) {
+    throw error
+  }
+
+  return data
+}
+
