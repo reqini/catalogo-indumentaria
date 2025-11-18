@@ -1,0 +1,10 @@
+console.log('\n✅ CatalogoIndumentaria en marcha\n')
+console.log('Catálogo (Home):        http://localhost:3000/')
+console.log('Catálogo (Listado):     http://localhost:3000/catalogo')
+console.log('Admin:                  http://localhost:3000/admin')
+console.log('API (docs simple):      http://localhost:3000/api')
+console.log('Status/Health:          http://localhost:3000/status\n')
+console.log('Credenciales admin seed:')
+console.log('  email:    admin@demo.com')
+console.log('  password: Admin123!\n')
+

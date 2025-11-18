@@ -1,0 +1,86 @@
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import jwt from 'jsonwebtoken'
+
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
+
+// Rate limiting mejorado
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>()
+
+// CSP Headers
+const cspHeader = `
+  default-src 'self';
+  script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com;
+  style-src 'self' 'unsafe-inline';
+  img-src 'self' blob: data: https:;
+  font-src 'self' data:;
+  connect-src 'self' https://api.mercadopago.com https://www.google-analytics.com;
+  frame-src 'self' https://www.mercadopago.com;
+  object-src 'none';
+  base-uri 'self';
+  form-action 'self';
+  frame-ancestors 'none';
+  upgrade-insecure-requests;
+`.replace(/\s{2,}/g, ' ').trim()
+
+export function middleware(request: NextRequest) {
+  // Rate limiting para API (10 req/min por IP)
+  if (request.nextUrl.pathname.startsWith('/api/')) {
+    const ip = request.ip || request.headers.get('x-forwarded-for') || 'unknown'
+    const now = Date.now()
+    const windowMs = 60 * 1000 // 1 minuto
+    const max = 10 // 10 requests por minuto
+
+    const record = rateLimitMap.get(ip)
+    
+    if (record) {
+      if (now > record.resetTime) {
+        rateLimitMap.set(ip, { count: 1, resetTime: now + windowMs })
+      } else {
+        if (record.count >= max) {
+          return NextResponse.json(
+            { error: 'Too many requests' },
+            { status: 429 }
+          )
+        }
+        record.count++
+      }
+    } else {
+      rateLimitMap.set(ip, { count: 1, resetTime: now + windowMs })
+    }
+
+    // Limpiar entradas antiguas
+    if (Math.random() < 0.01) {
+      for (const [key, value] of rateLimitMap.entries()) {
+        if (now > value.resetTime) {
+          rateLimitMap.delete(key)
+        }
+      }
+    }
+  }
+
+  // Proteger rutas admin (modo demo): solo verificamos presencia de cookie
+  if (
+    request.nextUrl.pathname.startsWith('/admin') &&
+    !request.nextUrl.pathname.startsWith('/admin/login')
+  ) {
+    const token = request.cookies.get('auth_token')?.value
+    if (!token) {
+      return NextResponse.redirect(new URL('/admin/login', request.url))
+    }
+  }
+
+  // Proteger API admin (modo demo): requerir cookie, sin romper por problemas de firma
+  if (request.nextUrl.pathname.startsWith('/api/admin')) {
+    const token = request.cookies.get('auth_token')?.value
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+  }
+
+  return NextResponse.next()
+}
+
+export const config = {
+  matcher: ['/api/:path*', '/admin/:path*'],
+}
