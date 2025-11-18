@@ -1,19 +1,24 @@
 import { NextResponse } from 'next/server'
-import connectDB from '@/lib/mongodb'
-import Plan from '@/models/Plan'
+import { getPlanes } from '@/lib/supabase-helpers'
 
 export async function GET() {
   try {
-    await connectDB()
-    const planes = await Plan.find({ activo: true }).sort({ precio: 1 }).lean()
+    const planes = await getPlanes(true)
 
-    return NextResponse.json(planes)
+    // Formatear planes para el frontend
+    const planesFormateados = planes.map((p: any) => ({
+      _id: p.id,
+      nombre: p.nombre,
+      precio: Number(p.precio),
+      limiteProductos: p.limite_productos,
+      limiteBanners: p.limite_banners,
+      beneficios: p.beneficios || [],
+      activo: p.activo,
+    }))
+
+    return NextResponse.json(planesFormateados)
   } catch (error: any) {
     console.error('Error fetching planes:', error)
-    return NextResponse.json(
-      { error: 'Error al obtener planes' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Error al obtener planes' }, { status: 500 })
   }
 }
-

@@ -1,30 +1,18 @@
 import { NextResponse } from 'next/server'
-import connectDB from '@/lib/mongodb'
-import Banner from '@/models/Banner'
 import { bannerSchema } from '@/utils/validations'
-import { getTenantFromToken } from '@/lib/tenant'
-import { checkPlanLimits } from '@/lib/tenant'
+import { getTenantFromToken, checkPlanLimits } from '@/lib/supabase-helpers'
+import { getBanners, createBanner } from '@/lib/supabase-helpers'
 
 export async function GET(request: Request) {
   try {
-    await connectDB()
-  } catch (dbError: any) {
-    console.error('[API Banners] Error de conexión a MongoDB:', dbError.message)
-    return NextResponse.json(
-      { error: 'Error de conexión a la base de datos', details: process.env.NODE_ENV === 'development' ? dbError.message : undefined },
-      { status: 503 }
-    )
-  }
-
-  try {
     const { searchParams } = new URL(request.url)
-    const tenantId = searchParams.get('tenantId') // Para catálogos públicos
+    const tenantId = searchParams.get('tenantId')
 
-    const query: any = { activo: true }
+    const filters: any = { activo: true }
 
     // Si hay tenantId en query (catálogo público), filtrar por ese tenant
     if (tenantId) {
-      query.tenantId = tenantId
+      filters.tenantId = tenantId
     } else {
       // Si no, intentar obtener del token (admin)
       const authHeader = request.headers.get('authorization')
@@ -32,20 +20,19 @@ export async function GET(request: Request) {
         const token = authHeader.replace('Bearer ', '')
         const tenant = await getTenantFromToken(token)
         if (tenant) {
-          query.tenantId = tenant.tenantId
+          filters.tenantId = tenant.tenantId
         }
       }
     }
 
-    const banners = await Banner.find(query)
-      .sort({ orden: 1 })
-      .lean()
+    const banners = await getBanners(filters)
 
+    // Formatear banners para el frontend
     const bannersFormateados = banners.map((b: any) => ({
       ...b,
-      id: b._id.toString(),
-      _id: undefined,
-      __v: undefined,
+      id: b.id,
+      imagen: b.imagen_url,
+      imagenUrl: b.imagen_url,
     }))
 
     return NextResponse.json(bannersFormateados)
@@ -53,11 +40,11 @@ export async function GET(request: Request) {
     console.error('[API Banners] Error fetching banners:', error)
     const errorMessage = error.message || 'Error al obtener banners'
     const errorDetails = process.env.NODE_ENV === 'development' ? error.stack : undefined
-    
+
     return NextResponse.json(
-      { 
+      {
         error: errorMessage,
-        ...(errorDetails && { details: errorDetails })
+        ...(errorDetails && { details: errorDetails }),
       },
       { status: 500 }
     )
@@ -66,8 +53,6 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    await connectDB()
-
     // Obtener tenant del token
     const authHeader = request.headers.get('authorization')
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -98,31 +83,32 @@ export async function POST(request: Request) {
     const body = await request.json()
     const validatedData = bannerSchema.parse(body)
 
-    const banner = await Banner.create({
-      ...validatedData,
-      tenantId: tenant.tenantId, // Agregar tenantId
-    })
+    const bannerData = {
+      tenant_id: tenant.tenantId,
+      titulo: validatedData.titulo,
+      imagen_url: validatedData.imagenUrl || validatedData.imagen,
+      activo: validatedData.activo !== false,
+      orden: validatedData.orden || 0,
+      link: validatedData.link,
+    }
 
+    const banner = await createBanner(bannerData)
+
+    // Formatear respuesta
     const bannerFormateado = {
-      ...banner.toObject(),
-      id: banner._id.toString(),
-      _id: undefined,
-      __v: undefined,
+      ...banner,
+      id: banner.id,
+      imagen: banner.imagen_url,
+      imagenUrl: banner.imagen_url,
     }
 
     return NextResponse.json(bannerFormateado, { status: 201 })
   } catch (error: any) {
     if (error.name === 'ZodError') {
-      return NextResponse.json(
-        { error: 'Datos inválidos', details: error.errors },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Datos inválidos', details: error.errors }, { status: 400 })
     }
 
     console.error('Error creating banner:', error)
-    return NextResponse.json(
-      { error: error.message || 'Error al crear banner' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: error.message || 'Error al crear banner' }, { status: 500 })
   }
 }

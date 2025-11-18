@@ -1,11 +1,11 @@
 /**
  * Utilidades para manejo de tenants
+ * Actualizado para usar Supabase
  */
 
 import { NextRequest } from 'next/server'
 import jwt from 'jsonwebtoken'
-import Tenant from '@/models/Tenant'
-import connectDB from '@/lib/mongodb'
+import { getTenantById, checkPlanLimits } from './supabase-helpers'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
 
@@ -32,18 +32,17 @@ export async function getTenantFromToken(token: string): Promise<TenantContext |
       return null
     }
 
-    await connectDB()
-    const tenant = await Tenant.findOne({ tenantId: decoded.tenantId }).lean()
+    const tenant = await getTenantById(decoded.tenantId)
 
     if (!tenant || !tenant.activo) {
       return null
     }
 
     return {
-      tenantId: tenant.tenantId,
-      plan: tenant.plan,
+      tenantId: tenant.tenant_id,
+      plan: tenant.plan as 'free' | 'pro' | 'premium',
       activo: tenant.activo,
-      branding: tenant.branding,
+      branding: tenant.branding as any,
     }
   } catch (error) {
     return null
@@ -51,39 +50,13 @@ export async function getTenantFromToken(token: string): Promise<TenantContext |
 }
 
 /**
- * Obtiene el tenantId desde el request (JWT o subdominio)
+ * Verifica los límites del plan del tenant
  */
-export async function getTenantFromRequest(
-  request: NextRequest
-): Promise<TenantContext | null> {
-  // Intentar desde JWT token
-  const token = request.cookies.get('token')?.value
-  if (token) {
-    const tenant = await getTenantFromToken(token)
-    if (tenant) {
-      return tenant
-    }
-  }
-
-  // Intentar desde subdominio
-  const host = request.headers.get('host') || ''
-  const subdomain = host.split('.')[0]
-
-  if (subdomain && subdomain !== 'www' && subdomain !== 'localhost') {
-    await connectDB()
-    const tenant = await Tenant.findOne({ subdomain, activo: true }).lean()
-
-    if (tenant) {
-      return {
-        tenantId: tenant.tenantId,
-        plan: tenant.plan,
-        activo: tenant.activo,
-        branding: tenant.branding,
-      }
-    }
-  }
-
-  return null
+export async function checkPlanLimits(
+  tenantId: string,
+  resource: 'productos' | 'banners'
+): Promise<{ allowed: boolean; current: number; limit: number }> {
+  return await checkPlanLimitsHelper(tenantId, resource)
 }
 
 /**
@@ -92,62 +65,37 @@ export async function getTenantFromRequest(
 export async function getTenantFromPath(
   tenantSlug: string
 ): Promise<TenantContext | null> {
-  await connectDB()
-
   // Buscar por subdomain o tenantId
-  const tenant = await Tenant.findOne({
-    $or: [{ subdomain: tenantSlug }, { tenantId: tenantSlug }],
-    activo: true,
-  }).lean()
+  const { supabaseAdmin } = await import('./supabase')
+  
+  const { data: tenant } = await supabaseAdmin
+    .from('tenants')
+    .select('tenant_id, plan, activo, branding')
+    .or(`subdomain.eq.${tenantSlug},tenant_id.eq.${tenantSlug}`)
+    .eq('activo', true)
+    .single()
 
-  if (tenant) {
-    return {
-      tenantId: tenant.tenantId,
-      plan: tenant.plan,
-      activo: tenant.activo,
-      branding: tenant.branding,
-    }
+  if (!tenant) {
+    return null
   }
 
-  return null
+  return {
+    tenantId: tenant.tenant_id,
+    plan: tenant.plan as 'free' | 'pro' | 'premium',
+    activo: tenant.activo,
+    branding: tenant.branding as any,
+  }
 }
 
 /**
- * Verifica límites según el plan
+ * Obtiene información del tenant desde el request
  */
-export async function checkPlanLimits(
-  tenantId: string,
-  type: 'productos' | 'banners'
-): Promise<{ allowed: boolean; current: number; limit: number }> {
-  await connectDB()
-
-  const tenant = await Tenant.findOne({ tenantId }).lean()
-  if (!tenant) {
-    return { allowed: false, current: 0, limit: 0 }
+export async function getTenantFromRequest(request: NextRequest): Promise<TenantContext | null> {
+  const authHeader = request.headers.get('authorization')
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return null
   }
 
-  const Plan = (await import('@/models/Plan')).default
-  const plan = await Plan.findOne({ nombre: tenant.plan }).lean()
-
-  if (!plan) {
-    return { allowed: false, current: 0, limit: 0 }
-  }
-
-  let current = 0
-  if (type === 'productos') {
-    const Producto = (await import('@/models/Producto')).default
-    current = await Producto.countDocuments({ tenantId, activo: true })
-  } else if (type === 'banners') {
-    const Banner = (await import('@/models/Banner')).default
-    current = await Banner.countDocuments({ tenantId, activo: true })
-  }
-
-  const limit = type === 'productos' ? plan.limiteProductos : plan.limiteBanners
-
-  return {
-    allowed: current < limit,
-    current,
-    limit,
-  }
+  const token = authHeader.replace('Bearer ', '')
+  return await getTenantFromToken(token)
 }
-

@@ -1,35 +1,27 @@
 import { NextResponse } from 'next/server'
-import connectDB from '@/lib/mongodb'
-import Producto from '@/models/Producto'
 import { productoSchema } from '@/utils/validations'
-import { getTenantFromToken } from '@/lib/tenant'
-import { checkPlanLimits } from '@/lib/tenant'
+import { getTenantFromToken, checkPlanLimits } from '@/lib/supabase-helpers'
+import {
+  getProductos,
+  createProducto,
+  getProductoById,
+} from '@/lib/supabase-helpers'
 
 export async function GET(request: Request) {
-  try {
-    await connectDB()
-  } catch (dbError: any) {
-    console.error('[API Productos] Error de conexión a MongoDB:', dbError.message)
-    return NextResponse.json(
-      { error: 'Error de conexión a la base de datos', details: process.env.NODE_ENV === 'development' ? dbError.message : undefined },
-      { status: 503 }
-    )
-  }
-
   try {
     const { searchParams } = new URL(request.url)
     const categoria = searchParams.get('categoria')
     const color = searchParams.get('color')
     const destacado = searchParams.get('destacado')
     const activo = searchParams.get('activo') !== 'false'
-    const tenantId = searchParams.get('tenantId') // Para catálogos públicos
+    const tenantId = searchParams.get('tenantId')
 
-    const query: any = {}
-    
+    const filters: any = {}
+
     // Si hay tenantId en query (catálogo público), filtrar por ese tenant
     if (tenantId) {
-      query.tenantId = tenantId
-      query.activo = true
+      filters.tenantId = tenantId
+      filters.activo = true
     } else {
       // Si no, intentar obtener del token (admin)
       const authHeader = request.headers.get('authorization')
@@ -37,59 +29,40 @@ export async function GET(request: Request) {
         const token = authHeader.replace('Bearer ', '')
         const tenant = await getTenantFromToken(token)
         if (tenant) {
-          query.tenantId = tenant.tenantId
+          filters.tenantId = tenant.tenantId
         }
       } else {
         // Si no hay token ni tenantId, mostrar todos los productos activos (catálogo público)
-        // No filtrar por tenantId para mostrar todos los productos públicos
-        query.activo = activo !== false
+        filters.activo = activo !== false
       }
     }
 
-    if (categoria) query.categoria = categoria
-    if (color) query.color = color
-    if (destacado === 'true') query.destacado = true
+    if (categoria) filters.categoria = categoria
+    if (color) filters.color = color
+    if (destacado === 'true') filters.destacado = true
 
-    const productos = await Producto.find(query)
-      .sort({ createdAt: -1 })
-      .lean()
+    const productos = await getProductos(filters)
 
-    // Convertir Map de stock a objeto
-    const productosFormateados = productos.map((p: any) => {
-      let stockRecord: Record<string, number> = {}
-      
-      if (p.stock) {
-        // Si es un Map de Mongoose, convertirlo a objeto
-        if (p.stock instanceof Map) {
-          stockRecord = Object.fromEntries(p.stock.entries())
-        } else if (typeof p.stock === 'object' && p.stock !== null) {
-          // Si ya es un objeto, usarlo directamente
-          stockRecord = p.stock
-        }
-      }
-
-      return {
-        ...p,
-        stock: stockRecord,
-        id: p._id.toString(),
-        imagenPrincipal: p.imagenPrincipal || '/images/default-product.svg',
-        imagenes: p.imagenesSec || [],
-        tags: p.tags || [],
-        _id: undefined,
-        __v: undefined,
-      }
-    })
+    // Formatear productos para el frontend
+    const productosFormateados = productos.map((p: any) => ({
+      ...p,
+      id: p.id,
+      imagenPrincipal: p.imagen_principal || '/images/default-product.svg',
+      imagenes: p.imagenes_sec || [],
+      tags: p.tags || [],
+      stock: p.stock || {},
+    }))
 
     return NextResponse.json(productosFormateados)
   } catch (error: any) {
     console.error('[API Productos] Error fetching productos:', error)
     const errorMessage = error.message || 'Error al obtener productos'
     const errorDetails = process.env.NODE_ENV === 'development' ? error.stack : undefined
-    
+
     return NextResponse.json(
-      { 
+      {
         error: errorMessage,
-        ...(errorDetails && { details: errorDetails })
+        ...(errorDetails && { details: errorDetails }),
       },
       { status: 500 }
     )
@@ -98,8 +71,6 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    await connectDB()
-
     // Obtener tenant del token
     const authHeader = request.headers.get('authorization')
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -142,15 +113,9 @@ export async function POST(request: Request) {
       )
     }
 
-    // Convertir stock a Map para MongoDB
-    const stockMap = new Map(Object.entries(validatedData.stock))
-
-    // Normalizar campos de imagen
-    const imagenPrincipal = validatedData.imagenPrincipal || validatedData.imagen_principal
-    const imagenesSec = validatedData.imagenesSec || validatedData.imagenes || []
-    const idMercadoPago = validatedData.idMercadoPago || validatedData.id_mercado_pago
-
-    const producto = await Producto.create({
+    // Preparar datos para Supabase
+    const productoData = {
+      tenant_id: tenant.tenantId,
       nombre: validatedData.nombre,
       descripcion: validatedData.descripcion,
       precio: validatedData.precio,
@@ -158,21 +123,22 @@ export async function POST(request: Request) {
       categoria: validatedData.categoria,
       color: validatedData.color,
       talles: validatedData.talles,
-      stock: stockMap,
-      imagenPrincipal,
-      imagenesSec,
-      idMercadoPago,
+      stock: validatedData.stock,
+      imagen_principal: validatedData.imagenPrincipal || validatedData.imagen_principal,
+      imagenes_sec: validatedData.imagenesSec || validatedData.imagenes || [],
+      id_mercado_pago: validatedData.idMercadoPago || validatedData.id_mercado_pago,
       tags: validatedData.tags || [],
       destacado: validatedData.destacado || false,
       activo: validatedData.activo !== false,
-      tenantId: tenant.tenantId,
-    })
+    }
+
+    const producto = await createProducto(productoData)
 
     // Registrar alta en historial de stock
-    const StockLog = (await import('@/models/StockLog')).default
-    for (const [talle, cantidad] of stockMap.entries()) {
-      await StockLog.create({
-        productoId: producto._id,
+    const { createStockLog } = await import('@/lib/supabase-helpers')
+    for (const [talle, cantidad] of Object.entries(validatedData.stock)) {
+      await createStockLog({
+        producto_id: producto.id,
         accion: 'alta',
         cantidad,
         talle,
@@ -180,26 +146,19 @@ export async function POST(request: Request) {
       })
     }
 
-    const rawStock = producto.stock as any
-    const stockRecord: Record<string, number> = rawStock
-      ? Object.fromEntries(rawStock as any)
-      : {}
-
+    // Formatear respuesta
     const productoFormateado = {
-      ...producto.toObject(),
-      stock: stockRecord,
-      id: producto._id.toString(),
-      _id: undefined,
-      __v: undefined,
+      ...producto,
+      id: producto.id,
+      imagenPrincipal: producto.imagen_principal,
+      imagenes: producto.imagenes_sec || [],
+      stock: producto.stock || {},
     }
 
     return NextResponse.json(productoFormateado, { status: 201 })
   } catch (error: any) {
     if (error.name === 'ZodError') {
-      return NextResponse.json(
-        { error: 'Datos inválidos', details: error.errors },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Datos inválidos', details: error.errors }, { status: 400 })
     }
 
     console.error('Error creating producto:', error)
