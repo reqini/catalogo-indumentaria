@@ -15,6 +15,7 @@
     "migrate-to-supabase": "node scripts/migrate-to-supabase.mjs",
     "setup-supabase-env": "node scripts/setup-supabase-env.mjs",
     "verify-supabase": "node scripts/verificar-supabase-setup.mjs",
+    "guide-supabase": "node scripts/guia-interactiva-supabase.mjs",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
