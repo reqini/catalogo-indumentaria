@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { LogOut, Plus, Edit, Trash2, BarChart3, Package } from 'lucide-react'
 import { useAuthContext } from '@/context/AuthContext'
 import { useAdmin } from '@/hooks/useAdmin'
