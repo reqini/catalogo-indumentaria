@@ -6,6 +6,7 @@ import {
   createProducto,
   getProductoById,
 } from '@/lib/supabase-helpers'
+import { registrarHistorial } from '@/lib/historial-helpers'
 
 export async function GET(request: Request) {
   try {

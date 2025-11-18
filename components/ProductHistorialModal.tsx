@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { X, Clock, User, FileEdit, Trash2, Eye, EyeOff, Package } from 'lucide-react'
 import { format } from 'date-fns'
 
@@ -46,11 +46,7 @@ export default function ProductHistorialModal({
   const [historial, setHistorial] = useState<HistorialEntry[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    fetchHistorial()
-  }, [productId])
-
-  const fetchHistorial = async () => {
+  const fetchHistorial = useCallback(async () => {
     try {
       const token = localStorage.getItem('token')
       const response = await fetch(`/api/productos/${productId}/historial`, {
@@ -68,7 +64,11 @@ export default function ProductHistorialModal({
     } finally {
       setLoading(false)
     }
-  }
+  }, [productId])
+
+  useEffect(() => {
+    fetchHistorial()
+  }, [fetchHistorial])
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 overflow-y-auto">
