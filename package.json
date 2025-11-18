@@ -9,6 +9,8 @@
     "seed": "node scripts/seed.mjs",
     "seed-plans": "node scripts/seed-plans.mjs",
     "init-saas": "node scripts/init-saas.mjs",
+    "test-atlas": "node scripts/test-atlas-connection.mjs",
+    "migrate-to-atlas": "node scripts/migrate-to-atlas.mjs",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
