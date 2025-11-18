@@ -16,20 +16,24 @@ const nextConfig = {
   poweredByHeader: false,
   generateEtags: true,
   swcMinify: true,
-  webpack: (config) => {
-    // Algunos paquetes externos pueden usar el loader de mini-css-extract-plugin
-    // y esperar que el plugin esté presente. Aseguramos que exista al menos una instancia.
-    const hasMiniCssExtract = config.plugins.some(
-      (plugin) => plugin && plugin.constructor && plugin.constructor.name === 'MiniCssExtractPlugin'
-    )
-
-    if (!hasMiniCssExtract) {
-      config.plugins.push(
-        new MiniCssExtractPlugin({
-          filename: 'static/css/[name].[contenthash].css',
-          chunkFilename: 'static/css/[id].[contenthash].css',
-        })
+  // Asegurar que PostCSS se procese correctamente
+  webpack: (config, { isServer }) => {
+    // No interferir con el procesamiento de CSS de Next.js
+    // Next.js maneja PostCSS y Tailwind automáticamente
+    if (!isServer) {
+      // Solo para plugins específicos que lo requieran
+      const hasMiniCssExtract = config.plugins.some(
+        (plugin) => plugin && plugin.constructor && plugin.constructor.name === 'MiniCssExtractPlugin'
       )
+
+      if (!hasMiniCssExtract) {
+        config.plugins.push(
+          new MiniCssExtractPlugin({
+            filename: 'static/css/[name].[contenthash].css',
+            chunkFilename: 'static/css/[id].[contenthash].css',
+          })
+        )
+      }
     }
 
     return config
