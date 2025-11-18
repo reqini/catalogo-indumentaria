@@ -10,24 +10,35 @@ import ProductCard from '@/components/ProductCard'
 import { getProducts, getBanners } from '@/utils/api'
 
 function HeroBanner() {
-  const [heroImage, setHeroImage] = useState<string>('/images/hero-bg.jpg')
+  // Imagen genérica de indumentaria por defecto (Unsplash - moda/ropa)
+  const defaultHeroImage = 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80'
+  
+  const [heroImage, setHeroImage] = useState<string>(defaultHeroImage)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const fetchHeroBanner = async () => {
       try {
         const banners = await getBanners()
-        // Usar el primer banner activo como hero, o imagen por defecto
+        // Usar el primer banner activo como hero, o imagen genérica por defecto
         // El campo puede ser 'imagen', 'imagenUrl' o 'imagen_url'
         if (banners.length > 0) {
           const imagenBanner = banners[0].imagen || banners[0].imagenUrl || banners[0].imagen_url
           if (imagenBanner) {
             setHeroImage(imagenBanner)
             console.log('[HOME] Hero banner usando imagen real:', imagenBanner)
+          } else {
+            // Si no hay imagen en el banner, usar la genérica
+            setHeroImage(defaultHeroImage)
           }
+        } else {
+          // Si no hay banners, usar la imagen genérica
+          setHeroImage(defaultHeroImage)
         }
       } catch (error) {
         console.error('Error fetching hero banner:', error)
+        // En caso de error, usar la imagen genérica
+        setHeroImage(defaultHeroImage)
       } finally {
         setLoading(false)
       }
@@ -50,8 +61,9 @@ function HeroBanner() {
           placeholder="blur"
           blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
           onError={(e) => {
-            // Si la imagen falla, usar imagen por defecto
-            ;(e.target as HTMLImageElement).src = '/images/hero-bg.jpg'
+            // Si la imagen falla, usar imagen genérica de indumentaria
+            const fallbackImage = 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80'
+            ;(e.target as HTMLImageElement).src = fallbackImage
           }}
         />
       </div>
