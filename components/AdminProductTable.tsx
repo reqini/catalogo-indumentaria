@@ -96,16 +96,27 @@ export default function AdminProductTable({
                 <tr key={product.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="w-16 h-16 bg-gray-200 rounded-lg overflow-hidden">
-                      {product.imagen_principal ? (
+                      {(product.imagenPrincipal || product.imagen_principal) ? (
                         <Image
-                          src={product.imagen_principal}
+                          src={product.imagenPrincipal || product.imagen_principal}
                           alt={product.nombre}
                           width={64}
                           height={64}
                           className="w-full h-full object-cover"
+                          onError={(e) => {
+                            // Si la imagen falla, mostrar placeholder
+                            ;(e.target as HTMLImageElement).style.display = 'none'
+                            const parent = (e.target as HTMLImageElement).parentElement
+                            if (parent && !parent.querySelector('.placeholder')) {
+                              const placeholder = document.createElement('div')
+                              placeholder.className = 'placeholder w-full h-full flex items-center justify-center text-gray-400 text-xs'
+                              placeholder.textContent = 'Sin imagen'
+                              parent.appendChild(placeholder)
+                            }
+                          }}
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-400">
+                        <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
                           Sin imagen
                         </div>
                       )}

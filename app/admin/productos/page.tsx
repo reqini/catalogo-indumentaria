@@ -40,57 +40,114 @@ export default function AdminProductosPage() {
   }
 
   const handleDuplicate = async (product: any) => {
+    if (!confirm(`¿Duplicar "${product.nombre}"?`)) {
+      return
+    }
+
     try {
-      const duplicated = {
-        ...product,
+      // Crear copia limpia del producto sin campos de sistema
+      const duplicated: any = {
         nombre: `${product.nombre} (Copia)`,
+        descripcion: product.descripcion || '',
+        precio: product.precio || 0,
+        descuento: product.descuento || null,
+        categoria: product.categoria || '',
+        color: product.color || '',
+        talles: product.talles ? [...product.talles] : [],
+        stock: product.stock ? { ...product.stock } : {},
+        imagenPrincipal: product.imagenPrincipal || product.imagen_principal || '',
+        imagenesSec: product.imagenesSec || product.imagenes || [],
+        idMercadoPago: product.idMercadoPago || '',
+        tags: product.tags ? [...product.tags] : [],
+        destacado: product.destacado || false,
+        activo: product.activo !== false,
       }
-      // Remover campos que no deben duplicarse
-      delete duplicated.id
-      delete duplicated._id
-      delete duplicated.createdAt
-      delete duplicated.updatedAt
+
+      // Remover campos de sistema que no deben duplicarse
+      const fieldsToRemove = [
+        'id',
+        '_id',
+        'tenant_id',
+        'created_at',
+        'createdAt',
+        'updated_at',
+        'updatedAt',
+        'imagen_principal',
+        'imagenes_sec',
+        'id_mercado_pago',
+      ]
       
+      fieldsToRemove.forEach((field) => {
+        delete duplicated[field]
+      })
+
       await createProduct(duplicated)
       toast.success('Producto duplicado exitosamente')
       fetchProducts()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error duplicating product:', error)
-      toast.error('Error al duplicar producto')
+      const errorMessage = error?.response?.data?.error || error?.message || 'Error al duplicar producto'
+      toast.error(errorMessage)
     }
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('¿Estás seguro de eliminar este producto?')) {
+    const product = products.find((p) => p.id === id)
+    const productName = product?.nombre || 'este producto'
+    
+    if (!confirm(`¿Estás seguro de eliminar "${productName}"?\n\nEsta acción no se puede deshacer.`)) {
       return
     }
 
     try {
       await deleteProduct(id)
-      toast.success('Producto eliminado')
+      toast.success(`Producto "${productName}" eliminado exitosamente`)
       fetchProducts()
-    } catch (error) {
-      toast.error('Error al eliminar producto')
+    } catch (error: any) {
+      console.error('Error deleting product:', error)
+      const errorMessage = error?.response?.data?.error || error?.message || 'Error al eliminar producto'
+      toast.error(errorMessage)
     }
   }
 
   const handleStockUpdate = async (productId: string, talle: string, cantidad: number) => {
+    if (cantidad < 0) {
+      toast.error('El stock no puede ser negativo')
+      return
+    }
+
+    if (!Number.isInteger(cantidad)) {
+      toast.error('La cantidad debe ser un número entero')
+      return
+    }
+
     try {
       await updateStock(productId, talle, cantidad)
-      toast.success('Stock actualizado')
+      toast.success(`Stock de talle ${talle} actualizado a ${cantidad}`)
       fetchProducts()
-    } catch (error) {
-      toast.error('Error al actualizar stock')
+    } catch (error: any) {
+      console.error('Error updating stock:', error)
+      const errorMessage = error?.response?.data?.error || error?.message || 'Error al actualizar stock'
+      toast.error(errorMessage)
     }
   }
 
   const handleToggleActive = async (product: any) => {
+    const newStatus = !product.activo
+    const action = newStatus ? 'activar' : 'desactivar'
+    
+    if (!confirm(`¿${action.charAt(0).toUpperCase() + action.slice(1)} "${product.nombre}"?`)) {
+      return
+    }
+
     try {
-      await updateProduct(product.id, { activo: !product.activo })
-      toast.success(`Producto ${!product.activo ? 'activado' : 'desactivado'}`)
+      await updateProduct(product.id, { activo: newStatus })
+      toast.success(`Producto "${product.nombre}" ${newStatus ? 'activado' : 'desactivado'} exitosamente`)
       fetchProducts()
-    } catch (error) {
-      toast.error('Error al actualizar producto')
+    } catch (error: any) {
+      console.error('Error toggling product active status:', error)
+      const errorMessage = error?.response?.data?.error || error?.message || 'Error al actualizar producto'
+      toast.error(errorMessage)
     }
   }
 

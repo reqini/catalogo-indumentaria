@@ -1,32 +1,33 @@
 import { NextResponse } from 'next/server'
-import connectDB from '@/lib/mongodb'
-import Producto from '@/models/Producto'
-import StockLog from '@/models/StockLog'
-import { getAuthUser } from '@/lib/auth'
-import mongoose from 'mongoose'
+import { getTenantFromToken } from '@/lib/supabase-helpers'
+import { getProductoById, updateProducto } from '@/lib/supabase-helpers'
+import { createStockLog } from '@/lib/supabase-helpers'
 
 export async function PUT(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    await connectDB()
-    const user = await getAuthUser()
-
-    if (!user || user.rol !== 'admin') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // Obtener tenant del token
+    const authHeader = request.headers.get('authorization')
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Token no proporcionado' }, { status: 401 })
     }
 
-    if (!mongoose.Types.ObjectId.isValid(params.id)) {
-      return NextResponse.json({ error: 'ID inválido' }, { status: 400 })
+    const token = authHeader.replace('Bearer ', '')
+    const tenant = await getTenantFromToken(token)
+
+    if (!tenant) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
     }
 
     const body = await request.json()
     const { talle, cantidad, accion } = body
 
+    // Validaciones
     if (!talle || cantidad === undefined) {
       return NextResponse.json(
-        { error: 'Talle y cantidad requeridos' },
+        { error: 'Talle y cantidad son requeridos' },
         { status: 400 }
       )
     }
@@ -38,35 +39,66 @@ export async function PUT(
       )
     }
 
-    const producto = await Producto.findById(params.id)
+    if (!Number.isInteger(cantidad)) {
+      return NextResponse.json(
+        { error: 'La cantidad debe ser un número entero' },
+        { status: 400 }
+      )
+    }
+
+    // Obtener producto
+    const producto = await getProductoById(params.id)
 
     if (!producto) {
       return NextResponse.json({ error: 'Producto no encontrado' }, { status: 404 })
     }
 
-    const stockMap = producto.stock as any
-    const stockAnterior = (stockMap?.get(talle) as number) || 0
-    stockMap.set(talle, cantidad)
-    await producto.save()
+    // Verificar que el producto pertenece al tenant
+    if (producto.tenant_id !== tenant.tenantId) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
+    }
 
-    // Registrar en historial
-    await StockLog.create({
-      productoId: producto._id,
-      accion: accion || 'reposicion',
-      cantidad: cantidad - stockAnterior,
-      talle,
-      usuario: user.email,
+    // Verificar que el talle existe en el producto
+    if (!producto.talles || !producto.talles.includes(talle)) {
+      return NextResponse.json(
+        { error: `El talle "${talle}" no existe en este producto` },
+        { status: 400 }
+      )
+    }
+
+    // Obtener stock anterior
+    const stockAnterior = (producto.stock as Record<string, number>)?.[talle] || 0
+
+    // Actualizar stock
+    const stockActualizado = {
+      ...(producto.stock as Record<string, number> || {}),
+      [talle]: cantidad,
+    }
+
+    // Actualizar producto en Supabase
+    const productoActualizado = await updateProducto(params.id, {
+      stock: stockActualizado,
     })
 
-    const rawStock = producto.stock as any
-    const stockRecord: Record<string, number> = rawStock
-      ? Object.fromEntries(rawStock as any)
-      : {}
+    // Registrar en historial de stock
+    try {
+      await createStockLog({
+        producto_id: producto.id,
+        accion: accion || 'reposicion',
+        cantidad: cantidad - stockAnterior,
+        talle,
+        usuario: tenant.tenantId,
+      })
+    } catch (logError) {
+      // No fallar si el log falla, solo registrar
+      console.error('Error creating stock log:', logError)
+    }
 
+    // Formatear respuesta
     const productoFormateado = {
-      ...producto.toObject(),
-      stock: stockRecord,
-      id: producto._id.toString(),
+      ...productoActualizado,
+      id: productoActualizado.id,
+      stock: productoActualizado.stock || {},
     }
 
     return NextResponse.json(productoFormateado)

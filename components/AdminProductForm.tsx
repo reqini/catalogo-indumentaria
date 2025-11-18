@@ -122,38 +122,57 @@ export default function AdminProductForm({
     setLoading(true)
 
     try {
-      // Validaciones
+      // Validaciones mejoradas
+      const errors: string[] = []
+
       if (!formData.nombre || formData.nombre.trim() === '') {
-        toast.error('El nombre es requerido')
-        setLoading(false)
-        return
+        errors.push('El nombre es requerido')
+      } else if (formData.nombre.trim().length < 3) {
+        errors.push('El nombre debe tener al menos 3 caracteres')
       }
 
-      if (!formData.precio || parseFloat(formData.precio) <= 0) {
-        toast.error('El precio debe ser mayor a 0')
-        setLoading(false)
-        return
+      if (!formData.precio || isNaN(parseFloat(formData.precio)) || parseFloat(formData.precio) <= 0) {
+        errors.push('El precio debe ser un número mayor a 0')
+      }
+
+      if (formData.descuento && (isNaN(parseFloat(formData.descuento)) || parseFloat(formData.descuento) < 0 || parseFloat(formData.descuento) > 100)) {
+        errors.push('El descuento debe ser un número entre 0 y 100')
+      }
+
+      if (!formData.categoria || formData.categoria.trim() === '') {
+        errors.push('La categoría es requerida')
       }
 
       if (!formData.talles || formData.talles.length === 0) {
-        toast.error('Debe tener al menos un talle')
-        setLoading(false)
-        return
+        errors.push('Debe tener al menos un talle')
       }
 
-      if (!formData.imagen_principal) {
-        toast.error('Debe tener al menos una imagen principal')
-        setLoading(false)
-        return
+      if (!formData.imagen_principal || formData.imagen_principal.trim() === '') {
+        errors.push('Debe tener al menos una imagen principal')
       }
 
-      // Validar que todos los talles tengan stock
-      const tallesSinStock = formData.talles.filter(
-        (talle) => !formData.stock[talle] && formData.stock[talle] !== 0
-      )
+      // Validar que todos los talles tengan stock definido
+      if (formData.talles.length > 0) {
+        const tallesSinStock = formData.talles.filter(
+          (talle) => formData.stock[talle] === undefined || formData.stock[talle] === null
+        )
 
-      if (tallesSinStock.length > 0) {
-        toast.error(`Los talles ${tallesSinStock.join(', ')} deben tener stock definido`)
+        if (tallesSinStock.length > 0) {
+          errors.push(`Los talles ${tallesSinStock.join(', ')} deben tener stock definido`)
+        }
+
+        // Validar que el stock no sea negativo
+        const tallesConStockNegativo = formData.talles.filter(
+          (talle) => formData.stock[talle] < 0
+        )
+
+        if (tallesConStockNegativo.length > 0) {
+          errors.push(`Los talles ${tallesConStockNegativo.join(', ')} no pueden tener stock negativo`)
+        }
+      }
+
+      if (errors.length > 0) {
+        errors.forEach((error) => toast.error(error))
         setLoading(false)
         return
       }
@@ -177,16 +196,35 @@ export default function AdminProductForm({
 
       if (product) {
         await updateProduct(product.id, productData)
-        toast.success('Producto actualizado exitosamente')
+        toast.success(`Producto "${formData.nombre}" actualizado exitosamente`)
       } else {
         await createProduct(productData)
-        toast.success('Producto creado exitosamente')
+        toast.success(`Producto "${formData.nombre}" creado exitosamente`)
       }
 
       onSuccess()
     } catch (error: any) {
       console.error('Error submitting form:', error)
-      toast.error(error.response?.data?.error || 'Error al guardar producto')
+      
+      // Manejo de errores más detallado
+      if (error.response?.data?.error) {
+        const errorData = error.response.data
+        if (errorData.details && Array.isArray(errorData.details)) {
+          // Errores de validación Zod
+          errorData.details.forEach((detail: any) => {
+            const field = detail.path?.join('.') || 'campo'
+            toast.error(`${field}: ${detail.message}`)
+          })
+        } else {
+          toast.error(errorData.error)
+        }
+      } else if (error.response?.status === 403 && error.response?.data?.limit) {
+        // Error de límite de plan
+        const limit = error.response.data.limit
+        toast.error(`Límite alcanzado: ${limit.current}/${limit.limit} productos. Actualizá tu plan.`)
+      } else {
+        toast.error(error.message || 'Error al guardar producto. Intenta nuevamente.')
+      }
     } finally {
       setLoading(false)
     }
