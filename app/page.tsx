@@ -600,21 +600,30 @@ export default function Home() {
           <p className="text-gray-300 mb-8 max-w-2xl mx-auto">
             Recibí ofertas exclusivas y novedades antes que nadie
           </p>
-          <form onSubmit={handleNewsletter} className="max-w-md mx-auto flex gap-2">
-            <input
-              type="email"
-              value={newsletterEmail}
-              onChange={(e) => setNewsletterEmail(e.target.value)}
-              placeholder="tu@email.com"
-              required
-              className="flex-1 px-4 py-3 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-white"
-            />
-            <button
-              type="submit"
-              className="px-6 py-3 bg-white text-black font-semibold rounded-lg hover:bg-gray-100 transition-all"
-            >
-              Suscribirme
-            </button>
+          <form onSubmit={handleNewsletter} className="max-w-md mx-auto flex flex-col gap-2">
+            <div className="flex gap-2">
+              <input
+                type="email"
+                value={newsletterEmail}
+                onChange={(e) => setNewsletterEmail(e.target.value)}
+                placeholder="tu@email.com"
+                required
+                disabled={newsletterLoading}
+                className="flex-1 px-4 py-3 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-white disabled:opacity-50"
+              />
+              <button
+                type="submit"
+                disabled={newsletterLoading}
+                className="px-6 py-3 bg-white text-black font-semibold rounded-lg hover:bg-gray-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {newsletterLoading ? 'Enviando...' : 'Suscribirme'}
+              </button>
+            </div>
+            {newsletterSuccess && (
+              <p className="text-green-400 text-sm text-center">
+                ¡Gracias por suscribirte! Te notificaremos de nuestras novedades.
+              </p>
+            )}
           </form>
         </div>
       </section>
