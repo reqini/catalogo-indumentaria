@@ -24,36 +24,45 @@ const cspHeader = `
 `.replace(/\s{2,}/g, ' ').trim()
 
 export function middleware(request: NextRequest) {
-  // Rate limiting para API (10 req/min por IP)
+  // Rate limiting para API (excluir endpoints críticos de pago)
   if (request.nextUrl.pathname.startsWith('/api/')) {
-    const ip = request.ip || request.headers.get('x-forwarded-for') || 'unknown'
-    const now = Date.now()
-    const windowMs = 60 * 1000 // 1 minuto
-    const max = 10 // 10 requests por minuto
-
-    const record = rateLimitMap.get(ip)
+    // Excluir endpoints críticos del rate limiting
+    const criticalEndpoints = ['/api/pago', '/api/mp/webhook', '/api/mp/subscription']
+    const isCriticalEndpoint = criticalEndpoints.some(endpoint => 
+      request.nextUrl.pathname.startsWith(endpoint)
+    )
     
-    if (record) {
-      if (now > record.resetTime) {
-        rateLimitMap.set(ip, { count: 1, resetTime: now + windowMs })
-      } else {
-        if (record.count >= max) {
-          return NextResponse.json(
-            { error: 'Too many requests' },
-            { status: 429 }
-          )
-        }
-        record.count++
-      }
-    } else {
-      rateLimitMap.set(ip, { count: 1, resetTime: now + windowMs })
-    }
+    // Solo aplicar rate limiting a endpoints no críticos
+    if (!isCriticalEndpoint) {
+      const ip = request.ip || request.headers.get('x-forwarded-for') || 'unknown'
+      const now = Date.now()
+      const windowMs = 60 * 1000 // 1 minuto
+      const max = 30 // 30 requests por minuto (aumentado de 10)
 
-    // Limpiar entradas antiguas
-    if (Math.random() < 0.01) {
-      for (const [key, value] of rateLimitMap.entries()) {
-        if (now > value.resetTime) {
-          rateLimitMap.delete(key)
+      const record = rateLimitMap.get(ip)
+      
+      if (record) {
+        if (now > record.resetTime) {
+          rateLimitMap.set(ip, { count: 1, resetTime: now + windowMs })
+        } else {
+          if (record.count >= max) {
+            return NextResponse.json(
+              { error: 'Too many requests' },
+              { status: 429 }
+            )
+          }
+          record.count++
+        }
+      } else {
+        rateLimitMap.set(ip, { count: 1, resetTime: now + windowMs })
+      }
+
+      // Limpiar entradas antiguas
+      if (Math.random() < 0.01) {
+        for (const [key, value] of rateLimitMap.entries()) {
+          if (now > value.resetTime) {
+            rateLimitMap.delete(key)
+          }
         }
       }
     }
