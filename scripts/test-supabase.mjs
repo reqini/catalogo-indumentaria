@@ -8,14 +8,34 @@
  */
 
 import { createClient } from '@supabase/supabase-js'
-import dotenv from 'dotenv'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
+import { existsSync, readFileSync } from 'fs'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
-dotenv.config({ path: join(__dirname, '..', '.env.local') })
+// Leer .env.local manualmente
+function loadEnv() {
+  const envPath = join(__dirname, '..', '.env.local')
+  if (!existsSync(envPath)) {
+    return {}
+  }
+  
+  const content = readFileSync(envPath, 'utf-8')
+  const env = {}
+  
+  content.split('\n').forEach((line) => {
+    const match = line.match(/^([^=]+)=(.*)$/)
+    if (match) {
+      env[match[1].trim()] = match[2].trim()
+    }
+  })
+  
+  return env
+}
+
+const env = loadEnv()
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
