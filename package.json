@@ -16,6 +16,8 @@
     "setup-supabase-env": "node scripts/setup-supabase-env.mjs",
     "verify-supabase": "node scripts/verificar-supabase-setup.mjs",
     "guide-supabase": "node scripts/guia-interactiva-supabase.mjs",
+    "config-credenciales": "node scripts/configurar-credenciales-provistas.mjs",
+    "crear-datos-reales": "node scripts/crear-datos-reales-supabase.mjs",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
