@@ -5,7 +5,7 @@
 
 import { NextRequest } from 'next/server'
 import jwt from 'jsonwebtoken'
-import { getTenantById, checkPlanLimits } from './supabase-helpers'
+import { getTenantById, checkPlanLimits as checkPlanLimitsFromHelpers } from './supabase-helpers'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
 
