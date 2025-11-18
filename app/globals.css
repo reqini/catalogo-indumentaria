@@ -8,7 +8,11 @@
   }
   
   body {
-    @apply bg-white dark:bg-dark-bg text-black dark:text-dark-text;
+    @apply bg-white text-black;
+  }
+  
+  .dark body {
+    @apply bg-dark-bg text-dark-text;
   }
   
   * {
