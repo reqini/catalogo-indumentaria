@@ -30,12 +30,11 @@ export async function GET(request: Request) {
         if (tenant) {
           query.tenantId = tenant.tenantId
         }
-    } else {
-      // Si no hay token ni tenantId, mostrar todos los productos activos (catálogo público)
-      // No filtrar por tenantId para mostrar todos los productos públicos
-      query.activo = activo !== false
-    }
-    }
+      } else {
+        // Si no hay token ni tenantId, mostrar todos los productos activos (catálogo público)
+        // No filtrar por tenantId para mostrar todos los productos públicos
+        query.activo = activo !== false
+      }
 
     if (categoria) query.categoria = categoria
     if (color) query.color = color
