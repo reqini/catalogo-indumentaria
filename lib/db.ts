@@ -1,4 +1,12 @@
-import { supabase, isSupabaseConfigured } from './supabase'
+import { supabase } from './supabase'
+
+// Verificar si Supabase está configurado
+function isSupabaseConfigured(): boolean {
+  return !!(
+    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  )
+}
 
 // Tipos
 export interface Producto {
