@@ -114,6 +114,7 @@ export async function getProductos(filters?: {
   color?: string
   destacado?: boolean
   activo?: boolean
+  nombre?: string
 }) {
   let query = supabaseAdmin.from('productos').select('*')
 
@@ -131,6 +132,9 @@ export async function getProductos(filters?: {
   }
   if (filters?.activo !== undefined) {
     query = query.eq('activo', filters.activo)
+  }
+  if (filters?.nombre) {
+    query = query.ilike('nombre', `%${filters.nombre}%`)
   }
 
   const { data, error } = await query.order('created_at', { ascending: false })
@@ -154,6 +158,11 @@ export async function getProductoById(id: string) {
   }
 
   return data
+}
+
+// Alias para compatibilidad
+export async function getProductById(id: string) {
+  return getProductoById(id)
 }
 
 export async function createProducto(producto: any) {

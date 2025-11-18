@@ -1,16 +1,13 @@
 import { NextResponse } from 'next/server'
-import connectDB from '@/lib/mongodb'
-import Producto from '@/models/Producto'
-import CompraLog from '@/models/CompraLog'
 import { pagoSchema } from '@/utils/validations'
-import mongoose from 'mongoose'
+import { getProductById, getProductos } from '@/lib/supabase-helpers'
+import { createCompraLog } from '@/lib/supabase-helpers'
 
 const MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN
 
 export async function POST(request: Request) {
   try {
     console.log('[MP-PAYMENT] Iniciando creación de preferencia')
-    await connectDB()
     const body = await request.json()
     console.log('[MP-PAYMENT] Body recibido completo:', JSON.stringify(body, null, 2))
     
@@ -73,11 +70,18 @@ export async function POST(request: Request) {
     for (const item of items) {
       // Buscar producto por ID (preferido) o por nombre (fallback)
       let producto = null
-      if (item.id && mongoose.Types.ObjectId.isValid(item.id)) {
-        producto = await Producto.findById(item.id).lean()
+      
+      // Intentar buscar por ID primero (UUID de Supabase)
+      if (item.id) {
+        producto = await getProductById(item.id)
+        console.log(`[MP-PAYMENT] Buscando producto por ID: ${item.id}`, producto ? '✅ Encontrado' : '❌ No encontrado')
       }
+      
+      // Si no se encuentra por ID, buscar por nombre
       if (!producto) {
-        producto = await Producto.findOne({ nombre: item.title }).lean()
+        const productos = await getProductos({ nombre: item.title })
+        producto = productos.length > 0 ? productos[0] : null
+        console.log(`[MP-PAYMENT] Buscando producto por nombre: ${item.title}`, producto ? '✅ Encontrado' : '❌ No encontrado')
       }
       
       if (!producto) {
@@ -88,14 +92,8 @@ export async function POST(request: Request) {
         )
       }
       
-      const rawStock = producto.stock as any
-      const stockRecord: Record<string, number> = rawStock
-        ? typeof rawStock === 'object' && rawStock.constructor === Map
-          ? Object.fromEntries(rawStock as Map<string, number>)
-          : typeof rawStock === 'object'
-          ? rawStock
-          : {}
-        : {}
+      // Stock en Supabase viene como objeto JSON
+      const stockRecord: Record<string, number> = producto.stock || {}
 
       // Validar stock por talle específico si se proporciona
       if (item.talle) {
@@ -323,21 +321,23 @@ export async function POST(request: Request) {
     try {
       for (const item of items) {
         let producto = null
-        if (item.id && mongoose.Types.ObjectId.isValid(item.id)) {
-          producto = await Producto.findById(item.id)
+        
+        // Buscar producto por ID o nombre
+        if (item.id) {
+          producto = await getProductById(item.id)
         }
         if (!producto) {
-          producto = await Producto.findOne({ nombre: item.title })
+          const productos = await getProductos({ nombre: item.title })
+          producto = productos.length > 0 ? productos[0] : null
         }
         
         if (producto) {
-          await CompraLog.create({
-            productoId: producto._id,
+          await createCompraLog({
+            productoId: producto.id,
             preferenciaId: data.id,
             estado: 'pendiente',
-            fecha: new Date(),
-            // Guardar información del talle si está disponible
-            metadata: item.talle ? { talle: item.talle } : undefined,
+            fecha: new Date().toISOString(),
+            metadata: item.talle ? { talle: item.talle } : {},
           })
         }
       }
