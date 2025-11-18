@@ -8,6 +8,15 @@ import { checkPlanLimits } from '@/lib/tenant'
 export async function GET(request: Request) {
   try {
     await connectDB()
+  } catch (dbError: any) {
+    console.error('[API Productos] Error de conexión a MongoDB:', dbError.message)
+    return NextResponse.json(
+      { error: 'Error de conexión a la base de datos', details: process.env.NODE_ENV === 'development' ? dbError.message : undefined },
+      { status: 503 }
+    )
+  }
+
+  try {
     const { searchParams } = new URL(request.url)
     const categoria = searchParams.get('categoria')
     const color = searchParams.get('color')
@@ -73,9 +82,15 @@ export async function GET(request: Request) {
 
     return NextResponse.json(productosFormateados)
   } catch (error: any) {
-    console.error('Error fetching productos:', error)
+    console.error('[API Productos] Error fetching productos:', error)
+    const errorMessage = error.message || 'Error al obtener productos'
+    const errorDetails = process.env.NODE_ENV === 'development' ? error.stack : undefined
+    
     return NextResponse.json(
-      { error: error.message || 'Error al obtener productos' },
+      { 
+        error: errorMessage,
+        ...(errorDetails && { details: errorDetails })
+      },
       { status: 500 }
     )
   }

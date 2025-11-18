@@ -8,6 +8,15 @@ import { checkPlanLimits } from '@/lib/tenant'
 export async function GET(request: Request) {
   try {
     await connectDB()
+  } catch (dbError: any) {
+    console.error('[API Banners] Error de conexión a MongoDB:', dbError.message)
+    return NextResponse.json(
+      { error: 'Error de conexión a la base de datos', details: process.env.NODE_ENV === 'development' ? dbError.message : undefined },
+      { status: 503 }
+    )
+  }
+
+  try {
     const { searchParams } = new URL(request.url)
     const tenantId = searchParams.get('tenantId') // Para catálogos públicos
 
@@ -41,9 +50,15 @@ export async function GET(request: Request) {
 
     return NextResponse.json(bannersFormateados)
   } catch (error: any) {
-    console.error('Error fetching banners:', error)
+    console.error('[API Banners] Error fetching banners:', error)
+    const errorMessage = error.message || 'Error al obtener banners'
+    const errorDetails = process.env.NODE_ENV === 'development' ? error.stack : undefined
+    
     return NextResponse.json(
-      { error: error.message || 'Error al obtener banners' },
+      { 
+        error: errorMessage,
+        ...(errorDetails && { details: errorDetails })
+      },
       { status: 500 }
     )
   }
