@@ -1,6 +1,4 @@
 /** @type {import('next').NextConfig} */
-const MiniCssExtractPlugin = require('mini-css-extract-plugin')
-
 const nextConfig = {
   reactStrictMode: true,
   images: {
@@ -16,27 +14,8 @@ const nextConfig = {
   poweredByHeader: false,
   generateEtags: true,
   swcMinify: true,
-  webpack: (config, { isServer }) => {
-    // No interferir con el procesamiento de CSS de Next.js
-    // Next.js maneja PostCSS y Tailwind automáticamente cuando detecta postcss.config.js
-    // Solo aplicar MiniCssExtractPlugin si es absolutamente necesario para otros plugins
-    if (!isServer) {
-      const hasMiniCssExtract = config.plugins.some(
-        (plugin) => plugin && plugin.constructor && plugin.constructor.name === 'MiniCssExtractPlugin'
-      )
-
-      if (!hasMiniCssExtract) {
-        config.plugins.push(
-          new MiniCssExtractPlugin({
-            filename: 'static/css/[name].[contenthash].css',
-            chunkFilename: 'static/css/[id].[contenthash].css',
-          })
-        )
-      }
-    }
-
-    return config
-  },
+  // Removida configuración de webpack para CSS
+  // Next.js maneja PostCSS y Tailwind automáticamente cuando detecta postcss.config.js
 }
 
 module.exports = nextConfig
