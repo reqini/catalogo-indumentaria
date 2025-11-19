@@ -45,6 +45,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/admin/productos', label: 'Productos', icon: Package },
     { href: '/admin/productos/carga-multiple', label: 'Carga Múltiple (IA)', icon: Sparkles },
+    { href: '/admin/productos/carga-multiple-v2', label: 'Carga IA V2', icon: Sparkles },
     { href: '/admin/banners', label: 'Banners', icon: Image },
     { href: '/admin/categorias', label: 'Categorías', icon: Tag },
   ]
