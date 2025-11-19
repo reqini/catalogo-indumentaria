@@ -57,10 +57,33 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     const validatedData = productoSchema.parse(body)
 
     // Preparar datos para actualizar
-    // Asegurar que siempre haya una imagen (placeholder si no hay)
-    const imagenPrincipal = validatedData.imagenPrincipal || 
-                            validatedData.imagen_principal || 
-                            '/images/default-product.svg'
+    // Preservar imagen real si existe, solo usar placeholder si realmente no hay imagen
+    const imagenPrincipalRaw = validatedData.imagenPrincipal || validatedData.imagen_principal || ''
+    const imagenPrincipalTrimmed = imagenPrincipalRaw.trim()
+    
+    // Verificar si es una URL válida (http/https) o ruta válida (/images/)
+    const tieneImagenValida = imagenPrincipalTrimmed && 
+                              imagenPrincipalTrimmed !== '' &&
+                              (imagenPrincipalTrimmed.startsWith('http://') || 
+                               imagenPrincipalTrimmed.startsWith('https://') ||
+                               imagenPrincipalTrimmed.startsWith('/images/'))
+    
+    // Si hay imagen válida, usarla. Si no, mantener la imagen existente o usar placeholder
+    let imagenPrincipal = tieneImagenValida 
+      ? imagenPrincipalTrimmed 
+      : (productoExistente.imagen_principal || '/images/default-product.svg')
+    
+    // Si el usuario explícitamente quiere usar placeholder (string vacío), usar placeholder
+    if (imagenPrincipalRaw === '' && !productoExistente.imagen_principal) {
+      imagenPrincipal = '/images/default-product.svg'
+    }
+    
+    console.log('[API Productos PUT] Imagen procesada:', {
+      imagenRaw: imagenPrincipalRaw?.substring(0, 50),
+      imagenExistente: productoExistente.imagen_principal?.substring(0, 50),
+      tieneImagenValida,
+      imagenFinal: imagenPrincipal.substring(0, 50),
+    })
     
     const updateData: any = {
       nombre: validatedData.nombre,
@@ -71,7 +94,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       color: validatedData.color,
       talles: validatedData.talles,
       stock: validatedData.stock,
-      imagen_principal: imagenPrincipal.trim() || '/images/default-product.svg', // Asegurar placeholder
+      imagen_principal: imagenPrincipal, // Usar imagen real, existente o placeholder según corresponda
       imagenes_sec: validatedData.imagenesSec || validatedData.imagenes || [],
       tags: Array.isArray(validatedData.tags) ? validatedData.tags.filter(tag => tag && tag.trim() !== '') : [],
       destacado: validatedData.destacado || false,

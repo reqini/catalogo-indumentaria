@@ -113,10 +113,27 @@ export async function POST(request: Request) {
     }
 
     // Preparar datos para Supabase
-    // Asegurar que siempre haya una imagen (placeholder si no hay)
-    const imagenPrincipal = validatedData.imagenPrincipal || 
-                            validatedData.imagen_principal || 
-                            '/images/default-product.svg'
+    // Preservar imagen real si existe, solo usar placeholder si realmente no hay imagen
+    const imagenPrincipalRaw = validatedData.imagenPrincipal || validatedData.imagen_principal || ''
+    const imagenPrincipalTrimmed = imagenPrincipalRaw.trim()
+    
+    // Verificar si es una URL válida (http/https) o ruta válida (/images/)
+    const tieneImagenValida = imagenPrincipalTrimmed && 
+                              imagenPrincipalTrimmed !== '' &&
+                              (imagenPrincipalTrimmed.startsWith('http://') || 
+                               imagenPrincipalTrimmed.startsWith('https://') ||
+                               imagenPrincipalTrimmed.startsWith('/images/'))
+    
+    // Solo usar placeholder si NO hay imagen válida
+    const imagenPrincipal = tieneImagenValida 
+      ? imagenPrincipalTrimmed 
+      : '/images/default-product.svg'
+    
+    console.log('[API Productos POST] Imagen procesada:', {
+      imagenRaw: imagenPrincipalRaw?.substring(0, 50),
+      tieneImagenValida,
+      imagenFinal: imagenPrincipal.substring(0, 50),
+    })
     
     const productoData = {
       tenant_id: tenant.tenantId,
@@ -128,7 +145,7 @@ export async function POST(request: Request) {
       color: validatedData.color,
       talles: validatedData.talles,
       stock: validatedData.stock,
-      imagen_principal: imagenPrincipal.trim() || '/images/default-product.svg', // Asegurar placeholder
+      imagen_principal: imagenPrincipal, // Usar imagen real o placeholder según corresponda
       imagenes_sec: validatedData.imagenesSec || validatedData.imagenes || [],
       id_mercado_pago: validatedData.idMercadoPago || validatedData.id_mercado_pago,
       tags: Array.isArray(validatedData.tags) ? validatedData.tags.filter(tag => tag && tag.trim() !== '') : [],

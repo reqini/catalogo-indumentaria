@@ -196,7 +196,7 @@ export default function AdminProductForm({
         return
       }
 
-      // Manejo de imagen: usar placeholder si no hay o está vacía
+      // Manejo de imagen: preservar URL real si existe, solo usar placeholder si realmente no hay imagen
       let imagenPrincipal = formData.imagen_principal?.trim() || ''
       
       // Validar que la imagen sea una URL válida (no base64)
@@ -206,15 +206,19 @@ export default function AdminProductForm({
         return
       }
 
-      // Si no hay imagen o está vacía, usar placeholder por defecto
-      if (!imagenPrincipal || imagenPrincipal === '') {
-        imagenPrincipal = '/images/default-product.svg'
-        console.log('⚠️ No hay imagen, usando placeholder automático:', imagenPrincipal)
-      }
+      // Verificar si es una URL válida (http/https) o ruta válida (/images/)
+      const tieneImagenValida = imagenPrincipal && 
+                                imagenPrincipal !== '' && 
+                                (imagenPrincipal.startsWith('http://') || 
+                                 imagenPrincipal.startsWith('https://') ||
+                                 imagenPrincipal.startsWith('/images/'))
       
-      // Asegurar que siempre haya una imagen (nunca string vacío)
-      if (!imagenPrincipal) {
+      // Solo usar placeholder si NO hay imagen válida
+      if (!tieneImagenValida) {
         imagenPrincipal = '/images/default-product.svg'
+        console.log('⚠️ No hay imagen válida, usando placeholder automático')
+      } else {
+        console.log('✅ Imagen válida detectada, preservando URL:', imagenPrincipal.substring(0, 50) + '...')
       }
 
       const productData = {
