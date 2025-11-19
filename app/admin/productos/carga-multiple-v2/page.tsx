@@ -349,9 +349,8 @@ export default function AdminBulkImportV2Page() {
             products={parsedProducts}
             onUpdate={handleUpdateProduct}
             onDelete={handleDeleteProduct}
-            onImageSearch={(index: number, query: string) => {
-              // Abrir modal de búsqueda de imágenes
-              console.log('Buscar imágenes para:', query)
+            onImageSearch={(_index: number, _query: string) => {
+              // La búsqueda de imágenes se maneja dentro del componente SmartProductTable
             }}
           />
         )}
