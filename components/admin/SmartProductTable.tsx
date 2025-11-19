@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Edit2, Trash2, ImageIcon, AlertCircle, CheckCircle2, X } from 'lucide-react'
 import Image from 'next/image'
-import { EnhancedProduct } from '@/app/admin/productos/carga-multiple-v2/page'
+import { EnhancedProduct } from '@/app/admin/productos/carga-inteligente/page'
 import ImageSearch from './ImageSearch'
 
 interface SmartProductTableProps {
@@ -96,8 +96,12 @@ export default function SmartProductTable({
             {products.map((product, index) => (
               <tr 
                 key={index} 
-                className={`hover:bg-gray-50 ${
-                  (product.errores?.length || 0) > 0 ? 'bg-red-50' : ''
+                className={`hover:bg-gray-50 transition-colors ${
+                  (product.errores?.length || 0) > 0 
+                    ? 'bg-red-50 border-l-4 border-red-500' 
+                    : (product.advertencias?.length || 0) > 0
+                    ? 'bg-yellow-50 border-l-4 border-yellow-500'
+                    : 'border-l-4 border-green-500'
                 }`}
               >
                 {/* Imagen */}
