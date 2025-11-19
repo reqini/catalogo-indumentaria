@@ -145,21 +145,21 @@ export async function POST(request: Request) {
               console.warn(`[MP-WEBHOOK] ⚠️ No se encontró talle específico para ${item.title}, usando: ${talle}`)
             }
 
-            // Obtener stock del talle específico
-            const stockRecord: Record<string, number> = producto.stock || {}
-            const stockActual = stockRecord[talle] || 0
-            const cantidad = item.quantity || 1
-
-            console.log(`[MP-WEBHOOK] Verificando stock para ${item.title} (Talle ${talle}): Disponible: ${stockActual}, Solicitado: ${cantidad}`)
-
-            // Validar que el talle existe
+            // Validar que el talle existe antes de continuar
             const tallesDisponibles = producto.talles || []
             if (!talle || !tallesDisponibles.includes(talle)) {
               console.error(`[MP-WEBHOOK] ❌ Talle ${talle} no válido para este producto`)
               continue
             }
 
-            if (stockActual >= cantidad && talle) {
+            // Obtener stock del talle específico (ya validado que existe)
+            const stockRecord: Record<string, number> = producto.stock || {}
+            const stockActual = stockRecord[talle] || 0
+            const cantidad = item.quantity || 1
+
+            console.log(`[MP-WEBHOOK] Verificando stock para ${item.title} (Talle ${talle}): Disponible: ${stockActual}, Solicitado: ${cantidad}`)
+
+            if (stockActual >= cantidad) {
               // Actualizar stock en Supabase
               const nuevoStock = { ...stockRecord }
               nuevoStock[talle] = stockActual - cantidad
