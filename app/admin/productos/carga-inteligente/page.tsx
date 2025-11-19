@@ -391,7 +391,7 @@ export default function AdminCargaInteligentePage() {
                 ) : (
                   <>
                     <Sparkles size={20} />
-                    <span>Procesar con IA</span>
+                    <span>Procesar con IA / Analizar</span>
                   </>
                 )}
               </button>
