@@ -358,7 +358,7 @@ export default function AdminCargaInteligentePage() {
             <h2 className="text-xl font-bold text-black mb-4">Paso 1: Ingresá tus productos</h2>
             
             <p className="text-gray-600 mb-4">
-              Pegá aquí un listado de productos, copiá desde Excel, WhatsApp o generá uno automáticamente con IA.
+              Podés pegar productos desde WhatsApp, Excel, o generarlos con IA usando el botón de abajo.
             </p>
 
             <div className="mb-4">
@@ -463,6 +463,13 @@ export default function AdminCargaInteligentePage() {
 
               {/* QA Automático */}
               <AutoQA products={parsedProducts} />
+
+              {/* Mensaje sobre imágenes */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
+                <p className="text-sm text-blue-800">
+                  <strong>Nota:</strong> Las imágenes se asignarán momentáneamente con un placeholder. Luego podés cargarlas a mano en la edición individual de productos.
+                </p>
+              </div>
             </div>
 
             {/* Tabla inteligente */}
