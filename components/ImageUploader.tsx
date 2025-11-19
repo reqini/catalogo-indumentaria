@@ -99,9 +99,17 @@ export default function ImageUploader({
         const result = await response.json()
 
         if (!response.ok) {
-          console.error('Error en upload-image API:', result)
-          const errorMessage = result.error || 'Error al subir la imagen'
-          toast.error(errorMessage)
+          console.error('❌ Error en upload-image API:', result)
+          console.error('Response status:', response.status)
+          
+          // Manejar errores específicos
+          if (response.status === 401) {
+            toast.error('Sesión expirada. Por favor, recarga la página e inicia sesión nuevamente.')
+          } else {
+            const errorMessage = result.error || 'Error al subir la imagen'
+            toast.error(errorMessage)
+          }
+          
           setPreview(value || '')
           setIsUploading(false)
           return
