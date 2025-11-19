@@ -10,9 +10,7 @@ import {
 import { X as XIcon } from 'lucide-react'
 import toast from 'react-hot-toast'
 import BulkImportTabs from '@/components/admin/BulkImportTabs'
-import IntelligentParser from '@/components/admin/IntelligentParser'
 import SmartProductTable from '@/components/admin/SmartProductTable'
-import ImageSearch from '@/components/admin/ImageSearch'
 import AutoQA from '@/components/admin/AutoQA'
 import MetricsDisplay from '@/components/admin/MetricsDisplay'
 
