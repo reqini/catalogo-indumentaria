@@ -79,10 +79,14 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // Proteger API admin (modo demo): requerir cookie, sin romper por problemas de firma
+  // Proteger API admin: requerir token en cookie O header Authorization
   if (request.nextUrl.pathname.startsWith('/api/admin')) {
-    const token = request.cookies.get('auth_token')?.value
-    if (!token) {
+    const tokenCookie = request.cookies.get('auth_token')?.value
+    const authHeader = request.headers.get('authorization')
+    const tokenHeader = authHeader?.startsWith('Bearer ') ? authHeader.replace('Bearer ', '') : null
+    
+    // Permitir si hay token en cookie O en header
+    if (!tokenCookie && !tokenHeader) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
   }

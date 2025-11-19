@@ -3,13 +3,13 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import Image from 'next/image'
 import { Upload, X, Loader2, Check } from 'lucide-react'
-import { uploadImage, validateImageFile } from '@/lib/supabase-storage'
+import { validateImageFile } from '@/lib/supabase-storage'
 import toast from 'react-hot-toast'
 
 interface ImageUploaderProps {
   value?: string
   onChange: (url: string) => void
-  tenantId: string
+  tenantId?: string // Opcional porque ahora se obtiene del token en la API
   label?: string
   required?: boolean
   className?: string
@@ -18,7 +18,7 @@ interface ImageUploaderProps {
 export default function ImageUploader({
   value,
   onChange,
-  tenantId,
+  tenantId, // Mantener para compatibilidad pero ya no es crítico
   label = 'Imagen Principal',
   required = false,
   className = '',
@@ -60,41 +60,68 @@ export default function ImageUploader({
       setUploadProgress(0)
 
       try {
-        // Verificar que tenantId sea válido
-        if (!tenantId || tenantId === 'default' || tenantId.trim() === '') {
-          console.error('tenantId inválido:', tenantId)
+        // Simular progreso inicial
+        setUploadProgress(10)
+
+        // Crear FormData para enviar el archivo
+        const formData = new FormData()
+        formData.append('file', file)
+
+        // Obtener token de localStorage o cookies
+        let token = localStorage.getItem('token')
+        if (!token && typeof window !== 'undefined') {
+          const cookies = document.cookie.split(';')
+          const authCookie = cookies.find(cookie => cookie.trim().startsWith('auth_token='))
+          if (authCookie) {
+            token = authCookie.split('=')[1]
+          }
+        }
+
+        if (!token) {
+          console.error('No se encontró token de autenticación')
           toast.error('Error: Debes iniciar sesión para subir imágenes. Por favor, recarga la página.')
           setPreview(value || '')
           setIsUploading(false)
           return
         }
 
-        // Validar formato de tenantId (debe ser UUID o string válido)
-        if (tenantId.length < 3) {
-          console.error('tenantId demasiado corto:', tenantId)
-          toast.error('Error: tenantId inválido. Por favor, inicia sesión nuevamente.')
+        setUploadProgress(30)
+
+        // Subir archivo a través de la API interna
+        const response = await fetch('/api/admin/upload-image', {
+          method: 'POST',
+          headers: {
+            // NO incluir Content-Type, el browser lo hace automáticamente para FormData
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
+        })
+
+        setUploadProgress(70)
+
+        const result = await response.json()
+
+        if (!response.ok) {
+          console.error('Error en upload-image API:', result)
+          const errorMessage = result.error || 'Error al subir la imagen'
+          toast.error(errorMessage)
           setPreview(value || '')
           setIsUploading(false)
           return
         }
 
-        const result = await uploadImage(file, tenantId, (progress) => {
-          setUploadProgress(progress)
-        })
-
-        if (result.error) {
-          console.error('Error en uploadImage:', result.error)
-          toast.error(result.error || 'Error al subir la imagen')
-          setPreview(value || '')
-        } else if (!result.url) {
+        if (!result.url) {
           console.error('No se obtuvo URL de la imagen')
           toast.error('Error: No se pudo obtener la URL de la imagen')
           setPreview(value || '')
-        } else {
-          setPreview(result.url)
-          onChange(result.url)
-          toast.success('Imagen subida exitosamente')
+          setIsUploading(false)
+          return
         }
+
+        setUploadProgress(100)
+        setPreview(result.url)
+        onChange(result.url)
+        toast.success('Imagen subida exitosamente')
       } catch (error: any) {
         console.error('Error uploading image:', error)
         toast.error(error.message || 'Error al subir la imagen. Verifica tu conexión.')
@@ -104,7 +131,7 @@ export default function ImageUploader({
         setUploadProgress(0)
       }
     },
-    [tenantId, onChange, value]
+    [onChange, value]
   )
 
   const handleDrop = useCallback(
