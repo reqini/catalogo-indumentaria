@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Edit2, Trash2, ImageIcon, AlertCircle, CheckCircle2, Sparkles } from 'lucide-react'
+import { Edit2, Trash2, ImageIcon, AlertCircle, CheckCircle2, X } from 'lucide-react'
 import Image from 'next/image'
 import { EnhancedProduct } from '@/app/admin/productos/carga-multiple-v2/page'
 import ImageSearch from './ImageSearch'
