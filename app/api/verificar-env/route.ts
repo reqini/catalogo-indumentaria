@@ -93,6 +93,7 @@ export async function GET() {
     },
   }, {
     status: allValid ? 200 : 200, // Siempre 200 para que se pueda ver el reporte
+    headers,
   })
 }
 

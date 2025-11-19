@@ -39,35 +39,45 @@
 
 ## ✅ Paso 3: Verificar Variables de Entorno
 
-### 3.1. Usar el Endpoint de Verificación
+### 3.1. Método Seguro: Verificar desde Vercel Dashboard (RECOMENDADO)
 
-Visita:
-```
-https://tu-proyecto.vercel.app/api/verificar-env
-```
+**⚠️ IMPORTANTE:** Usa siempre este método para mayor seguridad.
 
-Deberías ver un JSON con:
-```json
-{
-  "status": "ok",
-  "required": {
-    "valid": {
-      "NEXT_PUBLIC_SUPABASE_URL": true,
-      "NEXT_PUBLIC_SUPABASE_ANON_KEY": true,
-      "SUPABASE_SERVICE_ROLE_KEY": true,
-      "JWT_SECRET": true,
-      "NEXT_PUBLIC_BASE_URL": true
-    },
-    "missing": []
-  },
-  "warnings": []
-}
+1. Ve directamente a: [Vercel Dashboard](https://vercel.com/dashboard)
+2. Inicia sesión con tus credenciales oficiales
+3. Selecciona tu proyecto: `catalogo-indumentaria`
+4. Ve a **Settings** → **Environment Variables**
+5. Verifica manualmente que estas 5 variables estén presentes:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `JWT_SECRET`
+   - `NEXT_PUBLIC_BASE_URL`
+
+### 3.2. Método Alternativo: Verificar desde Código Local
+
+Ejecuta localmente:
+```bash
+pnpm verificar-produccion
 ```
 
-### 3.2. Si Hay Problemas
+Esto verificará la configuración sin exponer información sensible.
 
-- Si `status` es `"warning"` o hay `missing`, revisa las variables en Vercel Dashboard
-- Si hay `warnings`, revisa los formatos de las variables
+### 3.3. Método Alternativo: Verificar Build Logs
+
+1. Ve a Vercel Dashboard → **Deployments**
+2. Click en el último deployment
+3. Click en **"Logs"**
+4. Busca errores relacionados con variables de entorno
+
+Si ves errores como `Environment variable not found`, significa que alguna variable falta.
+
+### 3.4. Si Hay Problemas
+
+- Revisa las variables en Vercel Dashboard
+- Verifica que todas estén marcadas para "Production"
+- Verifica que los formatos sean correctos
+- Haz redeploy después de agregar/modificar variables
 
 ---
 
