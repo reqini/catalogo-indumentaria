@@ -22,13 +22,30 @@ function generateFileName(tenantId: string, originalName: string): string {
 export async function POST(request: Request) {
   try {
     // 1. Validar autenticación
+    console.log('[UPLOAD-IMAGE] Iniciando upload de imagen')
     const tenant = await getTenantFromRequest(request)
+    
     if (!tenant) {
+      console.error('[UPLOAD-IMAGE] ❌ No se encontró tenant - Token inválido o no proporcionado')
+      // Log adicional para debugging
+      const authHeader = request.headers.get('authorization')
+      const cookieHeader = request.headers.get('cookie')
+      console.error('[UPLOAD-IMAGE] Debug:', {
+        hasAuthHeader: !!authHeader,
+        hasCookie: !!cookieHeader,
+        authHeaderPrefix: authHeader?.substring(0, 20),
+      })
+      
       return NextResponse.json(
-        { error: 'No autorizado. Debes iniciar sesión para subir imágenes.' },
+        { 
+          error: 'No autorizado. Debes iniciar sesión para subir imágenes.',
+          details: 'Token no encontrado o inválido'
+        },
         { status: 401 }
       )
     }
+    
+    console.log('[UPLOAD-IMAGE] ✅ Tenant autenticado:', tenant.tenantId)
 
     // 2. Obtener el archivo del FormData
     const formData = await request.formData()

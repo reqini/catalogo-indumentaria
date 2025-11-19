@@ -59,17 +59,29 @@ export default function AdminCategoriasPage() {
         toast.success('Categoría actualizada correctamente')
       } else {
         // Crear nueva categoría
-        await createCategoria(formData)
+        const nuevaCategoria = await createCategoria(formData)
+        console.log('✅ Categoría creada:', nuevaCategoria)
         toast.success('Categoría creada correctamente')
       }
 
       setShowForm(false)
       setEditingCategoria(null)
       setFormData({ nombre: '', slug: '', descripcion: '', activa: true, orden: 0 })
-      fetchCategorias()
+      // Refrescar listado inmediatamente
+      await fetchCategorias()
     } catch (error: any) {
-      console.error('Error saving categoria:', error)
-      toast.error(error.message || 'Error al guardar categoría')
+      console.error('❌ Error saving categoria:', error)
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      })
+      
+      // Mensaje de error más específico
+      const errorMessage = error.response?.data?.error || 
+                          error.message || 
+                          'Error al guardar categoría'
+      toast.error(errorMessage)
     }
   }
 
@@ -84,16 +96,31 @@ export default function AdminCategoriasPage() {
     }
 
     try {
+      console.log('🗑️ Eliminando categoría:', categoria.id)
       await deleteCategoria(categoria.id)
+      console.log('✅ Categoría eliminada exitosamente')
       toast.success('Categoría eliminada correctamente')
-      fetchCategorias()
+      // Refrescar listado inmediatamente
+      await fetchCategorias()
     } catch (error: any) {
-      console.error('Error deleting categoria:', error)
+      console.error('❌ Error deleting categoria:', error)
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      })
+      
       const errorMessage = error.response?.data?.error || error.message || 'Error al eliminar categoría'
       
       // Si hay productos asociados, mostrar mensaje específico
-      if (error.response?.data?.productosAsociados) {
+      if (error.response?.data?.productosAsociados !== undefined) {
         toast.error(`No se puede eliminar. Hay ${error.response.data.productosAsociados} producto(s) usando esta categoría. Re-asigná los productos primero.`)
+      } else if (error.response?.status === 401) {
+        toast.error('No autorizado. Por favor, inicia sesión nuevamente.')
+      } else if (error.response?.status === 404) {
+        toast.error('Categoría no encontrada. Puede que ya haya sido eliminada.')
+        // Refrescar listado por si acaso
+        await fetchCategorias()
       } else {
         toast.error(errorMessage)
       }

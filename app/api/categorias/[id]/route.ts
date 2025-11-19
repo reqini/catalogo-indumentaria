@@ -64,23 +64,33 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    console.log('[API-CATEGORIAS] DELETE - Eliminar categoría:', params.id)
+    
     // Obtener tenant del token (desde header o cookie)
     const tenant = await getTenantFromRequest(request)
     if (!tenant) {
+      console.error('[API-CATEGORIAS] ❌ Token no proporcionado')
       return NextResponse.json({ error: 'Token no proporcionado' }, { status: 401 })
     }
+
+    console.log('[API-CATEGORIAS] ✅ Tenant autenticado:', tenant.tenantId)
 
     // Verificar que la categoría existe
     const categoria = await getCategoriaById(params.id)
     if (!categoria) {
+      console.warn('[API-CATEGORIAS] ⚠️ Categoría no encontrada:', params.id)
       return NextResponse.json({ error: 'Categoría no encontrada' }, { status: 404 })
     }
+
+    console.log('[API-CATEGORIAS] Categoría encontrada:', categoria.nombre)
 
     // Verificar si hay productos asociados a esta categoría
     const productos = await getProductos({ tenantId: tenant.tenantId })
     const productosConCategoria = productos.filter(
       (p: any) => p.categoria === categoria.slug
     )
+
+    console.log('[API-CATEGORIAS] Productos con esta categoría:', productosConCategoria.length)
 
     if (productosConCategoria.length > 0) {
       return NextResponse.json(
@@ -94,12 +104,16 @@ export async function DELETE(
 
     // Eliminar la categoría
     await deleteCategoria(params.id)
+    console.log('[API-CATEGORIAS] ✅ Categoría eliminada exitosamente')
 
     return NextResponse.json({ message: 'Categoría eliminada correctamente' })
   } catch (error: any) {
-    console.error('Error deleting categoria:', error)
+    console.error('[API-CATEGORIAS] ❌ Error deleting categoria:', error)
     return NextResponse.json(
-      { error: error.message || 'Error al eliminar categoría' },
+      { 
+        error: error.message || 'Error al eliminar categoría',
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      },
       { status: 500 }
     )
   }

@@ -78,8 +78,12 @@ export default function ImageUploader({
         }
 
         if (!token) {
-          console.error('No se encontró token de autenticación')
-          toast.error('Error: Debes iniciar sesión para subir imágenes. Por favor, recarga la página.')
+          console.error('❌ No se encontró token de autenticación')
+          console.error('Debug info:', {
+            localStorageToken: localStorage.getItem('token'),
+            cookies: document.cookie,
+          })
+          toast.error('Error: No se encontró sesión activa. Por favor, inicia sesión nuevamente.')
           setPreview(value || '')
           setIsUploading(false)
           return
