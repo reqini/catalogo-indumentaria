@@ -58,6 +58,7 @@ export async function POST(request: Request) {
           descripcion,
           orden: orden || 0,
           activa: true,
+          tenant_id: tenant.tenantId, // Agregar tenant_id
         },
       ])
       .select()

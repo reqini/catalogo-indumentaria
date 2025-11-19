@@ -358,7 +358,7 @@ export default function AdminCargaInteligentePage() {
             <h2 className="text-xl font-bold text-black mb-4">Paso 1: Ingresá tus productos</h2>
             
             <p className="text-gray-600 mb-4">
-              Podés pegar productos desde WhatsApp, Excel, o generarlos con IA usando el botón de abajo.
+              Podés pegar tu lista de productos desde Excel, WhatsApp o generarla con IA.
             </p>
 
             <div className="mb-4">

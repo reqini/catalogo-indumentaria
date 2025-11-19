@@ -45,6 +45,7 @@ export async function PUT(
       descripcion,
       orden: orden || 0,
       activa: activa !== false,
+      tenant_id: tenant.tenantId, // Asegurar tenant_id en actualización
     }
 
     const categoria = await updateCategoria(params.id, updateData)
