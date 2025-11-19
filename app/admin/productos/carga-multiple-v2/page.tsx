@@ -102,7 +102,7 @@ export default function AdminBulkImportV2Page() {
     }
   }
 
-  const calculateQualityScore = (product: EnhancedProduct): number {
+  const calculateQualityScore = (product: EnhancedProduct): number => {
     let score = 0
     
     // Nombre: 20 puntos
