@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import Image from 'next/image'
 import { Upload, X, Loader2, Check } from 'lucide-react'
 import { uploadImage, validateImageFile } from '@/lib/supabase-storage'
@@ -27,6 +27,16 @@ export default function ImageUploader({
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [preview, setPreview] = useState<string>(value || '')
+  
+  // Actualizar preview cuando cambia el value externo
+  useEffect(() => {
+    if (value && value !== preview) {
+      setPreview(value)
+    } else if (!value && preview) {
+      // Si value se borra, mantener preview para no perder la imagen subida
+      // Solo limpiar si explícitamente se pasa string vacío
+    }
+  }, [value, preview])
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileSelect = useCallback(

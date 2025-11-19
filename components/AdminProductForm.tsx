@@ -40,6 +40,7 @@ export default function AdminProductForm({
 
   const [imagePreview, setImagePreview] = useState<string>('')
   const [selectedTalle, setSelectedTalle] = useState('')
+  const [newTag, setNewTag] = useState('')
   const availableTalles = ['S', 'M', 'L', 'XL', 'XXL']
 
   useEffect(() => {
@@ -120,6 +121,23 @@ export default function AdminProductForm({
     }))
   }
 
+  const handleAddTag = () => {
+    if (newTag && newTag.trim() !== '' && !formData.tags.includes(newTag.trim())) {
+      setFormData((prev) => ({
+        ...prev,
+        tags: [...prev.tags, newTag.trim()],
+      }))
+      setNewTag('')
+    }
+  }
+
+  const handleRemoveTag = (tag: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      tags: prev.tags.filter((t) => t !== tag),
+    }))
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -150,7 +168,7 @@ export default function AdminProductForm({
         errors.push('Debe tener al menos un talle')
       }
 
-      // Removida validación obligatoria de imagen - se usará placeholder si no hay
+      // NO validar imagen - se usará placeholder automáticamente si no hay
 
       // Validar que todos los talles tengan stock definido
       if (formData.talles.length > 0) {
@@ -178,7 +196,7 @@ export default function AdminProductForm({
         return
       }
 
-      // Si no hay imagen, usar placeholder por defecto
+      // Manejo de imagen: usar placeholder si no hay o está vacía
       let imagenPrincipal = formData.imagen_principal?.trim() || ''
       
       // Validar que la imagen sea una URL válida (no base64)
@@ -191,7 +209,12 @@ export default function AdminProductForm({
       // Si no hay imagen o está vacía, usar placeholder por defecto
       if (!imagenPrincipal || imagenPrincipal === '') {
         imagenPrincipal = '/images/default-product.svg'
-        console.log('⚠️ No hay imagen, usando placeholder:', imagenPrincipal)
+        console.log('⚠️ No hay imagen, usando placeholder automático:', imagenPrincipal)
+      }
+      
+      // Asegurar que siempre haya una imagen (nunca string vacío)
+      if (!imagenPrincipal) {
+        imagenPrincipal = '/images/default-product.svg'
       }
 
       const productData = {
@@ -457,37 +480,55 @@ export default function AdminProductForm({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Tags (separados por comas)
+              Tags
             </label>
-            <input
-              type="text"
-              value={formData.tags.join(', ')}
-              onChange={(e) => {
-                const inputValue = e.target.value
-                const tagsArray = inputValue
-                  .split(',')
-                  .map((tag) => tag.trim())
-                  .filter((tag) => tag.length > 0)
-                console.log('Tags actualizados:', tagsArray)
-                setFormData((prev) => ({ ...prev, tags: tagsArray }))
-              }}
-              placeholder="Ej: nuevo, verano, oferta"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-            />
-            {formData.tags.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
-                {formData.tags.map((tag, index) => (
-                  <span
-                    key={`${tag}-${index}`}
-                    className="px-2 py-1 bg-gray-100 text-gray-700 text-sm rounded"
-                  >
-                    {tag}
-                  </span>
-                ))}
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newTag}
+                  onChange={(e) => setNewTag(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      handleAddTag()
+                    }
+                  }}
+                  placeholder="Escribe un tag y presiona Enter o click en Agregar"
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddTag}
+                  className="px-4 py-2 bg-gray-200 text-black rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  Agregar
+                </button>
               </div>
-            )}
-            <p className="mt-1 text-xs text-gray-500">
-              Escribe los tags separados por comas. Ejemplo: nuevo, verano, oferta
+
+              {formData.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {formData.tags.map((tag, index) => (
+                    <span
+                      key={`${tag}-${index}`}
+                      className="inline-flex items-center gap-2 px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-lg"
+                    >
+                      {tag}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveTag(tag)}
+                        className="text-red-600 hover:text-red-800"
+                        aria-label={`Eliminar tag ${tag}`}
+                      >
+                        <X size={14} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+            <p className="mt-2 text-xs text-gray-500">
+              Agrega tags uno por uno para mejor organización
             </p>
           </div>
 
