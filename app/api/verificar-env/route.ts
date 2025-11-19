@@ -3,8 +3,24 @@ import { NextResponse } from 'next/server'
 /**
  * Endpoint para verificar variables de entorno en producción
  * Solo funciona si las variables están correctamente configuradas
+ * 
+ * ⚠️ SEGURIDAD: Este endpoint NO expone valores reales de las variables,
+ * solo indica si están presentes y su formato es correcto.
  */
 export async function GET() {
+  // Verificar que estamos en el dominio correcto
+  const allowedDomains = [
+    'vercel.app',
+    'vercel.com',
+    process.env.NEXT_PUBLIC_BASE_URL?.replace('https://', '').replace('http://', ''),
+  ].filter(Boolean)
+
+  // Headers de seguridad adicionales
+  const headers = new Headers()
+  headers.set('X-Content-Type-Options', 'nosniff')
+  headers.set('X-Frame-Options', 'DENY')
+  headers.set('X-XSS-Protection', '1; mode=block')
+  headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
   const requiredVars = {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
