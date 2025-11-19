@@ -78,9 +78,12 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       tags: updateData.tags,
     })
 
-    // Normalizar campos de imagen
+    // Normalizar campos de imagen - usar placeholder si no hay imagen
     if (validatedData.imagenPrincipal || validatedData.imagen_principal) {
       updateData.imagen_principal = validatedData.imagenPrincipal || validatedData.imagen_principal
+    } else {
+      // Si no hay imagen, usar placeholder
+      updateData.imagen_principal = '/images/default-product.svg'
     }
     if (validatedData.imagenesSec || validatedData.imagenes) {
       updateData.imagenes_sec = validatedData.imagenesSec || validatedData.imagenes

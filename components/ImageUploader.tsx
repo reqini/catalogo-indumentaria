@@ -173,6 +173,12 @@ export default function ImageUploader({
               fill
               className="object-cover"
               sizes="(max-width: 768px) 100vw, 400px"
+              onError={(e) => {
+                console.error('Error cargando imagen preview:', preview)
+                // Si falla la imagen, usar placeholder
+                const target = e.target as HTMLImageElement
+                target.src = '/images/default-product.svg'
+              }}
             />
             {isUploading && (
               <div className="absolute inset-0 bg-black/50 flex items-center justify-center">

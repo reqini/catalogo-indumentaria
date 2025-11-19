@@ -150,9 +150,7 @@ export default function AdminProductForm({
         errors.push('Debe tener al menos un talle')
       }
 
-      if (!formData.imagen_principal || formData.imagen_principal.trim() === '') {
-        errors.push('Debe tener al menos una imagen principal')
-      }
+      // Removida validación obligatoria de imagen - se usará placeholder si no hay
 
       // Validar que todos los talles tengan stock definido
       if (formData.talles.length > 0) {
@@ -180,18 +178,20 @@ export default function AdminProductForm({
         return
       }
 
-      // Validar que la imagen principal esté presente y sea una URL válida
-      if (!formData.imagen_principal || formData.imagen_principal.trim() === '') {
-        toast.error('Debe subir una imagen principal')
+      // Si no hay imagen, usar placeholder por defecto
+      let imagenPrincipal = formData.imagen_principal?.trim() || ''
+      
+      // Validar que la imagen sea una URL válida (no base64)
+      if (imagenPrincipal && imagenPrincipal.startsWith('data:')) {
+        toast.error('La imagen aún se está subiendo. Por favor, espera a que termine.')
         setLoading(false)
         return
       }
 
-      // Validar que la imagen sea una URL válida (no base64)
-      if (formData.imagen_principal.startsWith('data:')) {
-        toast.error('La imagen aún se está subiendo. Por favor, espera a que termine.')
-        setLoading(false)
-        return
+      // Si no hay imagen o está vacía, usar placeholder por defecto
+      if (!imagenPrincipal || imagenPrincipal === '') {
+        imagenPrincipal = '/images/default-product.svg'
+        console.log('⚠️ No hay imagen, usando placeholder:', imagenPrincipal)
       }
 
       const productData = {
@@ -203,7 +203,7 @@ export default function AdminProductForm({
         color: formData.color.trim(),
         talles: formData.talles,
         stock: formData.stock,
-        imagenPrincipal: formData.imagen_principal.trim(),
+        imagenPrincipal: imagenPrincipal,
         imagenesSec: formData.imagenes.filter(img => img.trim() !== ''),
         idMercadoPago: formData.idMercadoPago.trim(),
         tags: formData.tags.filter(tag => tag.trim() !== ''), // Filtrar tags vacíos

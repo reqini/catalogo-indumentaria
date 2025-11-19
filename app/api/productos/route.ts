@@ -127,7 +127,7 @@ export async function POST(request: Request) {
       color: validatedData.color,
       talles: validatedData.talles,
       stock: validatedData.stock,
-      imagen_principal: validatedData.imagenPrincipal || validatedData.imagen_principal,
+      imagen_principal: validatedData.imagenPrincipal || validatedData.imagen_principal || '/images/default-product.svg',
       imagenes_sec: validatedData.imagenesSec || validatedData.imagenes || [],
       id_mercado_pago: validatedData.idMercadoPago || validatedData.id_mercado_pago,
       tags: Array.isArray(validatedData.tags) ? validatedData.tags.filter(tag => tag && tag.trim() !== '') : [],
