@@ -14,7 +14,7 @@ const cspHeader = `
   style-src 'self' 'unsafe-inline';
   img-src 'self' blob: data: https:;
   font-src 'self' data:;
-  connect-src 'self' https://api.mercadopago.com https://www.google-analytics.com;
+  connect-src 'self' https://api.mercadopago.com https://www.google-analytics.com https://*.supabase.co https://yqggrzxjhylnxjuagfyr.supabase.co;
   frame-src 'self' https://www.mercadopago.com;
   object-src 'none';
   base-uri 'self';

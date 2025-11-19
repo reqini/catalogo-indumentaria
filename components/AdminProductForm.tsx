@@ -398,24 +398,37 @@ export default function AdminProductForm({
           </div>
 
           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Imagen Principal <span className="text-gray-400 text-xs font-normal">(opcional - se usará placeholder si no hay)</span>
+            </label>
             {!tenant?.tenantId ? (
               <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                 <p className="text-sm text-yellow-800">
                   ⚠️ Debes iniciar sesión para subir imágenes. Por favor, recarga la página.
                 </p>
+                <p className="text-xs text-yellow-700 mt-2">
+                  El producto se guardará con imagen placeholder por defecto.
+                </p>
               </div>
             ) : (
-              <ImageUploader
-                value={formData.imagen_principal}
-                onChange={(url) => {
-                  console.log('Imagen subida, URL recibida:', url)
-                  setFormData((prev) => ({ ...prev, imagen_principal: url }))
-                  setImagePreview(url)
-                }}
-                tenantId={tenant.tenantId}
-                label="Imagen Principal"
-                required
-              />
+              <>
+                <ImageUploader
+                  value={formData.imagen_principal}
+                  onChange={(url) => {
+                    console.log('✅ Imagen subida, URL recibida:', url)
+                    setFormData((prev) => ({ ...prev, imagen_principal: url }))
+                    setImagePreview(url)
+                  }}
+                  tenantId={tenant.tenantId}
+                  label=""
+                  required={false}
+                />
+                {(!formData.imagen_principal || formData.imagen_principal === '') && (
+                  <p className="mt-2 text-xs text-gray-500">
+                    💡 Si no subes imagen, se usará automáticamente la imagen por defecto.
+                  </p>
+                )}
+              </>
             )}
           </div>
 
