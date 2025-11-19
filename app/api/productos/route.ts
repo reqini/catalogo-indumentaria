@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server'
 import { productoSchema } from '@/utils/validations'
-import { getTenantFromToken, checkPlanLimits } from '@/lib/supabase-helpers'
+import { checkPlanLimits } from '@/lib/supabase-helpers'
 import {
   getProductos,
   createProducto,
   getProductoById,
 } from '@/lib/supabase-helpers'
 import { registrarHistorial } from '@/lib/historial-helpers'
+import { getAuthToken, getTenantFromRequest } from '@/lib/auth-helpers'
 
 export async function GET(request: Request) {
   try {
@@ -24,14 +25,10 @@ export async function GET(request: Request) {
       filters.tenantId = tenantId
       filters.activo = true
     } else {
-      // Si no, intentar obtener del token (admin)
-      const authHeader = request.headers.get('authorization')
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        const token = authHeader.replace('Bearer ', '')
-        const tenant = await getTenantFromToken(token)
-        if (tenant) {
-          filters.tenantId = tenant.tenantId
-        }
+      // Si no, intentar obtener del token (admin) - desde header o cookie
+      const tenant = await getTenantFromRequest(request)
+      if (tenant) {
+        filters.tenantId = tenant.tenantId
       } else {
         // Si no hay token ni tenantId, mostrar todos los productos activos (catálogo público)
         filters.activo = activo !== false
@@ -74,14 +71,13 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    // Obtener tenant del token
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // Obtener tenant del token (desde header o cookie)
+    const tokenResult = await getAuthToken(request)
+    if (!tokenResult) {
       return NextResponse.json({ error: 'Token no proporcionado' }, { status: 401 })
     }
 
-    const token = authHeader.replace('Bearer ', '')
-    const tenant = await getTenantFromToken(token)
+    const tenant = await getTenantFromRequest(request)
 
     if (!tenant) {
       return NextResponse.json({ error: 'Tenant no encontrado' }, { status: 401 })
@@ -117,6 +113,11 @@ export async function POST(request: Request) {
     }
 
     // Preparar datos para Supabase
+    // Asegurar que siempre haya una imagen (placeholder si no hay)
+    const imagenPrincipal = validatedData.imagenPrincipal || 
+                            validatedData.imagen_principal || 
+                            '/images/default-product.svg'
+    
     const productoData = {
       tenant_id: tenant.tenantId,
       nombre: validatedData.nombre,
@@ -127,7 +128,7 @@ export async function POST(request: Request) {
       color: validatedData.color,
       talles: validatedData.talles,
       stock: validatedData.stock,
-      imagen_principal: validatedData.imagenPrincipal || validatedData.imagen_principal || '/images/default-product.svg',
+      imagen_principal: imagenPrincipal.trim() || '/images/default-product.svg', // Asegurar placeholder
       imagenes_sec: validatedData.imagenesSec || validatedData.imagenes || [],
       id_mercado_pago: validatedData.idMercadoPago || validatedData.id_mercado_pago,
       tags: Array.isArray(validatedData.tags) ? validatedData.tags.filter(tag => tag && tag.trim() !== '') : [],

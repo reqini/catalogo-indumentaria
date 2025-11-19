@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Lock } from 'lucide-react'
 import { login } from '@/utils/api'
+import { useAuthContext } from '@/context/AuthContext'
 import toast from 'react-hot-toast'
 
 export default function AdminLoginPage() {
@@ -13,6 +14,7 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState('admin123')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+  const { login: loginContext } = useAuthContext()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -21,13 +23,21 @@ export default function AdminLoginPage() {
     try {
       const response = await login(email, password)
       
-      if (response.token) {
-        // Guardar token en cookie httpOnly vía API
-        await fetch('/api/auth/set-token', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token: response.token }),
-        })
+      if (response.token && response.tenant) {
+        // 1. Guardar token en cookie httpOnly vía API (para middleware y SSR)
+        try {
+          await fetch('/api/auth/set-token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: response.token }),
+          })
+        } catch (cookieError) {
+          console.warn('Error guardando token en cookie:', cookieError)
+          // Continuar aunque falle, el token se guardará en localStorage
+        }
+        
+        // 2. Actualizar AuthContext y localStorage (para cliente)
+        loginContext(response.token, response.tenant)
         
         toast.success('Inicio de sesión exitoso')
         router.push('/admin/dashboard')

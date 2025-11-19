@@ -1,29 +1,14 @@
 import { NextResponse } from 'next/server'
-import connectDB from '@/lib/mongodb'
-import Categoria from '@/models/Categoria'
-import { getAuthUser } from '@/lib/auth'
-import mongoose from 'mongoose'
+import { getCategoriaById, updateCategoria, deleteCategoria } from '@/lib/supabase-helpers'
+import { getTenantFromRequest } from '@/lib/auth-helpers'
+import { getProductos } from '@/lib/supabase-helpers'
 
-export async function PUT(
+export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    await connectDB()
-    const user = await getAuthUser()
-
-    if (!user || (user.rol !== 'admin' && user.rol !== 'editor')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    if (!mongoose.Types.ObjectId.isValid(params.id)) {
-      return NextResponse.json({ error: 'ID inválido' }, { status: 400 })
-    }
-
-    const body = await request.json()
-    const categoria = await Categoria.findByIdAndUpdate(params.id, body, {
-      new: true,
-    })
+    const categoria = await getCategoriaById(params.id)
 
     if (!categoria) {
       return NextResponse.json({ error: 'Categoría no encontrada' }, { status: 404 })
@@ -31,6 +16,42 @@ export async function PUT(
 
     return NextResponse.json(categoria)
   } catch (error: any) {
+    console.error('Error fetching categoria:', error)
+    return NextResponse.json({ error: 'Error al obtener categoría' }, { status: 500 })
+  }
+}
+
+export async function PUT(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    // Obtener tenant del token (desde header o cookie)
+    const tenant = await getTenantFromRequest(request)
+    if (!tenant) {
+      return NextResponse.json({ error: 'Token no proporcionado' }, { status: 401 })
+    }
+
+    const body = await request.json()
+    const { nombre, slug, descripcion, orden, activa } = body
+
+    if (!nombre || !slug) {
+      return NextResponse.json({ error: 'Nombre y slug son requeridos' }, { status: 400 })
+    }
+
+    const updateData: any = {
+      nombre,
+      slug,
+      descripcion,
+      orden: orden || 0,
+      activa: activa !== false,
+    }
+
+    const categoria = await updateCategoria(params.id, updateData)
+
+    return NextResponse.json(categoria)
+  } catch (error: any) {
+    console.error('Error updating categoria:', error)
     return NextResponse.json(
       { error: error.message || 'Error al actualizar categoría' },
       { status: 500 }
@@ -43,34 +64,43 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    await connectDB()
-    const user = await getAuthUser()
-
-    if (!user || user.rol !== 'admin') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // Obtener tenant del token (desde header o cookie)
+    const tenant = await getTenantFromRequest(request)
+    if (!tenant) {
+      return NextResponse.json({ error: 'Token no proporcionado' }, { status: 401 })
     }
 
-    if (!mongoose.Types.ObjectId.isValid(params.id)) {
-      return NextResponse.json({ error: 'ID inválido' }, { status: 400 })
-    }
-
-    // Desactivar en lugar de eliminar
-    const categoria = await Categoria.findByIdAndUpdate(
-      params.id,
-      { activa: false },
-      { new: true }
-    )
-
+    // Verificar que la categoría existe
+    const categoria = await getCategoriaById(params.id)
     if (!categoria) {
       return NextResponse.json({ error: 'Categoría no encontrada' }, { status: 404 })
     }
 
-    return NextResponse.json({ message: 'Categoría desactivada' })
+    // Verificar si hay productos asociados a esta categoría
+    const productos = await getProductos({ tenantId: tenant.tenantId })
+    const productosConCategoria = productos.filter(
+      (p: any) => p.categoria === categoria.slug
+    )
+
+    if (productosConCategoria.length > 0) {
+      return NextResponse.json(
+        {
+          error: `No se puede eliminar. Hay ${productosConCategoria.length} producto(s) usando esta categoría. Re-asigná los productos primero.`,
+          productosAsociados: productosConCategoria.length,
+        },
+        { status: 400 }
+      )
+    }
+
+    // Eliminar la categoría
+    await deleteCategoria(params.id)
+
+    return NextResponse.json({ message: 'Categoría eliminada correctamente' })
   } catch (error: any) {
+    console.error('Error deleting categoria:', error)
     return NextResponse.json(
       { error: error.message || 'Error al eliminar categoría' },
       { status: 500 }
     )
   }
 }
-

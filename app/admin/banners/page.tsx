@@ -44,10 +44,12 @@ export default function AdminBannersPage() {
 
     try {
       await deleteBanner(id)
-      toast.success('Banner eliminado')
+      toast.success('Banner eliminado correctamente')
       fetchBanners()
-    } catch (error) {
-      toast.error('Error al eliminar banner')
+    } catch (error: any) {
+      console.error('Error deleting banner:', error)
+      const errorMessage = error.response?.data?.error || error.message || 'Error al eliminar banner'
+      toast.error(errorMessage)
     }
   }
 
@@ -63,10 +65,15 @@ export default function AdminBannersPage() {
 
   const handleOrderChange = async (bannerId: string, newOrder: number) => {
     try {
-      await updateBanner(bannerId, { orden: newOrder })
+      // Asegurar que el orden sea un número válido y no negativo
+      const ordenFinal = Math.max(0, Math.floor(newOrder))
+      await updateBanner(bannerId, { orden: ordenFinal })
+      toast.success('Orden actualizado')
       fetchBanners()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating order:', error)
+      const errorMessage = error.response?.data?.error || error.message || 'Error al actualizar orden'
+      toast.error(errorMessage)
     }
   }
 

@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server'
 import connectDB from '@/lib/mongodb'
 import Tenant from '@/models/Tenant'
 import Plan from '@/models/Plan'
-import { getTenantFromToken } from '@/lib/tenant'
 import jwt from 'jsonwebtoken'
+import { getTenantFromRequest } from '@/lib/auth-helpers'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
 const MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN
@@ -12,17 +12,10 @@ export async function POST(request: Request) {
   try {
     await connectDB()
 
-    // Obtener token del header
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Token no proporcionado' }, { status: 401 })
-    }
-
-    const token = authHeader.replace('Bearer ', '')
-    const tenant = await getTenantFromToken(token)
-
+    // Obtener tenant del token (desde header o cookie)
+    const tenant = await getTenantFromRequest(request)
     if (!tenant) {
-      return NextResponse.json({ error: 'Tenant no encontrado' }, { status: 401 })
+      return NextResponse.json({ error: 'Token no proporcionado' }, { status: 401 })
     }
 
     const body = await request.json()

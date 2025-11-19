@@ -16,8 +16,8 @@ export default function AdminDashboard() {
   const [showForm, setShowForm] = useState(false)
   const [editingProduct, setEditingProduct] = useState<any>(null)
 
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
+    await logout()
     toast.success('Sesión cerrada')
     router.push('/')
   }

@@ -345,6 +345,57 @@ export async function getCategorias(activa: boolean = true) {
   return data || []
 }
 
+export async function getCategoriaById(id: string) {
+  const { data, error } = await supabaseAdmin
+    .from('categorias')
+    .select('*')
+    .eq('id', id)
+    .single()
+
+  if (error) {
+    return null
+  }
+
+  return data
+}
+
+export async function createCategoria(categoria: any) {
+  const { data, error } = await supabaseAdmin
+    .from('categorias')
+    .insert([categoria])
+    .select()
+    .single()
+
+  if (error) {
+    throw error
+  }
+
+  return data
+}
+
+export async function updateCategoria(id: string, updates: any) {
+  const { data, error } = await supabaseAdmin
+    .from('categorias')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) {
+    throw error
+  }
+
+  return data
+}
+
+export async function deleteCategoria(id: string) {
+  const { error } = await supabaseAdmin.from('categorias').delete().eq('id', id)
+
+  if (error) {
+    throw error
+  }
+}
+
 // ==================== STOCK LOGS ====================
 
 export async function createStockLog(log: any) {

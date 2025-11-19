@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import { productoSchema } from '@/utils/validations'
-import { getTenantFromToken } from '@/lib/supabase-helpers'
 import { getProductoById, updateProducto, deleteProducto } from '@/lib/supabase-helpers'
 import { registrarHistorial, detectarCambios } from '@/lib/historial-helpers'
+import { getAuthToken, getTenantFromRequest } from '@/lib/auth-helpers'
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
@@ -31,14 +31,13 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
   try {
-    // Obtener tenant del token
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // Obtener tenant del token (desde header o cookie)
+    const tokenResult = await getAuthToken(request)
+    if (!tokenResult) {
       return NextResponse.json({ error: 'Token no proporcionado' }, { status: 401 })
     }
 
-    const token = authHeader.replace('Bearer ', '')
-    const tenant = await getTenantFromToken(token)
+    const tenant = await getTenantFromRequest(request)
 
     if (!tenant) {
       return NextResponse.json({ error: 'Tenant no encontrado' }, { status: 401 })
@@ -58,6 +57,11 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     const validatedData = productoSchema.parse(body)
 
     // Preparar datos para actualizar
+    // Asegurar que siempre haya una imagen (placeholder si no hay)
+    const imagenPrincipal = validatedData.imagenPrincipal || 
+                            validatedData.imagen_principal || 
+                            '/images/default-product.svg'
+    
     const updateData: any = {
       nombre: validatedData.nombre,
       descripcion: validatedData.descripcion,
@@ -67,6 +71,8 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       color: validatedData.color,
       talles: validatedData.talles,
       stock: validatedData.stock,
+      imagen_principal: imagenPrincipal.trim() || '/images/default-product.svg', // Asegurar placeholder
+      imagenes_sec: validatedData.imagenesSec || validatedData.imagenes || [],
       tags: Array.isArray(validatedData.tags) ? validatedData.tags.filter(tag => tag && tag.trim() !== '') : [],
       destacado: validatedData.destacado || false,
       activo: validatedData.activo !== false,
@@ -77,17 +83,6 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       imagen_principal: updateData.imagen_principal?.substring(0, 50) + '...',
       tags: updateData.tags,
     })
-
-    // Normalizar campos de imagen - usar placeholder si no hay imagen
-    if (validatedData.imagenPrincipal || validatedData.imagen_principal) {
-      updateData.imagen_principal = validatedData.imagenPrincipal || validatedData.imagen_principal
-    } else {
-      // Si no hay imagen, usar placeholder
-      updateData.imagen_principal = '/images/default-product.svg'
-    }
-    if (validatedData.imagenesSec || validatedData.imagenes) {
-      updateData.imagenes_sec = validatedData.imagenesSec || validatedData.imagenes
-    }
     if (validatedData.idMercadoPago || validatedData.id_mercado_pago) {
       updateData.id_mercado_pago = validatedData.idMercadoPago || validatedData.id_mercado_pago
     }
@@ -138,14 +133,13 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
   try {
-    // Obtener tenant del token
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // Obtener tenant del token (desde header o cookie)
+    const tokenResult = await getAuthToken(request)
+    if (!tokenResult) {
       return NextResponse.json({ error: 'Token no proporcionado' }, { status: 401 })
     }
 
-    const token = authHeader.replace('Bearer ', '')
-    const tenant = await getTenantFromToken(token)
+    const tenant = await getTenantFromRequest(request)
 
     if (!tenant) {
       return NextResponse.json({ error: 'Tenant no encontrado' }, { status: 401 })

@@ -1,24 +1,17 @@
 import { NextResponse } from 'next/server'
-import { getTenantFromToken } from '@/lib/supabase-helpers'
 import { getHistorialProducto } from '@/lib/historial-helpers'
 import { getProductoById } from '@/lib/supabase-helpers'
+import { getTenantFromRequest } from '@/lib/auth-helpers'
 
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    // Obtener tenant del token
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Token no proporcionado' }, { status: 401 })
-    }
-
-    const token = authHeader.replace('Bearer ', '')
-    const tenant = await getTenantFromToken(token)
-
+    // Obtener tenant del token (desde header o cookie)
+    const tenant = await getTenantFromRequest(request)
     if (!tenant) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+      return NextResponse.json({ error: 'Token no proporcionado' }, { status: 401 })
     }
 
     // Verificar que el producto pertenece al tenant

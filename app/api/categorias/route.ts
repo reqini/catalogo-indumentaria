@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getCategorias } from '@/lib/supabase-helpers'
-import { getTenantFromToken } from '@/lib/supabase-helpers'
 import { supabaseAdmin } from '@/lib/supabase'
+import { getTenantFromRequest } from '@/lib/auth-helpers'
 
 export async function GET() {
   try {
@@ -14,17 +14,10 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    // Obtener tenant del token
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Token no proporcionado' }, { status: 401 })
-    }
-
-    const token = authHeader.replace('Bearer ', '')
-    const tenant = await getTenantFromToken(token)
-
+    // Obtener tenant del token (desde header o cookie)
+    const tenant = await getTenantFromRequest(request)
     if (!tenant) {
-      return NextResponse.json({ error: 'Tenant no encontrado' }, { status: 401 })
+      return NextResponse.json({ error: 'Token no proporcionado' }, { status: 401 })
     }
 
     const body = await request.json()

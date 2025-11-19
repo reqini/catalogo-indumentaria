@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import { bannerSchema } from '@/utils/validations'
-import { getTenantFromToken, checkPlanLimits } from '@/lib/supabase-helpers'
+import { checkPlanLimits } from '@/lib/supabase-helpers'
 import { getBanners, createBanner } from '@/lib/supabase-helpers'
+import { getTenantFromRequest } from '@/lib/auth-helpers'
 
 export async function GET(request: Request) {
   try {
@@ -14,14 +15,10 @@ export async function GET(request: Request) {
     if (tenantId) {
       filters.tenantId = tenantId
     } else {
-      // Si no, intentar obtener del token (admin)
-      const authHeader = request.headers.get('authorization')
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        const token = authHeader.replace('Bearer ', '')
-        const tenant = await getTenantFromToken(token)
-        if (tenant) {
-          filters.tenantId = tenant.tenantId
-        }
+      // Si no, intentar obtener del token (admin) - desde header o cookie
+      const tenant = await getTenantFromRequest(request)
+      if (tenant) {
+        filters.tenantId = tenant.tenantId
       }
     }
 
@@ -53,17 +50,10 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    // Obtener tenant del token
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Token no proporcionado' }, { status: 401 })
-    }
-
-    const token = authHeader.replace('Bearer ', '')
-    const tenant = await getTenantFromToken(token)
-
+    // Obtener tenant del token (desde header o cookie)
+    const tenant = await getTenantFromRequest(request)
     if (!tenant) {
-      return NextResponse.json({ error: 'Tenant no encontrado' }, { status: 401 })
+      return NextResponse.json({ error: 'Token no proporcionado' }, { status: 401 })
     }
 
     // Verificar límites (solo para planes free y pro)

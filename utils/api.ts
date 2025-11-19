@@ -13,22 +13,53 @@ const api = axios.create({
 
 // Interceptor para agregar token de autenticación
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('authToken')
+  // Buscar token en localStorage (clave 'token')
+  let token = localStorage.getItem('token')
+  
+  // Si no está en localStorage, intentar obtener de cookies (solo en cliente)
+  if (!token && typeof window !== 'undefined') {
+    const cookies = document.cookie.split(';')
+    const authCookie = cookies.find(cookie => cookie.trim().startsWith('auth_token='))
+    if (authCookie) {
+      token = authCookie.split('=')[1]
+    }
+  }
+  
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
+  
   return config
 })
 
 // Categorías
-export async function getCategorias(): Promise<any[]> {
+export async function getCategorias(activa: boolean = true): Promise<any[]> {
   try {
     const response = await api.get('/api/categorias')
-    return response.data
+    const categorias = response.data || []
+    // Filtrar por activa si se requiere
+    if (activa) {
+      return categorias.filter((c: any) => c.activa !== false)
+    }
+    return categorias
   } catch (error) {
     console.error('Error fetching categorias:', error)
     return []
   }
+}
+
+export async function createCategoria(categoriaData: any): Promise<any> {
+  const response = await api.post('/api/categorias', categoriaData)
+  return response.data
+}
+
+export async function updateCategoria(id: string, categoriaData: any): Promise<any> {
+  const response = await api.put(`/api/categorias/${id}`, categoriaData)
+  return response.data
+}
+
+export async function deleteCategoria(id: string): Promise<void> {
+  await api.delete(`/api/categorias/${id}`)
 }
 
 // Productos

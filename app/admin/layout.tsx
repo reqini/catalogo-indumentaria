@@ -4,12 +4,14 @@ import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { LogOut, LayoutDashboard, Package, Image, Tag } from 'lucide-react'
+import { useAuthContext } from '@/context/AuthContext'
 import toast from 'react-hot-toast'
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
   const [isClient, setIsClient] = useState(false)
+  const { logout: logoutContext } = useAuthContext()
 
   useEffect(() => {
     setIsClient(true)
@@ -17,12 +19,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const handleLogout = async () => {
     try {
+      // 1. Limpiar cookie httpOnly (servidor)
       await fetch('/api/auth/logout', { method: 'POST' })
+      
+      // 2. Limpiar localStorage y contexto (cliente)
+      logoutContext()
+      
       toast.success('Sesión cerrada')
       router.push('/admin/login')
       router.refresh()
     } catch (error) {
       console.error('Logout error:', error)
+      // Aunque falle el endpoint, limpiar contexto local
+      logoutContext()
+      router.push('/admin/login')
     }
   }
 

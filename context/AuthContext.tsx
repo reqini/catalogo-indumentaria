@@ -46,10 +46,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('token', token)
   }
 
-  const logout = () => {
+  const logout = async () => {
+    // Limpiar estado local
     setTenant(null)
     localStorage.removeItem('tenant')
     localStorage.removeItem('token')
+    
+    // Intentar limpiar cookie en servidor (no bloquea si falla)
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' })
+    } catch (error) {
+      // Ignorar errores, el logout local ya se hizo
+      console.warn('Error limpiando cookie en logout:', error)
+    }
   }
 
   const isAuthenticated = !!tenant
