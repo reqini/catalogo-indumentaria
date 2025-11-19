@@ -78,9 +78,9 @@ function checkBuild() {
   console.log('\n🏗️  Verificando build...\n')
   
   try {
-    const packageJson = JSON.parse(readFileSync(join(rootDir, 'package.json'), 'utf-8'))
+    const packageJsonContent = JSON.parse(readFileSync(join(rootDir, 'package.json'), 'utf-8'))
     console.log(`   ✅ package.json válido`)
-    console.log(`   📦 Versión: ${package.json.version || 'N/A'}`)
+    console.log(`   📦 Versión: ${packageJsonContent.version || 'N/A'}`)
     return true
   } catch (error) {
     console.log(`   ❌ Error leyendo package.json: ${error.message}`)
