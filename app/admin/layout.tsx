@@ -3,7 +3,7 @@
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { LogOut, LayoutDashboard, Package, Image, Tag } from 'lucide-react'
+import { LogOut, LayoutDashboard, Package, Image, Tag, Sparkles } from 'lucide-react'
 import { useAuthContext } from '@/context/AuthContext'
 import toast from 'react-hot-toast'
 
@@ -44,6 +44,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const navItems = [
     { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/admin/productos', label: 'Productos', icon: Package },
+    { href: '/admin/productos/carga-multiple', label: 'Carga Múltiple (IA)', icon: Sparkles },
     { href: '/admin/banners', label: 'Banners', icon: Image },
     { href: '/admin/categorias', label: 'Categorías', icon: Tag },
   ]

@@ -34,7 +34,7 @@ export default function AdminCategoriasPage() {
   const fetchCategorias = async () => {
     setLoading(true)
     try {
-      const data = await getCategorias(false) // Obtener todas, activas e inactivas
+      const data = await getCategorias({ activa: false }) // Obtener todas, activas e inactivas
       setCategorias(data)
     } catch (error: any) {
       console.error('Error fetching categorias:', error)

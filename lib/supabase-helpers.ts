@@ -329,11 +329,15 @@ export async function getCompraLogs(filters?: { estado?: string; productoId?: st
 
 // ==================== CATEGORIAS ====================
 
-export async function getCategorias(activa: boolean = true) {
+export async function getCategorias(filters?: { activa?: boolean; tenantId?: string }) {
   let query = supabaseAdmin.from('categorias').select('*')
 
-  if (activa) {
+  if (filters?.activa !== false) {
     query = query.eq('activa', true)
+  }
+
+  if (filters?.tenantId) {
+    query = query.eq('tenant_id', filters.tenantId)
   }
 
   const { data, error } = await query.order('orden', { ascending: true })

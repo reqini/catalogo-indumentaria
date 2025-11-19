@@ -5,7 +5,7 @@ import { getTenantFromRequest } from '@/lib/auth-helpers'
 
 export async function GET() {
   try {
-    const categorias = await getCategorias(true)
+    const categorias = await getCategorias({ activa: true })
     return NextResponse.json(categorias)
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Error al obtener categorías' }, { status: 500 })

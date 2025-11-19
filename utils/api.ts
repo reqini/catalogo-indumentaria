@@ -33,12 +33,12 @@ api.interceptors.request.use((config) => {
 })
 
 // Categorías
-export async function getCategorias(activa: boolean = true): Promise<any[]> {
+export async function getCategorias(filters?: { activa?: boolean }): Promise<any[]> {
   try {
     const response = await api.get('/api/categorias')
     const categorias = response.data || []
     // Filtrar por activa si se requiere
-    if (activa) {
+    if (filters?.activa !== false) {
       return categorias.filter((c: any) => c.activa !== false)
     }
     return categorias
