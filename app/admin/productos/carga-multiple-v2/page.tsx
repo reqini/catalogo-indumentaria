@@ -349,7 +349,7 @@ export default function AdminBulkImportV2Page() {
             products={parsedProducts}
             onUpdate={handleUpdateProduct}
             onDelete={handleDeleteProduct}
-            onImageSearch={(index, query) => {
+            onImageSearch={(index: number, query: string) => {
               // Abrir modal de búsqueda de imágenes
               console.log('Buscar imágenes para:', query)
             }}
