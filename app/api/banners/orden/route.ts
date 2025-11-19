@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { updateBanner } from '@/lib/supabase-helpers'
+import { getTenantFromRequest } from '@/lib/auth-helpers'
 import { z } from 'zod'
 
 const ordenSchema = z.array(
@@ -11,10 +12,21 @@ const ordenSchema = z.array(
 
 export async function PUT(request: Request) {
   try {
+    // Obtener tenant del token (desde header o cookie)
+    const tenant = await getTenantFromRequest(request)
+    if (!tenant) {
+      return NextResponse.json({ error: 'Token no proporcionado' }, { status: 401 })
+    }
+
     const body = await request.json()
     const banners = ordenSchema.parse(body)
 
-    await db.updateBannerOrder(banners)
+    // Actualizar orden de cada banner
+    for (const banner of banners) {
+      await updateBanner(banner.id, { orden: banner.orden })
+    }
+
+    console.log('[API Banners Orden] ✅ Orden actualizado para', banners.length, 'banners')
 
     return NextResponse.json({ success: true })
   } catch (error: any) {
@@ -25,7 +37,7 @@ export async function PUT(request: Request) {
       )
     }
 
-    console.error('Error updating banner order:', error)
+    console.error('[API Banners Orden] ❌ Error updating banner order:', error)
     return NextResponse.json(
       { error: error.message || 'Error al actualizar orden' },
       { status: 500 }

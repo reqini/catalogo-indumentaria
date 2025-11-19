@@ -1,8 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, Upload, Image as ImageIcon } from 'lucide-react'
+import { X } from 'lucide-react'
 import { createBanner, updateBanner } from '@/utils/api'
+import { useAuthContext } from '@/context/AuthContext'
+import ImageUploader from '@/components/ImageUploader'
 import toast from 'react-hot-toast'
 import Image from 'next/image'
 
@@ -17,6 +19,7 @@ export default function AdminBannerForm({
   onClose,
   onSuccess,
 }: AdminBannerFormProps) {
+  const { tenant } = useAuthContext()
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     titulo: '',
@@ -53,31 +56,6 @@ export default function AdminBannerForm({
     }
   }
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    // Validar formato
-    const validFormats = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
-    if (!validFormats.includes(file.type)) {
-      toast.error('Formato no válido. Usá JPG, PNG o WebP')
-      return
-    }
-
-    // Validar tamaño (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('La imagen no puede superar los 5MB')
-      return
-    }
-
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      const result = reader.result as string
-      setImagePreview(result)
-      setFormData((prev) => ({ ...prev, imagenUrl: result }))
-    }
-    reader.readAsDataURL(file)
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -145,21 +123,16 @@ export default function AdminBannerForm({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Imagen * (JPG, PNG o WebP, max 5MB)
             </label>
-            <div className="flex items-center gap-4">
-              <label className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
-                <Upload size={20} />
-                Subir Imagen
-                <input
-                  type="file"
-                  accept="image/jpeg,image/jpg,image/png,image/webp"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
-              </label>
-              {imagePreview && (
-                <span className="text-sm text-gray-600">Imagen cargada ✓</span>
-              )}
-            </div>
+            <ImageUploader
+              value={formData.imagenUrl}
+              onChange={(url) => {
+                setFormData((prev) => ({ ...prev, imagenUrl: url }))
+                setImagePreview(url)
+              }}
+              tenantId={tenant?.tenantId}
+              label=""
+              required={true}
+            />
           </div>
 
           <div>
