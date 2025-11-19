@@ -67,7 +67,9 @@ export default function ImageUploader({
         const formData = new FormData()
         formData.append('file', file)
 
-        // Obtener token de localStorage o cookies
+        setUploadProgress(30)
+
+        // Intentar obtener token de localStorage o cookies (opcional, la API validará)
         let token = localStorage.getItem('token')
         if (!token && typeof window !== 'undefined') {
           const cookies = document.cookie.split(';')
@@ -77,27 +79,18 @@ export default function ImageUploader({
           }
         }
 
-        if (!token) {
-          console.error('❌ No se encontró token de autenticación')
-          console.error('Debug info:', {
-            localStorageToken: localStorage.getItem('token'),
-            cookies: document.cookie,
-          })
-          toast.error('Error: No se encontró sesión activa. Por favor, inicia sesión nuevamente.')
-          setPreview(value || '')
-          setIsUploading(false)
-          return
+        // Preparar headers (el token puede estar en cookie httpOnly, así que no es crítico)
+        const headers: HeadersInit = {}
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`
         }
 
-        setUploadProgress(30)
-
         // Subir archivo a través de la API interna
+        // La API validará la autenticación (cookie o header)
         const response = await fetch('/api/admin/upload-image', {
           method: 'POST',
-          headers: {
-            // NO incluir Content-Type, el browser lo hace automáticamente para FormData
-            Authorization: `Bearer ${token}`,
-          },
+          headers,
+          credentials: 'include', // Incluir cookies automáticamente
           body: formData,
         })
 

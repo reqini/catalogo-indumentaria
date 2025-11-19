@@ -23,7 +23,14 @@ export async function POST(request: Request) {
   try {
     // 1. Validar autenticación
     console.log('[UPLOAD-IMAGE] Iniciando upload de imagen')
-    const tenant = await getTenantFromRequest(request)
+    
+    // Intentar obtener tenant de múltiples formas
+    let tenant = null
+    try {
+      tenant = await getTenantFromRequest(request)
+    } catch (error) {
+      console.error('[UPLOAD-IMAGE] Error obteniendo tenant:', error)
+    }
     
     if (!tenant) {
       console.error('[UPLOAD-IMAGE] ❌ No se encontró tenant - Token inválido o no proporcionado')
@@ -33,12 +40,13 @@ export async function POST(request: Request) {
       console.error('[UPLOAD-IMAGE] Debug:', {
         hasAuthHeader: !!authHeader,
         hasCookie: !!cookieHeader,
-        authHeaderPrefix: authHeader?.substring(0, 20),
+        authHeaderPrefix: authHeader?.substring(0, 30),
+        cookiePrefix: cookieHeader?.substring(0, 50),
       })
       
       return NextResponse.json(
         { 
-          error: 'No autorizado. Debes iniciar sesión para subir imágenes.',
+          error: 'No autorizado. Por favor, recarga la página e inicia sesión nuevamente.',
           details: 'Token no encontrado o inválido'
         },
         { status: 401 }
