@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react'
 import { FileText, Camera, Mic, Upload, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import * as XLSX from 'xlsx'
+// import * as XLSX from 'xlsx' // Comentado hasta instalar: pnpm add xlsx
 // import Tesseract from 'tesseract.js' // Comentado hasta instalar: pnpm add tesseract.js
 
 interface BulkImportTabsProps {
@@ -46,6 +46,9 @@ export default function BulkImportTabs({
         const text = await file.text()
         onParse(text, 'csv')
       } else if (fileExtension === 'xlsx' || fileExtension === 'xls') {
+        // TODO: Descomentar cuando xlsx esté instalado (pnpm add xlsx)
+        toast.error('Procesamiento de Excel requiere instalación de dependencia. Por ahora, usá CSV o pega el contenido como texto.')
+        /*
         const arrayBuffer = await file.arrayBuffer()
         const workbook = XLSX.read(arrayBuffer, { type: 'array' })
         const firstSheet = workbook.Sheets[workbook.SheetNames[0]]
@@ -61,6 +64,7 @@ export default function BulkImportTabs({
           .join('\n')
         
         onParse(text, 'csv')
+        */
       } else {
         toast.error('Formato de archivo no soportado. Usá CSV o Excel (.xlsx, .xls)')
       }
