@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { X } from 'lucide-react'
 import { createProduct, updateProduct } from '@/utils/api'
 import { useAuthContext } from '@/context/AuthContext'
-import ImageUploader from './ImageUploader'
+import ImageUploader from '@/components/ImageUploader'
 import toast from 'react-hot-toast'
 
 interface AdminProductFormProps {

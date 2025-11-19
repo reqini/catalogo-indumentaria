@@ -23,6 +23,7 @@
     "generar-jwt-secret": "node scripts/generar-jwt-secret.mjs",
     "test-produccion": "node scripts/test-produccion.mjs",
     "create-pwa-icons": "node scripts/create-pwa-icons.mjs",
+    "qa-test": "node scripts/qa-test-complete.mjs",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",

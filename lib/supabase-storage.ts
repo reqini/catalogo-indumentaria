@@ -72,25 +72,29 @@ export async function uploadImage(
     const fileName = generateFileName(tenantId, file.name)
     const filePath = `${fileName}`
 
-    // Crear bucket si no existe (solo en desarrollo, en producción debe crearse manualmente)
+    // Verificar que el bucket existe (no intentar crearlo automáticamente en producción)
     try {
-      const { data: buckets } = await supabaseAdmin.storage.listBuckets()
-      const bucketExists = buckets?.some((b) => b.name === BUCKET_NAME)
-
-      if (!bucketExists) {
-        console.warn(
-          `Bucket "${BUCKET_NAME}" no existe. Debe crearse manualmente en Supabase Dashboard.`
-        )
-        // Intentar crear bucket (requiere permisos de admin)
-        await supabaseAdmin.storage.createBucket(BUCKET_NAME, {
-          public: true,
-          fileSizeLimit: MAX_FILE_SIZE,
-          allowedMimeTypes: ALLOWED_TYPES,
-        })
+      const { data: buckets, error: listError } = await supabaseAdmin.storage.listBuckets()
+      
+      if (listError) {
+        console.error('Error listando buckets:', listError)
+        // Continuar, puede ser un problema de permisos pero el bucket puede existir
+      } else {
+        const bucketExists = buckets?.some((b) => b.name === BUCKET_NAME)
+        if (!bucketExists) {
+          const errorMsg = `Bucket "${BUCKET_NAME}" no existe. Debe crearse manualmente en Supabase Dashboard. Ver: docs/setup-supabase-storage.md`
+          console.error(errorMsg)
+          return {
+            url: '',
+            path: '',
+            error: errorMsg,
+          }
+        }
       }
-    } catch (bucketError) {
-      console.warn('Error verificando/creando bucket:', bucketError)
-      // Continuar aunque falle, el bucket puede existir
+    } catch (bucketError: any) {
+      console.error('Error verificando bucket:', bucketError)
+      // En producción, si no podemos verificar, asumimos que existe y continuamos
+      // El error real se mostrará al intentar subir
     }
 
     // Subir archivo
@@ -103,10 +107,25 @@ export async function uploadImage(
 
     if (error) {
       console.error('Error uploading file:', error)
+      
+      // Mensajes de error más descriptivos
+      let errorMessage = 'Error al subir la imagen'
+      if (error.message?.includes('Bucket not found')) {
+        errorMessage = `Bucket "${BUCKET_NAME}" no existe. Debe crearse en Supabase Dashboard. Ver: docs/setup-supabase-storage.md`
+      } else if (error.message?.includes('new row violates row-level security')) {
+        errorMessage = 'Error de permisos. Verifica las políticas RLS del bucket en Supabase.'
+      } else if (error.message?.includes('File size exceeds')) {
+        errorMessage = `El archivo es muy grande. Máximo ${MAX_FILE_SIZE / 1024 / 1024}MB`
+      } else if (error.message?.includes('Invalid MIME type')) {
+        errorMessage = 'Formato no válido. Solo se permiten JPG, PNG y WebP'
+      } else {
+        errorMessage = error.message || 'Error al subir la imagen'
+      }
+      
       return {
         url: '',
         path: '',
-        error: error.message || 'Error al subir la imagen',
+        error: errorMessage,
       }
     }
 

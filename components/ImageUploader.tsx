@@ -61,9 +61,18 @@ export default function ImageUploader({
 
       try {
         // Verificar que tenantId sea válido
-        if (!tenantId || tenantId === 'default') {
+        if (!tenantId || tenantId === 'default' || tenantId.trim() === '') {
           console.error('tenantId inválido:', tenantId)
-          toast.error('Error: tenantId no válido. Por favor, inicia sesión nuevamente.')
+          toast.error('Error: Debes iniciar sesión para subir imágenes. Por favor, recarga la página.')
+          setPreview(value || '')
+          setIsUploading(false)
+          return
+        }
+
+        // Validar formato de tenantId (debe ser UUID o string válido)
+        if (tenantId.length < 3) {
+          console.error('tenantId demasiado corto:', tenantId)
+          toast.error('Error: tenantId inválido. Por favor, inicia sesión nuevamente.')
           setPreview(value || '')
           setIsUploading(false)
           return
