@@ -130,10 +130,16 @@ export async function POST(request: Request) {
       imagen_principal: validatedData.imagenPrincipal || validatedData.imagen_principal,
       imagenes_sec: validatedData.imagenesSec || validatedData.imagenes || [],
       id_mercado_pago: validatedData.idMercadoPago || validatedData.id_mercado_pago,
-      tags: validatedData.tags || [],
+      tags: Array.isArray(validatedData.tags) ? validatedData.tags.filter(tag => tag && tag.trim() !== '') : [],
       destacado: validatedData.destacado || false,
       activo: validatedData.activo !== false,
     }
+
+    console.log('Creando producto con datos:', {
+      ...productoData,
+      imagen_principal: productoData.imagen_principal?.substring(0, 50) + '...',
+      tags: productoData.tags,
+    })
 
     const producto = await createProducto(productoData)
 

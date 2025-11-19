@@ -67,10 +67,16 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       color: validatedData.color,
       talles: validatedData.talles,
       stock: validatedData.stock,
-      tags: validatedData.tags || [],
+      tags: Array.isArray(validatedData.tags) ? validatedData.tags.filter(tag => tag && tag.trim() !== '') : [],
       destacado: validatedData.destacado || false,
       activo: validatedData.activo !== false,
     }
+
+    console.log('Actualizando producto con datos:', {
+      ...updateData,
+      imagen_principal: updateData.imagen_principal?.substring(0, 50) + '...',
+      tags: updateData.tags,
+    })
 
     // Normalizar campos de imagen
     if (validatedData.imagenPrincipal || validatedData.imagen_principal) {

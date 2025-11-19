@@ -180,22 +180,42 @@ export default function AdminProductForm({
         return
       }
 
+      // Validar que la imagen principal esté presente y sea una URL válida
+      if (!formData.imagen_principal || formData.imagen_principal.trim() === '') {
+        toast.error('Debe subir una imagen principal')
+        setLoading(false)
+        return
+      }
+
+      // Validar que la imagen sea una URL válida (no base64)
+      if (formData.imagen_principal.startsWith('data:')) {
+        toast.error('La imagen aún se está subiendo. Por favor, espera a que termine.')
+        setLoading(false)
+        return
+      }
+
       const productData = {
-        nombre: formData.nombre,
-        descripcion: formData.descripcion,
+        nombre: formData.nombre.trim(),
+        descripcion: formData.descripcion.trim(),
         precio: parseFloat(formData.precio),
         descuento: formData.descuento ? parseFloat(formData.descuento) : undefined,
         categoria: formData.categoria,
-        color: formData.color,
+        color: formData.color.trim(),
         talles: formData.talles,
         stock: formData.stock,
-        imagenPrincipal: formData.imagen_principal,
-        imagenesSec: formData.imagenes,
-        idMercadoPago: formData.idMercadoPago,
-        tags: formData.tags,
+        imagenPrincipal: formData.imagen_principal.trim(),
+        imagenesSec: formData.imagenes.filter(img => img.trim() !== ''),
+        idMercadoPago: formData.idMercadoPago.trim(),
+        tags: formData.tags.filter(tag => tag.trim() !== ''), // Filtrar tags vacíos
         destacado: formData.destacado,
         activo: formData.activo,
       }
+
+      console.log('Enviando producto:', {
+        ...productData,
+        imagenPrincipal: productData.imagenPrincipal.substring(0, 50) + '...',
+        tags: productData.tags,
+      })
 
       if (product) {
         await updateProduct(product.id, productData)
@@ -355,16 +375,25 @@ export default function AdminProductForm({
           </div>
 
           <div>
-            <ImageUploader
-              value={formData.imagen_principal}
-              onChange={(url) => {
-                setFormData((prev) => ({ ...prev, imagen_principal: url }))
-                setImagePreview(url)
-              }}
-              tenantId={tenant?.tenantId || 'default'}
-              label="Imagen Principal"
-              required
-            />
+            {!tenant?.tenantId ? (
+              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-sm text-yellow-800">
+                  ⚠️ Debes iniciar sesión para subir imágenes. Por favor, recarga la página.
+                </p>
+              </div>
+            ) : (
+              <ImageUploader
+                value={formData.imagen_principal}
+                onChange={(url) => {
+                  console.log('Imagen subida, URL recibida:', url)
+                  setFormData((prev) => ({ ...prev, imagen_principal: url }))
+                  setImagePreview(url)
+                }}
+                tenantId={tenant.tenantId}
+                label="Imagen Principal"
+                required
+              />
+            )}
           </div>
 
           <div>
@@ -434,10 +463,12 @@ export default function AdminProductForm({
               type="text"
               value={formData.tags.join(', ')}
               onChange={(e) => {
-                const tagsArray = e.target.value
+                const inputValue = e.target.value
+                const tagsArray = inputValue
                   .split(',')
                   .map((tag) => tag.trim())
                   .filter((tag) => tag.length > 0)
+                console.log('Tags actualizados:', tagsArray)
                 setFormData((prev) => ({ ...prev, tags: tagsArray }))
               }}
               placeholder="Ej: nuevo, verano, oferta"
@@ -447,7 +478,7 @@ export default function AdminProductForm({
               <div className="flex flex-wrap gap-2 mt-2">
                 {formData.tags.map((tag, index) => (
                   <span
-                    key={index}
+                    key={`${tag}-${index}`}
                     className="px-2 py-1 bg-gray-100 text-gray-700 text-sm rounded"
                   >
                     {tag}
@@ -455,6 +486,9 @@ export default function AdminProductForm({
                 ))}
               </div>
             )}
+            <p className="mt-1 text-xs text-gray-500">
+              Escribe los tags separados por comas. Ejemplo: nuevo, verano, oferta
+            </p>
           </div>
 
           <div className="flex items-center gap-6">

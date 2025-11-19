@@ -50,12 +50,26 @@ export default function ImageUploader({
       setUploadProgress(0)
 
       try {
+        // Verificar que tenantId sea válido
+        if (!tenantId || tenantId === 'default') {
+          console.error('tenantId inválido:', tenantId)
+          toast.error('Error: tenantId no válido. Por favor, inicia sesión nuevamente.')
+          setPreview(value || '')
+          setIsUploading(false)
+          return
+        }
+
         const result = await uploadImage(file, tenantId, (progress) => {
           setUploadProgress(progress)
         })
 
         if (result.error) {
-          toast.error(result.error)
+          console.error('Error en uploadImage:', result.error)
+          toast.error(result.error || 'Error al subir la imagen')
+          setPreview(value || '')
+        } else if (!result.url) {
+          console.error('No se obtuvo URL de la imagen')
+          toast.error('Error: No se pudo obtener la URL de la imagen')
           setPreview(value || '')
         } else {
           setPreview(result.url)
@@ -64,7 +78,7 @@ export default function ImageUploader({
         }
       } catch (error: any) {
         console.error('Error uploading image:', error)
-        toast.error('Error al subir la imagen')
+        toast.error(error.message || 'Error al subir la imagen. Verifica tu conexión.')
         setPreview(value || '')
       } finally {
         setIsUploading(false)
