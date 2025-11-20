@@ -66,13 +66,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
   }
 
+  // Memoizar navItems para evitar recreación (ANTES del return condicional)
+  const navItems = useMemo(() => NAV_ITEMS, [])
+
   // No mostrar sidebar en login
   if (pathname === '/admin/login') {
     return <>{children}</>
   }
-
-  // Memoizar navItems para evitar recreación
-  const navItems = useMemo(() => NAV_ITEMS, [])
 
   // Renderizar siempre el sidebar, incluso antes del mount para evitar flash
   // El contenido se hidratará correctamente cuando isMounted sea true

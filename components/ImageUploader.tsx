@@ -41,7 +41,8 @@ export default function ImageUploader({
       // Solo limpiar si explícitamente se pasa string vacío
       console.log('🔄 [ImageUploader] Manteniendo preview válido aunque value esté vacío')
     }
-  }, [value]) // Removido 'preview' de dependencias para evitar loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]) // 'preview' intencionalmente excluido para evitar loops infinitos
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileSelect = useCallback(
