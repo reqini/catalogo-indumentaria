@@ -252,6 +252,8 @@ export default function AdminProductForm({
       
       console.log('🔍 [AdminProductForm] imagenPrincipal final:', imagenPrincipal.substring(0, 100))
 
+      // CRÍTICO: Asegurar que imagenPrincipal se pase correctamente
+      // Usar ambos campos para compatibilidad con el API
       const productData = {
         nombre: formData.nombre.trim(),
         descripcion: formData.descripcion.trim(),
@@ -261,8 +263,10 @@ export default function AdminProductForm({
         color: formData.color.trim(),
         talles: formData.talles,
         stock: formData.stock,
-        imagenPrincipal: imagenPrincipal,
+        imagenPrincipal: imagenPrincipal, // Campo principal
+        imagen_principal: imagenPrincipal, // Campo alternativo para compatibilidad
         imagenesSec: formData.imagenes.filter(img => img.trim() !== ''),
+        imagenes: formData.imagenes.filter(img => img.trim() !== ''), // Campo alternativo
         idMercadoPago: formData.idMercadoPago.trim(),
         tags: formData.tags.filter(tag => tag.trim() !== ''), // Filtrar tags vacíos
         destacado: formData.destacado,

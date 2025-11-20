@@ -332,7 +332,14 @@ export async function getCompraLogs(filters?: { estado?: string; productoId?: st
 export async function getCategorias(filters?: { activa?: boolean; tenantId?: string }) {
   let query = supabaseAdmin.from('categorias').select('*')
 
-  if (filters?.activa !== false) {
+  // Si activa es explícitamente false, obtener todas (activas e inactivas)
+  // Si activa es true o undefined, solo activas
+  if (filters?.activa === false) {
+    // Obtener todas, no filtrar por activa
+  } else if (filters?.activa !== undefined) {
+    query = query.eq('activa', filters.activa)
+  } else {
+    // Por defecto, solo activas si no se especifica
     query = query.eq('activa', true)
   }
 
@@ -378,9 +385,12 @@ export async function createCategoria(categoria: any) {
 }
 
 export async function updateCategoria(id: string, updates: any) {
+  // Asegurar que tenant_id esté presente si viene en updates
+  const updateData = { ...updates }
+  
   const { data, error } = await supabaseAdmin
     .from('categorias')
-    .update(updates)
+    .update(updateData)
     .eq('id', id)
     .select()
     .single()

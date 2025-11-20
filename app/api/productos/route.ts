@@ -113,11 +113,14 @@ export async function POST(request: Request) {
     }
 
     // Preparar datos para Supabase
-    // Preservar imagen real si existe, solo usar placeholder si realmente no hay imagen
+    // CRÍTICO: Preservar imagen real si existe, solo usar placeholder si realmente no hay imagen
+    // Verificar ambos campos posibles (imagenPrincipal e imagen_principal)
     const imagenPrincipalRaw = validatedData.imagenPrincipal || validatedData.imagen_principal || ''
-    const imagenPrincipalTrimmed = imagenPrincipalRaw.trim()
+    const imagenPrincipalTrimmed = imagenPrincipalRaw?.trim() || ''
     
     console.log('🔍 [API Productos POST] Procesando imagen:')
+    console.log('  - validatedData.imagenPrincipal:', validatedData.imagenPrincipal?.substring(0, 150) || '(vacío)')
+    console.log('  - validatedData.imagen_principal:', validatedData.imagen_principal?.substring(0, 150) || '(vacío)')
     console.log('  - imagenPrincipalRaw:', imagenPrincipalRaw?.substring(0, 150) || '(vacío)')
     console.log('  - imagenPrincipalTrimmed:', imagenPrincipalTrimmed?.substring(0, 150) || '(vacío)')
     console.log('  - Tipo:', typeof imagenPrincipalTrimmed)
@@ -125,18 +128,23 @@ export async function POST(request: Request) {
     
     // Verificar si es una URL válida (http/https) o ruta válida (/images/)
     // IMPORTANTE: Las URLs de Supabase Storage empiezan con https://
+    // También aceptar URLs que contengan 'supabase.co' en el dominio
     const tieneImagenValida = imagenPrincipalTrimmed && 
                               imagenPrincipalTrimmed !== '' &&
                               imagenPrincipalTrimmed.trim() !== '' &&
+                              imagenPrincipalTrimmed !== '/images/default-product.svg' && // No es placeholder
                               (imagenPrincipalTrimmed.startsWith('http://') || 
                                imagenPrincipalTrimmed.startsWith('https://') ||
-                               imagenPrincipalTrimmed.startsWith('/images/'))
+                               imagenPrincipalTrimmed.startsWith('/images/') ||
+                               imagenPrincipalTrimmed.includes('supabase.co')) // URLs de Supabase
     
     console.log('🔍 [API Productos POST] Validación de imagen:')
     console.log('  - tieneImagenValida:', tieneImagenValida)
     console.log('  - Empieza con http://:', imagenPrincipalTrimmed?.startsWith('http://'))
     console.log('  - Empieza con https://:', imagenPrincipalTrimmed?.startsWith('https://'))
     console.log('  - Empieza con /images/:', imagenPrincipalTrimmed?.startsWith('/images/'))
+    console.log('  - Contiene supabase.co:', imagenPrincipalTrimmed?.includes('supabase.co'))
+    console.log('  - Es placeholder:', imagenPrincipalTrimmed === '/images/default-product.svg')
     
     // Solo usar placeholder si NO hay imagen válida
     const imagenPrincipal = tieneImagenValida 
@@ -146,6 +154,7 @@ export async function POST(request: Request) {
     console.log('✅ [API Productos POST] Imagen final a guardar:', imagenPrincipal.substring(0, 150))
     console.log('  - Es placeholder:', imagenPrincipal === '/images/default-product.svg')
     console.log('  - Es URL real:', imagenPrincipal.startsWith('http://') || imagenPrincipal.startsWith('https://'))
+    console.log('  - URL completa (primeros 200 chars):', imagenPrincipal.substring(0, 200))
     
     const productoData = {
       tenant_id: tenant.tenantId,

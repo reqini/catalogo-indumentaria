@@ -3,11 +3,26 @@ import { getCategorias } from '@/lib/supabase-helpers'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getTenantFromRequest } from '@/lib/auth-helpers'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const categorias = await getCategorias({ activa: true })
+    // Obtener tenant del token si está disponible
+    let tenant = null
+    try {
+      tenant = await getTenantFromRequest(request)
+    } catch (e) {
+      // Si no hay token, obtener todas las categorías públicas (activas)
+      console.log('[API-CATEGORIAS] GET - Sin autenticación, obteniendo categorías activas')
+    }
+    
+    // Si hay tenant, filtrar por tenant_id, si no, solo activas
+    const filters = tenant 
+      ? { activa: true, tenantId: tenant.tenantId }
+      : { activa: true }
+    
+    const categorias = await getCategorias(filters)
     return NextResponse.json(categorias)
   } catch (error: any) {
+    console.error('[API-CATEGORIAS] GET - Error:', error)
     return NextResponse.json({ error: error.message || 'Error al obtener categorías' }, { status: 500 })
   }
 }

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
-import { Plus, Search, RefreshCw, Filter, X } from 'lucide-react'
+import { Plus, Search, RefreshCw, Filter, X, Sparkles } from 'lucide-react'
 import { getProducts, deleteProduct, createProduct, updateProduct } from '@/utils/api'
 import { updateStock } from '@/utils/api'
 import AdminProductForm from '@/components/AdminProductForm'
@@ -384,6 +384,13 @@ export default function AdminProductosPage() {
               <RefreshCw size={18} />
               Refrescar
             </button>
+            <a
+              href="/admin/productos/carga-inteligente"
+              className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition-all"
+            >
+              <Sparkles size={20} />
+              Carga Múltiple (IA)
+            </a>
             <button
               onClick={() => {
                 setEditingProduct(null)

@@ -89,7 +89,9 @@ export async function DELETE(
     // Los productos pueden tener categoria como nombre o slug, así que verificamos ambos
     const productos = await getProductos({ tenantId: tenant.tenantId })
     const productosConCategoria = productos.filter(
-      (p: any) => p.categoria === categoria.slug || p.categoria === categoria.nombre
+      (p: any) => 
+        (p.categoria && (p.categoria === categoria.slug || p.categoria === categoria.nombre)) ||
+        (p.categoria_id && p.categoria_id === categoria.id)
     )
 
     console.log('[API-CATEGORIAS] Productos con esta categoría:', productosConCategoria.length)
