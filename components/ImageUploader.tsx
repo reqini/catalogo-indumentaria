@@ -219,8 +219,9 @@ export default function ImageUploader({
   )
 
   const handleRemove = useCallback(() => {
+    console.log('🗑️ [ImageUploader] Eliminando imagen')
     setPreview('')
-    onChange('')
+    onChange('') // Pasar string vacío explícitamente para indicar que se eliminó
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
