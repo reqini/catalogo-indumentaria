@@ -78,18 +78,20 @@ export default function AdminProductForm({
     }
   }
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        const result = reader.result as string
-        setImagePreview(result)
-        setFormData((prev) => ({ ...prev, imagen_principal: result }))
-      }
-      reader.readAsDataURL(file)
-    }
-  }
+  // NOTA: Esta función ya no se usa. El componente ImageUploader maneja todo el flujo de upload.
+  // Se mantiene comentada por si se necesita en el futuro, pero ImageUploader es la implementación oficial.
+  // const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const file = e.target.files?.[0]
+  //   if (file) {
+  //     const reader = new FileReader()
+  //     reader.onloadend = () => {
+  //       const result = reader.result as string
+  //       setImagePreview(result)
+  //       setFormData((prev) => ({ ...prev, imagen_principal: result }))
+  //     }
+  //     reader.readAsDataURL(file)
+  //   }
+  // }
 
   const handleAddTalle = () => {
     if (selectedTalle && !formData.talles.includes(selectedTalle)) {

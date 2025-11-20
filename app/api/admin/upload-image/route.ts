@@ -150,6 +150,19 @@ export async function POST(request: Request) {
       data: { publicUrl },
     } = supabaseAdmin.storage.from(BUCKET_NAME).getPublicUrl(filePath)
 
+    if (!publicUrl) {
+      console.error('[UPLOAD-IMAGE] ❌ No se pudo obtener URL pública')
+      return NextResponse.json(
+        { error: 'Error al obtener URL pública de la imagen' },
+        { status: 500 }
+      )
+    }
+
+    console.log('[UPLOAD-IMAGE] ✅ Imagen subida exitosamente:', {
+      path: filePath,
+      url: publicUrl.substring(0, 80) + '...',
+    })
+
     // 10. Retornar URL pública
     return NextResponse.json({
       url: publicUrl,

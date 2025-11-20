@@ -102,22 +102,35 @@ export default function ImageUploader({
           console.error('❌ Error en upload-image API:', result)
           console.error('Response status:', response.status)
           
-          // Manejar errores específicos
+          // Manejar errores específicos con mensajes claros
           if (response.status === 401) {
-            toast.error('Sesión expirada. Por favor, recarga la página e inicia sesión nuevamente.')
+            toast.error('Sesión expirada. Por favor, recarga la página e inicia sesión nuevamente.', {
+              duration: 5000,
+            })
+          } else if (response.status === 400) {
+            // Error de validación (tipo, tamaño, etc.)
+            const errorMessage = result.error || 'El archivo no es válido'
+            toast.error(errorMessage, { duration: 4000 })
+          } else if (response.status === 500) {
+            // Error del servidor (bucket, Storage, etc.)
+            const errorMessage = result.error || 'Error del servidor al subir la imagen'
+            toast.error(errorMessage, { duration: 5000 })
           } else {
             const errorMessage = result.error || 'Error al subir la imagen'
-            toast.error(errorMessage)
+            toast.error(errorMessage, { duration: 4000 })
           }
           
+          // Restaurar preview anterior o limpiar
           setPreview(value || '')
           setIsUploading(false)
           return
         }
 
-        if (!result.url) {
-          console.error('No se obtuvo URL de la imagen')
-          toast.error('Error: No se pudo obtener la URL de la imagen')
+        if (!result.url || !result.url.trim()) {
+          console.error('No se obtuvo URL de la imagen:', result)
+          toast.error('Error: No se pudo obtener la URL de la imagen. Intenta nuevamente.', {
+            duration: 4000,
+          })
           setPreview(value || '')
           setIsUploading(false)
           return
@@ -129,7 +142,18 @@ export default function ImageUploader({
         toast.success('Imagen subida exitosamente')
       } catch (error: any) {
         console.error('Error uploading image:', error)
-        toast.error(error.message || 'Error al subir la imagen. Verifica tu conexión.')
+        
+        // Mensajes de error más específicos según el tipo de error
+        let errorMessage = 'Error al subir la imagen'
+        if (error.name === 'NetworkError' || error.message?.includes('fetch')) {
+          errorMessage = 'Error de conexión. Verifica tu internet e intenta nuevamente.'
+        } else if (error.message) {
+          errorMessage = error.message
+        }
+        
+        toast.error(errorMessage, {
+          duration: 5000,
+        })
         setPreview(value || '')
       } finally {
         setIsUploading(false)

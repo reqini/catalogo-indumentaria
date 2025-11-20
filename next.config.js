@@ -39,6 +39,16 @@ const nextConfig = {
         hostname: 'res.cloudinary.com',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: '*.supabase.co',
+        pathname: '/storage/v1/object/public/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'yqggrzxjhylnxjuagfyr.supabase.co',
+        pathname: '/storage/v1/object/public/**',
+      },
     ],
     domains: ['res.cloudinary.com', 'localhost', 'images.unsplash.com'],
     formats: ['image/avif', 'image/webp'],
