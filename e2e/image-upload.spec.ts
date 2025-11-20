@@ -40,7 +40,7 @@ test.describe('Image Upload Flow - E2E Tests', () => {
     })
 
     // Esperar a que se complete el upload
-    await page.waitForSelector('text=Imagen subida exitosamente', { timeout: 15000 }).catch(() => {
+    await page.waitForSelector('text=Imagen subida exitosamente', { timeout: 15000 }).catch(async () => {
       // Si no aparece el mensaje, verificar que al menos no hay error
       const errorMessages = await page.locator('text=/error|Error|ERROR/i').count()
       expect(errorMessages).toBe(0)

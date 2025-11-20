@@ -93,6 +93,8 @@ export default function CarritoPage() {
           title: `Envío - ${selectedShipping.nombre}`,
           quantity: 1,
           unit_price: selectedShipping.precio,
+          id: 'envio', // ID especial para envío
+          talle: '', // No aplica para envío
         })
       }
 

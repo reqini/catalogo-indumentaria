@@ -597,7 +597,7 @@ export default function AdminProductosPage() {
             {totalPages > 1 && (
               <div className="flex items-center justify-center gap-2 mt-6">
                 <button
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  onClick={() => setCurrentPage((p: number) => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
                   className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                 >
@@ -607,7 +607,7 @@ export default function AdminProductosPage() {
                   Página {currentPage} de {totalPages}
                 </span>
                 <button
-                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  onClick={() => setCurrentPage((p: number) => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
                   className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                 >
