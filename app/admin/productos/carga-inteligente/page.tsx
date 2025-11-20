@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { usePersistedState } from '@/hooks/usePersistedState'
 import { 
   Sparkles, Loader2, CheckCircle2, X, Trash2, Edit2, Save, XCircle, 
   Upload, FileText, Camera, Mic, Zap, Image as ImageIcon, AlertCircle,
@@ -57,27 +58,35 @@ Generá 10 productos de indumentaria moderna urbana y deportiva.`
 
 export default function AdminCargaInteligentePage() {
   const router = useRouter()
-  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1)
-  const [inputText, setInputText] = useState(EXAMPLE_TEXT)
-  const [parsedProducts, setParsedProducts] = useState<EnhancedProduct[]>([])
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [isImporting, setIsImporting] = useState(false)
-  const [importResult, setImportResult] = useState<{
+  
+  // Estados persistentes (sobreviven a refresh)
+  const [currentStep, setCurrentStep] = usePersistedState<1 | 2 | 3>('bulk-import-step', 1)
+  const [inputText, setInputText] = usePersistedState('bulk-import-input', EXAMPLE_TEXT)
+  const [parsedProducts, setParsedProducts] = usePersistedState<EnhancedProduct[]>('bulk-import-products', [])
+  const [importResult, setImportResult] = usePersistedState<{
     created: number
     errors: Array<{ index: number; reason: string }>
     metrics?: ImportMetrics
-  } | null>(null)
+  } | null>('bulk-import-result', null)
+  
+  // Estados temporales (no necesitan persistencia)
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [isImporting, setIsImporting] = useState(false)
   const [showMetrics, setShowMetrics] = useState(false)
   const [copiedPrompt, setCopiedPrompt] = useState(false)
 
-  // Resetear al montar
-  useEffect(() => {
-    setInputText(EXAMPLE_TEXT)
+  // Limpiar estados persistentes solo cuando se completa la importación exitosamente
+  const handleImportSuccess = () => {
+    // Limpiar solo después de importación exitosa
+    sessionStorage.removeItem('bulk-import-step')
+    sessionStorage.removeItem('bulk-import-input')
+    sessionStorage.removeItem('bulk-import-products')
+    sessionStorage.removeItem('bulk-import-result')
     setCurrentStep(1)
+    setInputText(EXAMPLE_TEXT)
     setParsedProducts([])
     setImportResult(null)
-    setShowMetrics(false)
-  }, [])
+  }
 
   const handleGeneratePrompt = () => {
     // Copiar prompt al clipboard
@@ -277,6 +286,8 @@ export default function AdminCargaInteligentePage() {
 
       if (result.created > 0) {
         toast.success(`✅ Se crearon ${result.created} productos correctamente`)
+        // Limpiar estados persistentes después de importación exitosa
+        handleImportSuccess()
       }
 
       if (result.errors && result.errors.length > 0) {

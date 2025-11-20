@@ -11,15 +11,19 @@ import toast from 'react-hot-toast'
 export default function AdminProductosPage() {
   const [products, setProducts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState('')
+  
+  // Estados persistentes (sobreviven a refresh)
+  const [searchTerm, setSearchTerm] = usePersistedState('products-search', '')
+  const [currentPage, setCurrentPage] = usePersistedState('products-page', 1)
+  const [filterActivo, setFilterActivo] = usePersistedState<'todos' | 'activos' | 'inactivos'>('products-filter-activo', 'todos')
+  const [filterCategoria, setFilterCategoria] = usePersistedState('products-filter-categoria', '')
+  const [filterPrecioMin, setFilterPrecioMin] = usePersistedState('products-filter-precio-min', '')
+  const [filterPrecioMax, setFilterPrecioMax] = usePersistedState('products-filter-precio-max', '')
+  
+  // Estados temporales (no necesitan persistencia)
   const [showForm, setShowForm] = useState(false)
   const [editingProduct, setEditingProduct] = useState<any>(null)
-  const [currentPage, setCurrentPage] = useState(1)
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set())
-  const [filterActivo, setFilterActivo] = useState<'todos' | 'activos' | 'inactivos'>('todos')
-  const [filterCategoria, setFilterCategoria] = useState<string>('')
-  const [filterPrecioMin, setFilterPrecioMin] = useState<string>('')
-  const [filterPrecioMax, setFilterPrecioMax] = useState<string>('')
   const [showFilters, setShowFilters] = useState(false)
   const itemsPerPage = 10
 

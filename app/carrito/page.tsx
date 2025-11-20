@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
@@ -9,11 +9,32 @@ import { useCart } from '@/hooks/useCart'
 import { formatPrice, calculateDiscount } from '@/utils/formatPrice'
 import { createPayment } from '@/utils/api'
 import toast from 'react-hot-toast'
+import ShippingCalculator from '@/components/ShippingCalculator'
+
+interface ShippingMethod {
+  nombre: string
+  precio: number
+  demora: string
+  disponible: boolean
+}
 
 export default function CarritoPage() {
   const { cart, removeFromCart, updateQuantity, getTotalPrice, clearCart } = useCart()
   const router = useRouter()
   const [isProcessing, setIsProcessing] = useState(false)
+  const [selectedShipping, setSelectedShipping] = useState<ShippingMethod | null>(null)
+
+  // Calcular peso total (estimado: 0.5kg por producto)
+  const totalWeight = useMemo(() => {
+    return cart.reduce((total, item) => total + (item.cantidad * 0.5), 0) || 1
+  }, [cart])
+
+  // Calcular total con envío
+  const totalWithShipping = useMemo(() => {
+    const subtotal = getTotalPrice()
+    const shippingCost = selectedShipping?.precio || 0
+    return subtotal + shippingCost
+  }, [getTotalPrice, selectedShipping])
 
   const handleCheckout = async () => {
     if (cart.length === 0) {
@@ -66,6 +87,15 @@ export default function CarritoPage() {
       
       console.log('[MP-PAYMENT] Frontend - Enviando back_urls:', JSON.stringify(backUrls, null, 2))
       
+      // Incluir costo de envío si está seleccionado
+      if (selectedShipping && selectedShipping.precio > 0) {
+        items.push({
+          title: `Envío - ${selectedShipping.nombre}`,
+          quantity: 1,
+          unit_price: selectedShipping.precio,
+        })
+      }
+
       const preference = await createPayment({
         items,
         back_urls: backUrls,
@@ -227,7 +257,16 @@ export default function CarritoPage() {
             })}
           </div>
 
-          <div className="md:col-span-1">
+          <div className="md:col-span-1 space-y-6">
+            {/* Calculadora de Envío */}
+            <ShippingCalculator
+              onSelectMethod={setSelectedShipping}
+              selectedMethod={selectedShipping}
+              totalPrice={getTotalPrice()}
+              totalWeight={totalWeight}
+            />
+
+            {/* Resumen */}
             <div className="bg-gray-50 rounded-lg p-6 sticky top-24">
               <h2 className="text-xl font-bold text-black mb-4">Resumen</h2>
 
@@ -238,19 +277,24 @@ export default function CarritoPage() {
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>Envío</span>
-                  <span>Calculado al finalizar</span>
+                  <span>
+                    {selectedShipping 
+                      ? formatPrice(selectedShipping.precio)
+                      : 'Calculado arriba'
+                    }
+                  </span>
                 </div>
                 <div className="border-t border-gray-300 pt-2 mt-2">
                   <div className="flex justify-between font-bold text-black text-lg">
                     <span>Total</span>
-                    <span>{formatPrice(getTotalPrice())}</span>
+                    <span>{formatPrice(totalWithShipping)}</span>
                   </div>
                 </div>
               </div>
 
               <button
                 onClick={handleCheckout}
-                disabled={isProcessing}
+                disabled={isProcessing || (!selectedShipping && getTotalPrice() > 0)}
                 className="w-full py-4 bg-black text-white font-semibold rounded-lg hover:bg-gray-800 transition-all mb-4 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isProcessing ? (
@@ -262,6 +306,12 @@ export default function CarritoPage() {
                   'Finalizar Compra'
                 )}
               </button>
+
+              {!selectedShipping && getTotalPrice() > 0 && (
+                <p className="text-xs text-gray-500 text-center mb-4">
+                  ⚠️ Seleccioná un método de envío antes de continuar
+                </p>
+              )}
 
               <button
                 onClick={() => router.push('/catalogo')}
