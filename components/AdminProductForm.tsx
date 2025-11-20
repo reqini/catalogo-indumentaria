@@ -201,9 +201,15 @@ export default function AdminProductForm({
       // Manejo de imagen: preservar URL real si existe, solo usar placeholder si realmente no hay imagen
       let imagenPrincipal = formData.imagen_principal?.trim() || ''
       
+      console.log('🔍 [AdminProductForm] handleSubmit - Verificando imagen:')
+      console.log('  - formData.imagen_principal:', imagenPrincipal?.substring(0, 100) || '(vacío)')
+      console.log('  - Tipo:', typeof imagenPrincipal)
+      console.log('  - Longitud:', imagenPrincipal?.length || 0)
+      
       // Validar que la imagen sea una URL válida (no base64)
       // Si la imagen aún está en formato base64, significa que el upload no terminó
       if (imagenPrincipal && imagenPrincipal.startsWith('data:')) {
+        console.warn('⚠️ [AdminProductForm] Imagen aún en formato base64, esperando upload...')
         toast.error('La imagen aún se está subiendo. Por favor, espera a que termine el proceso.', {
           duration: 5000,
           icon: '⏳',
@@ -213,19 +219,30 @@ export default function AdminProductForm({
       }
 
       // Verificar si es una URL válida (http/https) o ruta válida (/images/)
+      // IMPORTANTE: Las URLs de Supabase Storage empiezan con https://
       const tieneImagenValida = imagenPrincipal && 
                                 imagenPrincipal !== '' && 
+                                imagenPrincipal.trim() !== '' &&
                                 (imagenPrincipal.startsWith('http://') || 
                                  imagenPrincipal.startsWith('https://') ||
                                  imagenPrincipal.startsWith('/images/'))
       
+      console.log('🔍 [AdminProductForm] Validación de imagen:')
+      console.log('  - tieneImagenValida:', tieneImagenValida)
+      console.log('  - Empieza con http://:', imagenPrincipal?.startsWith('http://'))
+      console.log('  - Empieza con https://:', imagenPrincipal?.startsWith('https://'))
+      console.log('  - Empieza con /images/:', imagenPrincipal?.startsWith('/images/'))
+      
       // Solo usar placeholder si NO hay imagen válida
       if (!tieneImagenValida) {
+        console.warn('⚠️ [AdminProductForm] No hay imagen válida, usando placeholder automático')
+        console.warn('  - Valor actual de imagenPrincipal:', imagenPrincipal)
         imagenPrincipal = '/images/default-product.svg'
-        console.log('⚠️ No hay imagen válida, usando placeholder automático')
       } else {
-        console.log('✅ Imagen válida detectada, preservando URL:', imagenPrincipal.substring(0, 50) + '...')
+        console.log('✅ [AdminProductForm] Imagen válida detectada, preservando URL:', imagenPrincipal.substring(0, 100) + '...')
       }
+      
+      console.log('🔍 [AdminProductForm] imagenPrincipal final:', imagenPrincipal.substring(0, 100))
 
       const productData = {
         nombre: formData.nombre.trim(),
@@ -244,11 +261,12 @@ export default function AdminProductForm({
         activo: formData.activo,
       }
 
-      console.log('Enviando producto:', {
-        ...productData,
-        imagenPrincipal: productData.imagenPrincipal.substring(0, 50) + '...',
-        tags: productData.tags,
-      })
+      console.log('📤 [AdminProductForm] Enviando producto al API:')
+      console.log('  - nombre:', productData.nombre)
+      console.log('  - imagenPrincipal:', productData.imagenPrincipal?.substring(0, 150) || '(vacío)')
+      console.log('  - Tipo imagenPrincipal:', typeof productData.imagenPrincipal)
+      console.log('  - Es URL válida:', productData.imagenPrincipal?.startsWith('http://') || productData.imagenPrincipal?.startsWith('https://'))
+      console.log('  - Tags:', productData.tags)
 
       if (product) {
         await updateProduct(product.id, productData)
@@ -414,9 +432,25 @@ export default function AdminProductForm({
             <ImageUploader
               value={formData.imagen_principal}
               onChange={(url) => {
-                console.log('✅ Imagen subida, URL recibida:', url)
-                setFormData((prev) => ({ ...prev, imagen_principal: url }))
-                setImagePreview(url)
+                console.log('✅ [AdminProductForm] onChange llamado con URL:', url)
+                console.log('✅ [AdminProductForm] Tipo de URL:', typeof url)
+                console.log('✅ [AdminProductForm] URL válida:', url && (url.startsWith('http://') || url.startsWith('https://')))
+                
+                if (!url || typeof url !== 'string' || url.trim() === '') {
+                  console.error('❌ [AdminProductForm] URL inválida recibida en onChange:', url)
+                  toast.error('Error: URL de imagen inválida')
+                  return
+                }
+                
+                const imageUrl = url.trim()
+                console.log('✅ [AdminProductForm] Actualizando formData.imagen_principal con:', imageUrl.substring(0, 100))
+                setFormData((prev) => {
+                  const updated = { ...prev, imagen_principal: imageUrl }
+                  console.log('✅ [AdminProductForm] formData actualizado. imagen_principal:', updated.imagen_principal?.substring(0, 100))
+                  return updated
+                })
+                setImagePreview(imageUrl)
+                console.log('✅ [AdminProductForm] Estado actualizado correctamente')
               }}
               tenantId={tenant?.tenantId}
               label=""

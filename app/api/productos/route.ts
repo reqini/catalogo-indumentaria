@@ -117,23 +117,35 @@ export async function POST(request: Request) {
     const imagenPrincipalRaw = validatedData.imagenPrincipal || validatedData.imagen_principal || ''
     const imagenPrincipalTrimmed = imagenPrincipalRaw.trim()
     
+    console.log('🔍 [API Productos POST] Procesando imagen:')
+    console.log('  - imagenPrincipalRaw:', imagenPrincipalRaw?.substring(0, 150) || '(vacío)')
+    console.log('  - imagenPrincipalTrimmed:', imagenPrincipalTrimmed?.substring(0, 150) || '(vacío)')
+    console.log('  - Tipo:', typeof imagenPrincipalTrimmed)
+    console.log('  - Longitud:', imagenPrincipalTrimmed?.length || 0)
+    
     // Verificar si es una URL válida (http/https) o ruta válida (/images/)
+    // IMPORTANTE: Las URLs de Supabase Storage empiezan con https://
     const tieneImagenValida = imagenPrincipalTrimmed && 
                               imagenPrincipalTrimmed !== '' &&
+                              imagenPrincipalTrimmed.trim() !== '' &&
                               (imagenPrincipalTrimmed.startsWith('http://') || 
                                imagenPrincipalTrimmed.startsWith('https://') ||
                                imagenPrincipalTrimmed.startsWith('/images/'))
+    
+    console.log('🔍 [API Productos POST] Validación de imagen:')
+    console.log('  - tieneImagenValida:', tieneImagenValida)
+    console.log('  - Empieza con http://:', imagenPrincipalTrimmed?.startsWith('http://'))
+    console.log('  - Empieza con https://:', imagenPrincipalTrimmed?.startsWith('https://'))
+    console.log('  - Empieza con /images/:', imagenPrincipalTrimmed?.startsWith('/images/'))
     
     // Solo usar placeholder si NO hay imagen válida
     const imagenPrincipal = tieneImagenValida 
       ? imagenPrincipalTrimmed 
       : '/images/default-product.svg'
     
-    console.log('[API Productos POST] Imagen procesada:', {
-      imagenRaw: imagenPrincipalRaw?.substring(0, 50),
-      tieneImagenValida,
-      imagenFinal: imagenPrincipal.substring(0, 50),
-    })
+    console.log('✅ [API Productos POST] Imagen final a guardar:', imagenPrincipal.substring(0, 150))
+    console.log('  - Es placeholder:', imagenPrincipal === '/images/default-product.svg')
+    console.log('  - Es URL real:', imagenPrincipal.startsWith('http://') || imagenPrincipal.startsWith('https://'))
     
     const productoData = {
       tenant_id: tenant.tenantId,

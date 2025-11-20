@@ -137,8 +137,25 @@ export default function ImageUploader({
         }
 
         setUploadProgress(100)
-        setPreview(result.url)
-        onChange(result.url)
+        
+        // CRÍTICO: Verificar que la URL sea válida antes de llamar onChange
+        if (!result.url || typeof result.url !== 'string' || result.url.trim() === '') {
+          console.error('❌ URL inválida recibida del servidor:', result)
+          toast.error('Error: URL de imagen inválida recibida del servidor')
+          setPreview(value || '')
+          setIsUploading(false)
+          return
+        }
+        
+        const imageUrl = result.url.trim()
+        console.log('✅ [ImageUploader] URL recibida del servidor:', imageUrl.substring(0, 100))
+        console.log('✅ [ImageUploader] Tipo de URL:', typeof imageUrl)
+        console.log('✅ [ImageUploader] Es URL válida:', imageUrl.startsWith('http://') || imageUrl.startsWith('https://'))
+        
+        // Actualizar preview y llamar onChange
+        setPreview(imageUrl)
+        console.log('✅ [ImageUploader] Llamando onChange con URL:', imageUrl.substring(0, 100))
+        onChange(imageUrl)
         toast.success('Imagen subida exitosamente')
       } catch (error: any) {
         console.error('Error uploading image:', error)
