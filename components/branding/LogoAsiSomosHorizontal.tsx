@@ -16,8 +16,10 @@ export default function LogoAsiSomosHorizontal({
   const isInverse = variant === 'inverse'
   const primaryColor = isInverse ? '#F7E8B5' : '#7452A8'
   const textColor = isInverse ? '#7452A8' : '#F7E8B5'
-  const bgColor = isInverse ? '#7452A8' : '#E8D5F0'
   const shadowColor = isInverse ? '#F7E8B5' : '#5A3F87'
+  
+  // Para navbar con fondo blanco, usar fondo transparente y banner más visible
+  const showBackground = variant !== 'default'
   
   return (
     <svg
@@ -28,6 +30,7 @@ export default function LogoAsiSomosHorizontal({
       className={className}
       role="img"
       aria-label="ASÍ SOMOS Logo Horizontal"
+      style={{ display: 'block' }}
     >
       <defs>
         {/* Sombra sutil para efecto 3D */}
@@ -44,8 +47,8 @@ export default function LogoAsiSomosHorizontal({
         </filter>
       </defs>
       
-      {/* Fondo lavanda claro */}
-      <rect width="600" height="120" fill={bgColor} />
+      {/* Fondo transparente para navbar blanco */}
+      {showBackground && <rect width="600" height="120" fill="#E8D5F0" />}
       
       {/* Banner púrpura horizontal con esquinas redondeadas y efecto 3D */}
       <g transform="translate(50, 20) rotate(-1)">

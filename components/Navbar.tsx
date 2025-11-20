@@ -16,8 +16,8 @@ export default function Navbar() {
     <nav className="bg-white dark:bg-dark-surface border-b border-gray-200 dark:border-gray-700 sticky top-0 z-40">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          <Link href="/" className="flex items-center">
-            <LogoAsiSomosHorizontal width={180} height={40} />
+          <Link href="/" className="flex items-center h-full py-2">
+            <LogoAsiSomosHorizontal width={200} height={50} className="h-full w-auto" />
           </Link>
 
           <div className="hidden md:flex items-center gap-4">
