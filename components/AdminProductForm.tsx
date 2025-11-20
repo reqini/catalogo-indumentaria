@@ -45,6 +45,9 @@ export default function AdminProductForm({
 
   useEffect(() => {
     if (product) {
+      const imagenProducto = product.imagenPrincipal || product.imagen_principal || ''
+      console.log('🔄 [AdminProductForm] Cargando producto existente, imagen:', imagenProducto?.substring(0, 100) || '(vacío)')
+      
       setFormData({
         nombre: product.nombre || '',
         descripcion: product.descripcion || '',
@@ -54,14 +57,19 @@ export default function AdminProductForm({
         color: product.color || '',
         talles: product.talles || [],
         stock: product.stock || {},
-        imagen_principal: product.imagenPrincipal || product.imagen_principal || '',
+        imagen_principal: imagenProducto,
         imagenes: product.imagenes || product.imagenesSec || [],
         idMercadoPago: product.idMercadoPago || '',
         tags: product.tags || [],
         destacado: product.destacado || false,
         activo: product.activo !== false,
       })
-      setImagePreview(product.imagenPrincipal || product.imagen_principal || '')
+      setImagePreview(imagenProducto)
+    } else {
+      // Si no hay producto (crear nuevo), resetear imagen_principal
+      console.log('🔄 [AdminProductForm] Creando nuevo producto, reseteando imagen_principal')
+      setFormData((prev) => ({ ...prev, imagen_principal: '' }))
+      setImagePreview('')
     }
   }, [product])
 

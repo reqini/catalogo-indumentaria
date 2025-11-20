@@ -29,14 +29,19 @@ export default function ImageUploader({
   const [preview, setPreview] = useState<string>(value || '')
   
   // Actualizar preview cuando cambia el value externo
+  // IMPORTANTE: No resetear si ya hay una URL válida subida
   useEffect(() => {
-    if (value && value !== preview) {
+    // Solo actualizar si el value cambió Y es diferente al preview actual
+    // Esto evita que se resetee la imagen después de un upload exitoso
+    if (value && value !== preview && value.trim() !== '') {
+      console.log('🔄 [ImageUploader] Actualizando preview desde value externo:', value.substring(0, 100))
       setPreview(value)
-    } else if (!value && preview) {
-      // Si value se borra, mantener preview para no perder la imagen subida
+    } else if (!value && preview && !preview.startsWith('data:')) {
+      // Si value se borra pero preview tiene una URL válida (no base64), mantenerla
       // Solo limpiar si explícitamente se pasa string vacío
+      console.log('🔄 [ImageUploader] Manteniendo preview válido aunque value esté vacío')
     }
-  }, [value, preview])
+  }, [value]) // Removido 'preview' de dependencias para evitar loops
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileSelect = useCallback(
