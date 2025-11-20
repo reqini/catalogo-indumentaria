@@ -383,6 +383,8 @@ export default function AdminCargaInteligentePage() {
                 disabled={isProcessing || !inputText.trim()}
                 className="flex items-center gap-2 px-6 py-3 bg-black text-white font-semibold rounded-lg hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
+                <Sparkles size={20} />
+                Procesar con IA / Analizar
                 {isProcessing ? (
                   <>
                     <Loader2 className="animate-spin" size={20} />

@@ -48,6 +48,23 @@ export async function getCategorias(filters?: { activa?: boolean }): Promise<any
   }
 }
 
+// Bulk Import APIs
+export async function parseBulkProducts(text: string, source: 'text' | 'csv' | 'ocr' | 'voice' = 'text'): Promise<any> {
+  const response = await api.post('/api/admin/ia-bulk-parse-v2', {
+    text,
+    source,
+    enhance: true,
+  })
+  return response.data
+}
+
+export async function createBulkProducts(products: any[]): Promise<any> {
+  const response = await api.post('/api/admin/bulk-products-create-v2', {
+    products,
+  })
+  return response.data
+}
+
 export async function createCategoria(categoriaData: any): Promise<any> {
   const response = await api.post('/api/categorias', categoriaData)
   return response.data
