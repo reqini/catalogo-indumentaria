@@ -111,31 +111,30 @@ export default function VersionFooter() {
         {/* Información de versión */}
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-gray-600">
           <div className="flex items-center gap-1">
-            <span className="font-semibold text-gray-700">v{versionInfo.version}</span>
+            <span className="font-semibold text-gray-700">
+              ASÍ SOMOS — v{versionInfo.version} build {versionInfo.commit}
+            </span>
           </div>
-        <div className="flex items-center gap-1">
-          <GitCommit size={12} />
-          <span className="font-mono">{versionInfo.commit}</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <GitBranch size={12} />
-          <span>{versionInfo.branch}</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <Calendar size={12} />
-          <span>{versionInfo.buildTime}</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <Server size={12} />
-          <span className={`font-semibold ${
-            versionInfo.environment === 'PROD' 
-              ? 'text-green-600' 
-              : versionInfo.environment === 'PREVIEW'
-              ? 'text-yellow-600'
-              : 'text-gray-500'
-          }`}>
-            {versionInfo.environment}
-          </span>
+          <div className="flex items-center gap-1">
+            <GitBranch size={12} />
+            <span>{versionInfo.branch}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Calendar size={12} />
+            <span>{versionInfo.buildTime}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Server size={12} />
+            <span className={`font-semibold ${
+              versionInfo.environment === 'PROD' 
+                ? 'text-green-600' 
+                : versionInfo.environment === 'PREVIEW'
+                ? 'text-yellow-600'
+                : 'text-gray-500'
+            }`}>
+              {versionInfo.environment}
+            </span>
+          </div>
         </div>
       </div>
     </div>
