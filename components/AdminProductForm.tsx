@@ -202,8 +202,12 @@ export default function AdminProductForm({
       let imagenPrincipal = formData.imagen_principal?.trim() || ''
       
       // Validar que la imagen sea una URL válida (no base64)
+      // Si la imagen aún está en formato base64, significa que el upload no terminó
       if (imagenPrincipal && imagenPrincipal.startsWith('data:')) {
-        toast.error('La imagen aún se está subiendo. Por favor, espera a que termine.')
+        toast.error('La imagen aún se está subiendo. Por favor, espera a que termine el proceso.', {
+          duration: 5000,
+          icon: '⏳',
+        })
         setLoading(false)
         return
       }
