@@ -27,7 +27,12 @@ export function middleware(request: NextRequest) {
   // Rate limiting para API (excluir endpoints críticos de pago)
   if (request.nextUrl.pathname.startsWith('/api/')) {
     // Excluir endpoints críticos del rate limiting
-    const criticalEndpoints = ['/api/pago', '/api/mp/webhook', '/api/mp/subscription']
+    const criticalEndpoints = [
+      '/api/pago', 
+      '/api/mp/webhook', 
+      '/api/mp/subscription',
+      '/api/admin/upload-image' // CRÍTICO: Subida de imágenes no debe tener rate limiting estricto
+    ]
     const isCriticalEndpoint = criticalEndpoints.some(endpoint => 
       request.nextUrl.pathname.startsWith(endpoint)
     )

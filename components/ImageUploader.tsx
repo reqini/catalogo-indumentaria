@@ -86,23 +86,85 @@ export default function ImageUploader({
         }
 
         // Preparar headers (el token puede estar en cookie httpOnly, así que no es crítico)
+        // IMPORTANTE: NO incluir Content-Type cuando se envía FormData, el navegador lo hace automáticamente
         const headers: HeadersInit = {}
         if (token) {
           headers['Authorization'] = `Bearer ${token}`
         }
+        // NO agregar 'Content-Type': 'multipart/form-data' - el navegador lo maneja automáticamente
+
+        console.log('📤 [ImageUploader] Iniciando upload:', {
+          fileName: file.name,
+          fileSize: file.size,
+          fileType: file.type,
+          hasToken: !!token,
+          endpoint: '/api/admin/upload-image',
+        })
 
         // Subir archivo a través de la API interna
         // La API validará la autenticación (cookie o header)
-        const response = await fetch('/api/admin/upload-image', {
-          method: 'POST',
-          headers,
-          credentials: 'include', // Incluir cookies automáticamente
-          body: formData,
-        })
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 60000) // 60 segundos timeout
+
+        let response: Response
+        try {
+          response = await fetch('/api/admin/upload-image', {
+            method: 'POST',
+            headers,
+            credentials: 'include', // Incluir cookies automáticamente
+            body: formData,
+            signal: controller.signal,
+          })
+          clearTimeout(timeoutId)
+        } catch (fetchError: any) {
+          clearTimeout(timeoutId)
+          
+          // Manejar errores de red específicamente
+          if (fetchError.name === 'AbortError') {
+            console.error('❌ [ImageUploader] Timeout al subir imagen (60s)')
+            toast.error('La subida de imagen tardó demasiado. Intenta con una imagen más pequeña o verifica tu conexión.', {
+              duration: 6000,
+            })
+            setPreview(value || '')
+            setIsUploading(false)
+            return
+          }
+          
+          if (fetchError.name === 'TypeError' && fetchError.message?.includes('fetch')) {
+            console.error('❌ [ImageUploader] Error de red (Failed to fetch):', fetchError)
+            toast.error('Error de conexión. Verifica tu internet y que el servidor esté funcionando. Si el problema persiste, recarga la página.', {
+              duration: 6000,
+            })
+            setPreview(value || '')
+            setIsUploading(false)
+            return
+          }
+          
+          // Re-lanzar otros errores
+          throw fetchError
+        }
 
         setUploadProgress(70)
 
-        const result = await response.json()
+        // Verificar que la respuesta sea JSON válida
+        let result: any
+        try {
+          const text = await response.text()
+          if (!text) {
+            throw new Error('Respuesta vacía del servidor')
+          }
+          result = JSON.parse(text)
+        } catch (parseError) {
+          console.error('❌ [ImageUploader] Error parseando respuesta JSON:', parseError)
+          console.error('Response status:', response.status)
+          console.error('Response text:', await response.text())
+          toast.error('Error: Respuesta inválida del servidor. Intenta nuevamente.', {
+            duration: 5000,
+          })
+          setPreview(value || '')
+          setIsUploading(false)
+          return
+        }
 
         if (!response.ok) {
           console.error('❌ Error en upload-image API:', result)
