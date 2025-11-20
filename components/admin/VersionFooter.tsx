@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { GitBranch, GitCommit, Calendar, Server } from 'lucide-react'
+import LogoAsiSomosHorizontal from '@/components/branding/LogoAsiSomosHorizontal'
 
 interface VersionInfo {
   version: string
@@ -101,10 +102,17 @@ export default function VersionFooter() {
 
   return (
     <div className="border-t border-gray-200 bg-gray-50 px-6 py-3">
-      <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-gray-600">
-        <div className="flex items-center gap-1">
-          <span className="font-semibold text-gray-700">v{versionInfo.version}</span>
+      <div className="max-w-7xl mx-auto">
+        {/* Logo ASÍ SOMOS */}
+        <div className="flex justify-center mb-3">
+          <LogoAsiSomosHorizontal width={200} height={40} />
         </div>
+        
+        {/* Información de versión */}
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-gray-600">
+          <div className="flex items-center gap-1">
+            <span className="font-semibold text-gray-700">v{versionInfo.version}</span>
+          </div>
         <div className="flex items-center gap-1">
           <GitCommit size={12} />
           <span className="font-mono">{versionInfo.commit}</span>

@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200" width="400" height="200">
+  <defs>
+    <!-- Colores oficiales del branding -->
+    <style>
+      .primary-color { fill: #7452A8; }
+      .secondary-color { fill: #F7E8B5; }
+    </style>
+  </defs>
+  
+  <!-- Fondo secundario (crema) -->
+  <rect width="400" height="200" class="secondary-color"/>
+  
+  <!-- Franja diagonal principal -->
+  <!-- Manteniendo proporción, curvatura y espesor original -->
+  <path 
+    d="M 0 50 Q 50 60 100 70 T 200 80 T 300 90 T 400 100 L 400 130 Q 350 120 300 110 T 200 100 T 100 90 T 0 80 Z" 
+    class="primary-color"
+  />
+  
+  <!-- Texto "ASÍ SOMOS" -->
+  <!-- Tipografía fuerte, redondeada y moderna -->
+  <text 
+    x="200" 
+    y="120" 
+    font-family="system-ui, -apple-system, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif" 
+    font-size="42" 
+    font-weight="700" 
+    text-anchor="middle" 
+    fill="#7452A8"
+    letter-spacing="2"
+  >
+    ASÍ SOMOS
+  </text>
+</svg>
+
