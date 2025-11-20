@@ -7,14 +7,14 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-producti
 // Rate limiting mejorado
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>()
 
-// CSP Headers
+// CSP Headers - CRÍTICO: Permitir Supabase Storage completamente
 const cspHeader = `
   default-src 'self';
   script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com;
   style-src 'self' 'unsafe-inline';
-  img-src 'self' blob: data: https:;
+  img-src 'self' blob: data: https: https://*.supabase.co https://yqggrzxjhylnxjuagfyr.supabase.co;
   font-src 'self' data:;
-  connect-src 'self' https://api.mercadopago.com https://www.google-analytics.com https://*.supabase.co https://yqggrzxjhylnxjuagfyr.supabase.co;
+  connect-src 'self' https://api.mercadopago.com https://www.google-analytics.com https://*.supabase.co https://yqggrzxjhylnxjuagfyr.supabase.co wss://*.supabase.co;
   frame-src 'self' https://www.mercadopago.com;
   object-src 'none';
   base-uri 'self';

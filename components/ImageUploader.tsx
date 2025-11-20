@@ -154,13 +154,33 @@ export default function ImageUploader({
         }
         
         const imageUrl = result.url.trim()
+        
+        // CRÍTICO: Validar que la URL sea válida antes de usar
+        if (!imageUrl || typeof imageUrl !== 'string' || imageUrl.length === 0) {
+          console.error('❌ [ImageUploader] URL inválida recibida:', result)
+          toast.error('Error: URL de imagen inválida recibida del servidor')
+          setPreview(value || '')
+          setIsUploading(false)
+          return
+        }
+        
+        // Validar que sea una URL HTTP/HTTPS válida
+        if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
+          console.error('❌ [ImageUploader] URL no es HTTP/HTTPS:', imageUrl)
+          toast.error('Error: URL de imagen no válida (debe ser http:// o https://)')
+          setPreview(value || '')
+          setIsUploading(false)
+          return
+        }
+        
         console.log('✅ [ImageUploader] URL recibida del servidor:', imageUrl.substring(0, 100))
         console.log('✅ [ImageUploader] Tipo de URL:', typeof imageUrl)
         console.log('✅ [ImageUploader] Es URL válida:', imageUrl.startsWith('http://') || imageUrl.startsWith('https://'))
+        console.log('✅ [ImageUploader] Longitud URL:', imageUrl.length)
         
         // Actualizar preview y llamar onChange
         setPreview(imageUrl)
-        console.log('✅ [ImageUploader] Llamando onChange con URL:', imageUrl.substring(0, 100))
+        console.log('✅ [ImageUploader] Llamando onChange con URL válida:', imageUrl.substring(0, 100))
         onChange(imageUrl)
         toast.success('Imagen subida exitosamente')
       } catch (error: any) {

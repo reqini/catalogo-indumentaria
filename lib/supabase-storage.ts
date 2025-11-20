@@ -42,15 +42,43 @@ export function validateImageFile(file: File): { valid: boolean; error?: string 
 
 /**
  * Genera un nombre único para el archivo
+ * CRÍTICO: Normaliza el nombre para evitar doble extensión (.jpg.jpg)
  */
 function generateFileName(tenantId: string, originalName: string): string {
   const timestamp = Date.now()
   const random = Math.random().toString(36).substring(2, 9)
-  const extension = originalName.split('.').pop()
-  const sanitizedName = originalName
-    .replace(/[^a-zA-Z0-9.-]/g, '_')
-    .substring(0, 50)
-  return `${tenantId}/${timestamp}-${random}-${sanitizedName}.${extension}`
+  
+  // Extraer extensión correctamente (última parte después del último punto)
+  const lastDotIndex = originalName.lastIndexOf('.')
+  const extension = lastDotIndex > 0 ? originalName.substring(lastDotIndex + 1).toLowerCase() : 'jpg'
+  
+  // Obtener nombre sin extensión (todo antes del último punto)
+  const nameWithoutExt = lastDotIndex > 0 
+    ? originalName.substring(0, lastDotIndex)
+    : originalName
+  
+  // Sanitizar nombre: remover espacios, acentos, caracteres especiales
+  const sanitizedName = nameWithoutExt
+    .normalize('NFD') // Normalizar caracteres Unicode
+    .replace(/[\u0300-\u036f]/g, '') // Remover diacríticos (acentos)
+    .replace(/[^a-zA-Z0-9]/g, '_') // Reemplazar caracteres especiales con guión bajo
+    .replace(/_+/g, '_') // Reemplazar múltiples guiones bajos con uno solo
+    .replace(/^_|_$/g, '') // Remover guiones bajos al inicio y final
+    .substring(0, 50) // Limitar longitud
+  
+  // Construir nombre final: tenantId/timestamp-random-sanitizedName.extension
+  const finalName = sanitizedName || 'image' // Fallback si el nombre queda vacío
+  const fileName = `${tenantId}/${timestamp}-${random}-${finalName}.${extension}`
+  
+  console.log('[SUPABASE-STORAGE] 📝 Generando nombre de archivo:', {
+    originalName,
+    nameWithoutExt,
+    sanitizedName,
+    extension,
+    fileName,
+  })
+  
+  return fileName
 }
 
 /**

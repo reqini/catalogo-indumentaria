@@ -4,32 +4,48 @@
     <style>
       .primary-color { fill: #7452A8; }
       .secondary-color { fill: #F7E8B5; }
+      .text-color { fill: #F7E8B5; }
     </style>
+    <!-- Sombra sutil para efecto 3D -->
+    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
+      <feOffset dx="2" dy="2" result="offsetblur"/>
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.3"/>
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
   </defs>
   
-  <!-- Fondo secundario (crema) -->
-  <rect width="400" height="200" class="secondary-color"/>
+  <!-- Fondo secundario (lavanda claro) -->
+  <rect width="400" height="200" fill="#E8D5F0"/>
   
-  <!-- Franja diagonal principal -->
-  <!-- Manteniendo proporción, curvatura y espesor original -->
-  <path 
-    d="M 0 50 Q 50 60 100 70 T 200 80 T 300 90 T 400 100 L 400 130 Q 350 120 300 110 T 200 100 T 100 90 T 0 80 Z" 
-    class="primary-color"
-  />
-  
-  <!-- Texto "ASÍ SOMOS" -->
-  <!-- Tipografía fuerte, redondeada y moderna -->
-  <text 
-    x="200" 
-    y="120" 
-    font-family="system-ui, -apple-system, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif" 
-    font-size="42" 
-    font-weight="700" 
-    text-anchor="middle" 
-    fill="#7452A8"
-    letter-spacing="2"
-  >
-    ASÍ SOMOS
-  </text>
+  <!-- Banner púrpura con esquinas redondeadas y efecto 3D -->
+  <!-- Transformación para efecto de perspectiva -->
+  <g transform="translate(50, 40) rotate(-2)">
+    <!-- Sombra del banner -->
+    <rect x="5" y="5" width="300" height="120" rx="12" fill="#5A3F87" opacity="0.3"/>
+    
+    <!-- Banner principal -->
+    <rect x="0" y="0" width="300" height="120" rx="12" fill="#7452A8" filter="url(#shadow)"/>
+    
+    <!-- Texto "ASÍ SOMOS" con efecto embossed -->
+    <text 
+      x="150" 
+      y="75" 
+      font-family="system-ui, -apple-system, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif" 
+      font-size="36" 
+      font-weight="700" 
+      text-anchor="middle" 
+      fill="#F7E8B5"
+      letter-spacing="3"
+      style="text-shadow: 0 1px 2px rgba(0,0,0,0.2);"
+    >
+      ASÍ SOMOS
+    </text>
+  </g>
 </svg>
 

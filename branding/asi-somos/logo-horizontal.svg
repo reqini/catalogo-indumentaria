@@ -3,30 +3,47 @@
     <style>
       .primary-color { fill: #7452A8; }
       .secondary-color { fill: #F7E8B5; }
+      .text-color { fill: #F7E8B5; }
     </style>
+    <!-- Sombra sutil para efecto 3D -->
+    <filter id="shadow-h" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2"/>
+      <feOffset dx="2" dy="2" result="offsetblur"/>
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.3"/>
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
   </defs>
   
-  <!-- Fondo secundario (crema) -->
-  <rect width="600" height="120" class="secondary-color"/>
+  <!-- Fondo secundario (lavanda claro) -->
+  <rect width="600" height="120" fill="#E8D5F0"/>
   
-  <!-- Franja diagonal optimizada para formato horizontal -->
-  <path 
-    d="M 0 30 Q 60 35 120 40 T 240 45 T 360 50 T 480 55 T 600 60 L 600 85 Q 540 80 480 75 T 360 70 T 240 65 T 120 60 T 0 55 Z" 
-    class="primary-color"
-  />
-  
-  <!-- Texto "ASÍ SOMOS" -->
-  <text 
-    x="300" 
-    y="75" 
-    font-family="system-ui, -apple-system, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif" 
-    font-size="36" 
-    font-weight="700" 
-    text-anchor="middle" 
-    fill="#7452A8"
-    letter-spacing="2"
-  >
-    ASÍ SOMOS
-  </text>
+  <!-- Banner púrpura horizontal con esquinas redondeadas y efecto 3D -->
+  <g transform="translate(50, 20) rotate(-1)">
+    <!-- Sombra del banner -->
+    <rect x="4" y="4" width="500" height="80" rx="10" fill="#5A3F87" opacity="0.3"/>
+    
+    <!-- Banner principal -->
+    <rect x="0" y="0" width="500" height="80" rx="10" fill="#7452A8" filter="url(#shadow-h)"/>
+    
+    <!-- Texto "ASÍ SOMOS" con efecto embossed -->
+    <text 
+      x="250" 
+      y="50" 
+      font-family="system-ui, -apple-system, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif" 
+      font-size="32" 
+      font-weight="700" 
+      text-anchor="middle" 
+      fill="#F7E8B5"
+      letter-spacing="3"
+      style="text-shadow: 0 1px 2px rgba(0,0,0,0.2);"
+    >
+      ASÍ SOMOS
+    </text>
+  </g>
 </svg>
 

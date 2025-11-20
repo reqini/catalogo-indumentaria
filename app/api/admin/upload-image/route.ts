@@ -8,15 +8,43 @@ const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
 
 /**
  * Genera un nombre único para el archivo
+ * CRÍTICO: Normaliza el nombre para evitar doble extensión (.jpg.jpg)
  */
 function generateFileName(tenantId: string, originalName: string): string {
   const timestamp = Date.now()
   const random = Math.random().toString(36).substring(2, 9)
-  const extension = originalName.split('.').pop()
-  const sanitizedName = originalName
-    .replace(/[^a-zA-Z0-9.-]/g, '_')
-    .substring(0, 50)
-  return `${tenantId}/${timestamp}-${random}-${sanitizedName}.${extension}`
+  
+  // Extraer extensión correctamente (última parte después del último punto)
+  const lastDotIndex = originalName.lastIndexOf('.')
+  const extension = lastDotIndex > 0 ? originalName.substring(lastDotIndex + 1).toLowerCase() : 'jpg'
+  
+  // Obtener nombre sin extensión (todo antes del último punto)
+  const nameWithoutExt = lastDotIndex > 0 
+    ? originalName.substring(0, lastDotIndex)
+    : originalName
+  
+  // Sanitizar nombre: remover espacios, acentos, caracteres especiales
+  const sanitizedName = nameWithoutExt
+    .normalize('NFD') // Normalizar caracteres Unicode
+    .replace(/[\u0300-\u036f]/g, '') // Remover diacríticos (acentos)
+    .replace(/[^a-zA-Z0-9]/g, '_') // Reemplazar caracteres especiales con guión bajo
+    .replace(/_+/g, '_') // Reemplazar múltiples guiones bajos con uno solo
+    .replace(/^_|_$/g, '') // Remover guiones bajos al inicio y final
+    .substring(0, 50) // Limitar longitud
+  
+  // Construir nombre final: tenantId/timestamp-random-sanitizedName.extension
+  const finalName = sanitizedName || 'image' // Fallback si el nombre queda vacío
+  const fileName = `${tenantId}/${timestamp}-${random}-${finalName}.${extension}`
+  
+  console.log('[UPLOAD-IMAGE] 📝 Generando nombre de archivo:', {
+    originalName,
+    nameWithoutExt,
+    sanitizedName,
+    extension,
+    fileName,
+  })
+  
+  return fileName
 }
 
 export async function POST(request: Request) {
@@ -114,6 +142,14 @@ export async function POST(request: Request) {
     const uint8Array = new Uint8Array(arrayBuffer)
 
     // 8. Subir archivo a Supabase Storage
+    console.log('[UPLOAD-IMAGE] 📤 Iniciando upload a Supabase Storage:', {
+      bucket: BUCKET_NAME,
+      filePath,
+      fileSize: file.size,
+      fileType: file.type,
+      fileName: file.name,
+    })
+    
     const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
       .from(BUCKET_NAME)
       .upload(filePath, uint8Array, {
@@ -123,27 +159,61 @@ export async function POST(request: Request) {
       })
 
     if (uploadError) {
-      console.error('Error uploading file:', uploadError)
+      console.error('[UPLOAD-IMAGE] ❌ Error uploading file:', {
+        error: uploadError,
+        message: uploadError.message,
+        statusCode: uploadError.statusCode,
+        errorCode: uploadError.error,
+        bucket: BUCKET_NAME,
+        filePath,
+      })
       
-      // Mensajes de error más descriptivos
+      // Mensajes de error más descriptivos y específicos
       let errorMessage = 'Error al subir la imagen'
-      if (uploadError.message?.includes('Bucket not found')) {
-        errorMessage = `Bucket "${BUCKET_NAME}" no existe. Debe crearse en Supabase Dashboard.`
-      } else if (uploadError.message?.includes('new row violates row-level security')) {
-        errorMessage = 'Error de permisos. Verifica las políticas RLS del bucket en Supabase.'
-      } else if (uploadError.message?.includes('File size exceeds')) {
+      let statusCode = 500
+      
+      const errorMsg = uploadError.message || String(uploadError)
+      
+      if (errorMsg.includes('Bucket not found') || errorMsg.includes('404')) {
+        errorMessage = `Bucket "${BUCKET_NAME}" no existe. Debe crearse manualmente en Supabase Dashboard. Ver: docs/SETUP_SUPABASE_STORAGE.md`
+        statusCode = 500
+      } else if (errorMsg.includes('new row violates row-level security') || errorMsg.includes('RLS')) {
+        errorMessage = 'Error de permisos. Verifica las políticas RLS del bucket en Supabase. El bucket debe permitir INSERT para usuarios autenticados.'
+        statusCode = 403
+      } else if (errorMsg.includes('File size exceeds') || errorMsg.includes('too large')) {
         errorMessage = `El archivo es muy grande. Máximo ${MAX_FILE_SIZE / 1024 / 1024}MB`
-      } else if (uploadError.message?.includes('Invalid MIME type')) {
+        statusCode = 400
+      } else if (errorMsg.includes('Invalid MIME type') || errorMsg.includes('content type')) {
         errorMessage = 'Formato no válido. Solo se permiten JPG, PNG y WebP'
+        statusCode = 400
+      } else if (errorMsg.includes('Failed to fetch') || errorMsg.includes('NetworkError')) {
+        errorMessage = 'Error de conexión con Supabase Storage. Verifica tu conexión a internet y las políticas CSP.'
+        statusCode = 503
       } else {
-        errorMessage = uploadError.message || 'Error al subir la imagen'
+        errorMessage = errorMsg || 'Error al subir la imagen'
+        statusCode = 500
       }
       
+      console.error('[UPLOAD-IMAGE] ❌ Error detallado:', {
+        errorMessage,
+        statusCode,
+        originalError: uploadError,
+        errorString: String(uploadError),
+      })
+      
       return NextResponse.json(
-        { error: errorMessage },
-        { status: 500 }
+        { 
+          error: errorMessage,
+          details: errorMsg,
+        },
+        { status: statusCode }
       )
     }
+    
+    console.log('[UPLOAD-IMAGE] ✅ Archivo subido exitosamente:', {
+      path: uploadData?.path,
+      id: uploadData?.id,
+    })
 
     // 9. Obtener URL pública
     const {
