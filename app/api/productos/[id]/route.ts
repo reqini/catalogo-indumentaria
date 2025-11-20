@@ -59,31 +59,41 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     // Preparar datos para actualizar
     // Preservar imagen real si existe, solo usar placeholder si realmente no hay imagen
     const imagenPrincipalRaw = validatedData.imagenPrincipal || validatedData.imagen_principal || ''
-    const imagenPrincipalTrimmed = imagenPrincipalRaw.trim()
+    const imagenPrincipalTrimmed = imagenPrincipalRaw?.trim() || ''
+    
+    console.log('[API Productos PUT] Procesando imagen:')
+    console.log('  - validatedData.imagenPrincipal:', validatedData.imagenPrincipal?.substring(0, 150) || '(vacío)')
+    console.log('  - validatedData.imagen_principal:', validatedData.imagen_principal?.substring(0, 150) || '(vacío)')
+    console.log('  - imagenPrincipalRaw:', imagenPrincipalRaw?.substring(0, 150) || '(vacío)')
+    console.log('  - imagenPrincipalTrimmed:', imagenPrincipalTrimmed?.substring(0, 150) || '(vacío)')
+    console.log('  - productoExistente.imagen_principal:', productoExistente.imagen_principal?.substring(0, 150) || '(vacío)')
     
     // Verificar si es una URL válida (http/https) o ruta válida (/images/)
-    const tieneImagenValida = imagenPrincipalTrimmed && 
+    // IMPORTANTE: Las URLs de Supabase Storage empiezan con https://
+    const tieneImagenNueva = imagenPrincipalTrimmed && 
                               imagenPrincipalTrimmed !== '' &&
+                              imagenPrincipalTrimmed !== productoExistente.imagen_principal &&
+                              imagenPrincipalTrimmed !== '/images/default-product.svg' && // No es placeholder
                               (imagenPrincipalTrimmed.startsWith('http://') || 
                                imagenPrincipalTrimmed.startsWith('https://') ||
-                               imagenPrincipalTrimmed.startsWith('/images/'))
+                               imagenPrincipalTrimmed.startsWith('/images/') ||
+                               imagenPrincipalTrimmed.includes('supabase.co')) // URLs de Supabase
     
-    // Si hay imagen válida, usarla. Si no, mantener la imagen existente o usar placeholder
-    let imagenPrincipal = tieneImagenValida 
+    console.log('[API Productos PUT] Validación de imagen:')
+    console.log('  - tieneImagenNueva:', tieneImagenNueva)
+    console.log('  - Empieza con https://:', imagenPrincipalTrimmed?.startsWith('https://'))
+    console.log('  - Contiene supabase.co:', imagenPrincipalTrimmed?.includes('supabase.co'))
+    
+    // Si hay imagen nueva válida, usarla; si no, mantener la existente; si no hay ninguna, usar placeholder
+    const imagenPrincipal = tieneImagenNueva 
       ? imagenPrincipalTrimmed 
-      : (productoExistente.imagen_principal || '/images/default-product.svg')
+      : (productoExistente.imagen_principal && productoExistente.imagen_principal !== '/images/default-product.svg'
+          ? productoExistente.imagen_principal 
+          : '/images/default-product.svg')
     
-    // Si el usuario explícitamente quiere usar placeholder (string vacío), usar placeholder
-    if (imagenPrincipalRaw === '' && !productoExistente.imagen_principal) {
-      imagenPrincipal = '/images/default-product.svg'
-    }
-    
-    console.log('[API Productos PUT] Imagen procesada:', {
-      imagenRaw: imagenPrincipalRaw?.substring(0, 50),
-      imagenExistente: productoExistente.imagen_principal?.substring(0, 50),
-      tieneImagenValida,
-      imagenFinal: imagenPrincipal.substring(0, 50),
-    })
+    console.log('[API Productos PUT] Imagen final a guardar:', imagenPrincipal.substring(0, 150))
+    console.log('  - Es placeholder:', imagenPrincipal === '/images/default-product.svg')
+    console.log('  - Es URL real:', imagenPrincipal.startsWith('http://') || imagenPrincipal.startsWith('https://'))
     
     const updateData: any = {
       nombre: validatedData.nombre,
