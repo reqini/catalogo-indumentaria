@@ -162,8 +162,6 @@ export async function POST(request: Request) {
       console.error('[UPLOAD-IMAGE] ❌ Error uploading file:', {
         error: uploadError,
         message: uploadError.message,
-        statusCode: uploadError.statusCode,
-        errorCode: uploadError.error,
         bucket: BUCKET_NAME,
         filePath,
       })

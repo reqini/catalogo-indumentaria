@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { useCart } from '@/hooks/useCart'
 import CurrencySelector from './CurrencySelector'
 import DarkModeToggle from './DarkModeToggle'
+import LogoAsiSomosHorizontal from '@/components/branding/LogoAsiSomosHorizontal'
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -15,8 +16,8 @@ export default function Navbar() {
     <nav className="bg-white dark:bg-dark-surface border-b border-gray-200 dark:border-gray-700 sticky top-0 z-40">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          <Link href="/" className="text-2xl font-bold text-black dark:text-white">
-            CATÁLOGO
+          <Link href="/" className="flex items-center">
+            <LogoAsiSomosHorizontal width={180} height={40} />
           </Link>
 
           <div className="hidden md:flex items-center gap-4">
