@@ -7,6 +7,7 @@ import { updateStock } from '@/utils/api'
 import AdminProductForm from '@/components/AdminProductForm'
 import AdminProductTable from '@/components/AdminProductTable'
 import toast from 'react-hot-toast'
+import { usePersistedState } from '@/hooks/usePersistedState'
 
 export default function AdminProductosPage() {
   const [products, setProducts] = useState<any[]>([])
