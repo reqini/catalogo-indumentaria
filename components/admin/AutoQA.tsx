@@ -1,7 +1,7 @@
 'use client'
 
 import { AlertCircle, CheckCircle2, AlertTriangle } from 'lucide-react'
-import { EnhancedProduct } from '@/app/admin/productos/carga-multiple-v2/page'
+import { EnhancedProduct } from '@/app/admin/productos/carga-inteligente/page'
 
 interface AutoQAProps {
   products: EnhancedProduct[]

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { X, Search, Loader2, ImageIcon } from 'lucide-react'
 import Image from 'next/image'
-import { EnhancedProduct } from '@/app/admin/productos/carga-multiple-v2/page'
+import { EnhancedProduct } from '@/app/admin/productos/carga-inteligente/page'
 
 interface ImageSearchProps {
   product: EnhancedProduct
@@ -20,7 +20,8 @@ export default function ImageSearch({ product, onSelect, onClose }: ImageSearchP
     if (searchQuery) {
       searchImages()
     }
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Solo ejecutar al montar con el nombre inicial del producto
 
   const searchImages = async () => {
     if (!searchQuery.trim()) return
