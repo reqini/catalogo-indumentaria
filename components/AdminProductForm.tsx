@@ -444,9 +444,30 @@ export default function AdminProductForm({
             <ImageUploader
               value={formData.imagen_principal}
               onChange={(url) => {
-                console.log('✅ [AdminProductForm] onChange llamado con URL:', url)
+                console.log('✅ [AdminProductForm] onChange llamado con URL:', url?.substring(0, 100) || '(vacío)')
                 console.log('✅ [AdminProductForm] Tipo de URL:', typeof url)
                 console.log('✅ [AdminProductForm] URL válida:', url && (url.startsWith('http://') || url.startsWith('https://')))
+                console.log('✅ [AdminProductForm] Contiene supabase.co:', url?.includes('supabase.co'))
+                
+                // CRÍTICO: Validar que la URL sea válida antes de guardar
+                if (url && url.trim() !== '' && (url.startsWith('http://') || url.startsWith('https://'))) {
+                  console.log('✅ [AdminProductForm] Guardando URL válida en formData')
+                  setFormData((prev) => ({
+                    ...prev,
+                    imagen_principal: url.trim(),
+                  }))
+                  setImagePreview(url.trim())
+                } else if (url === '') {
+                  // Si se pasa string vacío, limpiar imagen
+                  console.log('🗑️ [AdminProductForm] Limpiando imagen (URL vacía)')
+                  setFormData((prev) => ({
+                    ...prev,
+                    imagen_principal: '',
+                  }))
+                  setImagePreview('')
+                } else {
+                  console.warn('⚠️ [AdminProductForm] URL inválida recibida, ignorando:', url?.substring(0, 100))
+                }
                 
                 if (!url || typeof url !== 'string' || url.trim() === '') {
                   console.error('❌ [AdminProductForm] URL inválida recibida en onChange:', url)

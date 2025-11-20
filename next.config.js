@@ -21,7 +21,7 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' blob: data: https: https://*.supabase.co https://yqggrzxjhylnxjuagfyr.supabase.co",
               "font-src 'self' data:",
-              "connect-src 'self' https://api.mercadopago.com https://www.google-analytics.com https://*.supabase.co https://yqggrzxjhylnxjuagfyr.supabase.co wss://*.supabase.co",
+              "connect-src 'self' https://api.mercadopago.com https://www.google-analytics.com https://*.supabase.co https://yqggrzxjhylnxjuagfyr.supabase.co wss://*.supabase.co wss://yqggrzxjhylnxjuagfyr.supabase.co",
               "frame-src 'self' https://www.mercadopago.com",
               "object-src 'none'",
               "base-uri 'self'",

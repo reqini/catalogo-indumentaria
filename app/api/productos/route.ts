@@ -129,9 +129,11 @@ export async function POST(request: Request) {
     // Verificar si es una URL válida (http/https) o ruta válida (/images/)
     // IMPORTANTE: Las URLs de Supabase Storage empiezan con https://
     // También aceptar URLs que contengan 'supabase.co' en el dominio
+    // CRÍTICO: NO aceptar base64 (data:) como imagen válida final
     const tieneImagenValida = imagenPrincipalTrimmed && 
                               imagenPrincipalTrimmed !== '' &&
                               imagenPrincipalTrimmed.trim() !== '' &&
+                              !imagenPrincipalTrimmed.startsWith('data:') && // NO base64
                               imagenPrincipalTrimmed !== '/images/default-product.svg' && // No es placeholder
                               (imagenPrincipalTrimmed.startsWith('http://') || 
                                imagenPrincipalTrimmed.startsWith('https://') ||
