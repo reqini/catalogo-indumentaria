@@ -114,28 +114,9 @@ export async function POST(request: Request) {
     const fileName = generateFileName(tenant.tenantId, file.name)
     const filePath = fileName
 
-    // 6. Verificar que el bucket existe
-    try {
-      const { data: buckets, error: listError } = await supabaseAdmin.storage.listBuckets()
-      
-      if (listError) {
-        console.error('Error listando buckets:', listError)
-        // Continuar, puede ser un problema de permisos pero el bucket puede existir
-      } else {
-        const bucketExists = buckets?.some((b) => b.name === BUCKET_NAME)
-        if (!bucketExists) {
-          return NextResponse.json(
-            {
-              error: `Bucket "${BUCKET_NAME}" no existe. Debe crearse manualmente en Supabase Dashboard.`,
-            },
-            { status: 500 }
-          )
-        }
-      }
-    } catch (bucketError: any) {
-      console.error('Error verificando bucket:', bucketError)
-      // En producción, si no podemos verificar, asumimos que existe y continuamos
-    }
+    // 6. NO verificar bucket - asumimos que existe (creado manualmente en Supabase Dashboard)
+    // Si el bucket no existe, el error se mostrará al intentar subir el archivo
+    // Esto elimina llamadas innecesarias a listBuckets() y mejora performance
 
     // 7. Convertir File a ArrayBuffer para Supabase
     const arrayBuffer = await file.arrayBuffer()

@@ -10,13 +10,16 @@ const rateLimitMap = new Map<string, { count: number; resetTime: number }>()
 // CSP Headers - CRÍTICO: Permitir Supabase Storage completamente
 // IMPORTANTE: Incluir todos los dominios posibles de Supabase para evitar bloqueos
 const SUPABASE_PROJECT_ID = process.env.NEXT_PUBLIC_SUPABASE_URL?.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1] || 'yqggrzxjhylnxjuagfyr'
+const SUPABASE_DOMAIN = `https://${SUPABASE_PROJECT_ID}.supabase.co`
+
+// CSP Header completo y robusto
 const cspHeader = `
   default-src 'self';
   script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com;
   style-src 'self' 'unsafe-inline';
-  img-src 'self' blob: data: https: https://*.supabase.co https://${SUPABASE_PROJECT_ID}.supabase.co;
+  img-src 'self' blob: data: https: https://*.supabase.co ${SUPABASE_DOMAIN};
   font-src 'self' data:;
-  connect-src 'self' https://api.mercadopago.com https://www.google-analytics.com https://*.supabase.co https://${SUPABASE_PROJECT_ID}.supabase.co wss://*.supabase.co wss://${SUPABASE_PROJECT_ID}.supabase.co;
+  connect-src 'self' https://api.mercadopago.com https://www.google-analytics.com https://*.supabase.co ${SUPABASE_DOMAIN} wss://*.supabase.co wss://${SUPABASE_PROJECT_ID}.supabase.co;
   frame-src 'self' https://www.mercadopago.com;
   object-src 'none';
   base-uri 'self';

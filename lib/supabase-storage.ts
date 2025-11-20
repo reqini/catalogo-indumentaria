@@ -100,30 +100,9 @@ export async function uploadImage(
     const fileName = generateFileName(tenantId, file.name)
     const filePath = `${fileName}`
 
-    // Verificar que el bucket existe (no intentar crearlo automáticamente en producción)
-    try {
-      const { data: buckets, error: listError } = await supabaseAdmin.storage.listBuckets()
-      
-      if (listError) {
-        console.error('Error listando buckets:', listError)
-        // Continuar, puede ser un problema de permisos pero el bucket puede existir
-      } else {
-        const bucketExists = buckets?.some((b) => b.name === BUCKET_NAME)
-        if (!bucketExists) {
-          const errorMsg = `Bucket "${BUCKET_NAME}" no existe. Debe crearse manualmente en Supabase Dashboard. Ver: docs/setup-supabase-storage.md`
-          console.error(errorMsg)
-          return {
-            url: '',
-            path: '',
-            error: errorMsg,
-          }
-        }
-      }
-    } catch (bucketError: any) {
-      console.error('Error verificando bucket:', bucketError)
-      // En producción, si no podemos verificar, asumimos que existe y continuamos
-      // El error real se mostrará al intentar subir
-    }
+    // NO verificar bucket - asumimos que existe (creado manualmente en Supabase Dashboard)
+    // Si el bucket no existe, el error se mostrará al intentar subir el archivo
+    // Esto elimina llamadas innecesarias a listBuckets() y mejora performance
 
     // Subir archivo
     const { data, error } = await supabaseAdmin.storage
