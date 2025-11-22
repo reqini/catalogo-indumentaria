@@ -43,8 +43,10 @@ export function validateImageFile(file: File): { valid: boolean; error?: string 
 /**
  * Genera un nombre único para el archivo
  * CRÍTICO: Normaliza el nombre para evitar doble extensión (.jpg.jpg)
+ * CRÍTICO: NO incluye tenantId ni carpetas - sube directamente al bucket productos
  */
 function generateFileName(tenantId: string, originalName: string): string {
+  // tenantId se recibe pero NO se usa en el path (compatibilidad con código existente)
   const timestamp = Date.now()
   const random = Math.random().toString(36).substring(2, 9)
   
@@ -106,9 +108,11 @@ export async function uploadImage(
       return { url: '', path: '', error: validation.error }
     }
 
-    // Generar nombre único
-    const fileName = generateFileName(tenantId, file.name)
-    const filePath = `${fileName}`
+    // Generar nombre único (tenantId se pasa pero NO se usa en el path)
+    // CRÍTICO: El path es directamente el fileName, sin tenantId ni carpeta default/
+    // El bucket productos ya existe y está configurado en Supabase Dashboard
+    const fileName = generateFileName('', file.name) // tenantId no se usa
+    const filePath = fileName // Directamente el nombre del archivo en el bucket productos
 
     // NO verificar bucket - asumimos que existe (creado manualmente en Supabase Dashboard)
     // Si el bucket no existe, el error se mostrará al intentar subir el archivo
