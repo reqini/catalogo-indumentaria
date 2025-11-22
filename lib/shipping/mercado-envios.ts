@@ -36,10 +36,11 @@ interface MercadoEnvioResponse {
 export async function calcularMercadoEnvios(
   request: MercadoEnvioRequest
 ): Promise<MercadoEnvioResponse | null> {
+  // CRÍTICO: Validar configuración en runtime
   const MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN
 
   // Si no hay token o es de test, usar cálculo simulado
-  if (!MP_ACCESS_TOKEN || MP_ACCESS_TOKEN.startsWith('TEST-')) {
+  if (!MP_ACCESS_TOKEN || MP_ACCESS_TOKEN.startsWith('TEST-') || MP_ACCESS_TOKEN.includes('xxxxx')) {
     console.log('[MERCADO-ENVIOS] ⚠️ Token no configurado o es de test, usando cálculo simulado')
     return null
   }

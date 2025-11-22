@@ -11,8 +11,7 @@ import {
 } from '@/lib/supabase-helpers'
 import { validateMercadoPagoConfig } from '@/lib/mercadopago/validate'
 
-const mpConfig = validateMercadoPagoConfig()
-const MP_ACCESS_TOKEN = mpConfig.accessToken
+// CRÍTICO: NO validar al cargar el módulo, validar en runtime
 const MP_WEBHOOK_SECRET = process.env.MP_WEBHOOK_SECRET
 
 function verifySignature(body: string, signature: string, secret: string): boolean {
@@ -23,9 +22,16 @@ function verifySignature(body: string, signature: string, secret: string): boole
 
 export async function POST(request: Request) {
   try {
+    // CRÍTICO: Validar configuración en runtime
+    const mpConfig = validateMercadoPagoConfig()
+    const MP_ACCESS_TOKEN = mpConfig.accessToken
+    
     if (!mpConfig.isValid || !MP_ACCESS_TOKEN) {
       console.error('[MP-WEBHOOK] ❌ Mercado Pago no configurado')
       console.error('[MP-WEBHOOK] Errores:', mpConfig.errors)
+      console.error('[MP-WEBHOOK] Access Token presente:', !!MP_ACCESS_TOKEN)
+      console.error('[MP-WEBHOOK] Entorno:', process.env.NODE_ENV || 'development')
+      console.error('[MP-WEBHOOK] VERCEL_ENV:', process.env.VERCEL_ENV || 'local')
       return NextResponse.json(
         { 
           error: 'Mercado Pago no configurado',

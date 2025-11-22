@@ -4,7 +4,9 @@ import Tenant from '@/models/Tenant'
 import Venta from '@/models/Venta'
 import Plan from '@/models/Plan'
 
-const MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN
+import { validateMercadoPagoConfig } from '@/lib/mercadopago/validate'
+
+// CRÍTICO: Validar en runtime, no al cargar módulo
 
 export async function POST(request: Request) {
   await connectDB()

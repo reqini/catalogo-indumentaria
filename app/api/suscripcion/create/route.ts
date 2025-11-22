@@ -6,7 +6,9 @@ import jwt from 'jsonwebtoken'
 import { getTenantFromRequest } from '@/lib/auth-helpers'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
-const MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN
+import { validateMercadoPagoConfig } from '@/lib/mercadopago/validate'
+
+// CRÍTICO: Validar en runtime, no al cargar módulo
 
 export async function POST(request: Request) {
   try {

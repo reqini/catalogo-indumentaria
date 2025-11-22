@@ -34,7 +34,9 @@
     "test:ui": "playwright test",
     "test:coverage": "vitest run --coverage",
     "qa": "pnpm lint && pnpm typecheck && pnpm test",
-    "prebuild": "pnpm lint && pnpm typecheck",
+    "prebuild": "pnpm lint && pnpm typecheck && node scripts/verify-mp-config.mjs",
+    "verify-mp": "node scripts/verify-mp-config.mjs",
+    "test-mp-checkout": "node scripts/test-mp-checkout.mjs",
     "prepare": "husky install"
   },
   "dependencies": {

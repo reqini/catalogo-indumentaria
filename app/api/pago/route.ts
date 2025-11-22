@@ -4,13 +4,26 @@ import { getProductById, getProductos } from '@/lib/supabase-helpers'
 import { createCompraLog } from '@/lib/supabase-helpers'
 import { validateMercadoPagoConfig, getMercadoPagoErrorMessage } from '@/lib/mercadopago/validate'
 
-// Validar configuración de Mercado Pago al cargar el módulo
-const mpConfig = validateMercadoPagoConfig()
-const MP_ACCESS_TOKEN = mpConfig.accessToken
+// CRÍTICO: NO validar al cargar el módulo, validar en runtime para detectar cambios
+// Las variables de entorno pueden cambiar entre builds en Vercel
 
 export async function POST(request: Request) {
   try {
+    // CRÍTICO: Validar configuración en runtime (no al cargar módulo)
+    // Esto asegura que detectamos cambios en variables de entorno
+    const mpConfig = validateMercadoPagoConfig()
+    const MP_ACCESS_TOKEN = mpConfig.accessToken
+    
     console.log('[MP-PAYMENT] Iniciando creación de preferencia')
+    console.log('[MP-PAYMENT] Validación de configuración:', {
+      isValid: mpConfig.isValid,
+      isProduction: mpConfig.isProduction,
+      hasAccessToken: !!MP_ACCESS_TOKEN,
+      tokenLength: MP_ACCESS_TOKEN?.length || 0,
+      environment: process.env.NODE_ENV || 'development',
+      vercelEnv: process.env.VERCEL_ENV || 'local',
+    })
+    
     const body = await request.json()
     console.log('[MP-PAYMENT] Body recibido completo:', JSON.stringify(body, null, 2))
     
