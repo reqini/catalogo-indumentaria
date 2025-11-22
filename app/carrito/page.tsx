@@ -26,7 +26,7 @@ export default function CarritoPage() {
 
   // Calcular peso total (estimado: 0.5kg por producto)
   const totalWeight = useMemo(() => {
-    return cart.reduce((total, item) => total + (item.cantidad * 0.5), 0) || 1
+    return cart.reduce((total, item) => total + item.cantidad * 0.5, 0) || 1
   }, [cart])
 
   // Calcular total con envío
@@ -84,9 +84,9 @@ export default function CarritoPage() {
         failure: `${origin}/pago/failure`,
         pending: `${origin}/pago/pending`,
       }
-      
+
       console.log('[MP-PAYMENT] Frontend - Enviando back_urls:', JSON.stringify(backUrls, null, 2))
-      
+
       // Incluir costo de envío si está seleccionado
       if (selectedShipping && selectedShipping.precio > 0) {
         items.push({
@@ -111,12 +111,16 @@ export default function CarritoPage() {
       }
     } catch (error: any) {
       console.error('[MP-PAYMENT] Error en frontend:', error)
-      const errorMessage = error?.response?.data?.error || error?.message || 'Error al procesar el pago'
+      const errorMessage =
+        error?.response?.data?.error || error?.message || 'Error al procesar el pago'
       const errorDetails = error?.response?.data?.details || ''
-      
+
       if (errorMessage.includes('Stock insuficiente')) {
         toast.error(errorMessage)
-      } else if (errorMessage.includes('No se pudo iniciar el pago') || errorMessage.includes('Error al crear preferencia')) {
+      } else if (
+        errorMessage.includes('No se pudo iniciar el pago') ||
+        errorMessage.includes('Error al crear preferencia')
+      ) {
         // Mostrar detalles del error si están disponibles
         const mpError = error?.response?.data?.mpError
         if (mpError?.message) {
@@ -137,12 +141,12 @@ export default function CarritoPage() {
       <main className="min-h-screen bg-white">
         <div className="container mx-auto px-4 py-16">
           <div className="text-center">
-            <ShoppingBag className="mx-auto text-gray-400 mb-4" size={64} />
-            <h2 className="text-2xl font-bold text-black mb-2">Tu carrito está vacío</h2>
-            <p className="text-gray-600 mb-8">Agregá productos para comenzar</p>
+            <ShoppingBag className="mx-auto mb-4 text-gray-400" size={64} />
+            <h2 className="mb-2 text-2xl font-bold text-black">Tu carrito está vacío</h2>
+            <p className="mb-8 text-gray-600">Agregá productos para comenzar</p>
             <button
               onClick={() => router.push('/catalogo')}
-              className="px-6 py-3 bg-black text-white font-semibold rounded-lg hover:bg-gray-800 transition-all"
+              className="rounded-lg bg-black px-6 py-3 font-semibold text-white transition-all hover:bg-gray-800"
             >
               Ver Catálogo
             </button>
@@ -155,10 +159,10 @@ export default function CarritoPage() {
   return (
     <main className="min-h-screen bg-white">
       <div className="container mx-auto px-4 py-8 md:py-12">
-        <h1 className="text-3xl md:text-4xl font-bold text-black mb-8">Carrito de Compras</h1>
+        <h1 className="mb-8 text-3xl font-bold text-black md:text-4xl">Carrito de Compras</h1>
 
-        <div className="grid md:grid-cols-3 gap-8">
-          <div className="md:col-span-2 space-y-4">
+        <div className="grid gap-8 md:grid-cols-3">
+          <div className="space-y-4 md:col-span-2">
             {cart.map((item, index) => {
               const finalPrice = calculateDiscount(item.precio, item.descuento)
 
@@ -168,10 +172,10 @@ export default function CarritoPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: index * 0.1 }}
-                  className="bg-white border border-gray-200 rounded-lg p-4 md:p-6"
+                  className="rounded-lg border border-gray-200 bg-white p-4 md:p-6"
                 >
                   <div className="flex gap-4">
-                    <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                    <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100 md:h-32 md:w-32">
                       <Image
                         src={item.imagenPrincipal || '/images/default-product.svg'}
                         alt={item.nombre}
@@ -184,26 +188,22 @@ export default function CarritoPage() {
                     </div>
 
                     <div className="flex-1">
-                      <h3 className="font-semibold text-black mb-1">{item.nombre}</h3>
-                      <p className="text-sm text-gray-600 mb-2">Talle: {item.talle}</p>
+                      <h3 className="mb-1 font-semibold text-black">{item.nombre}</h3>
+                      <p className="mb-2 text-sm text-gray-600">Talle: {item.talle}</p>
 
-                      <div className="flex items-center gap-2 mb-4">
+                      <div className="mb-4 flex items-center gap-2">
                         {item.descuento ? (
                           <>
-                            <span className="font-bold text-black">
-                              {formatPrice(finalPrice)}
-                            </span>
+                            <span className="font-bold text-black">{formatPrice(finalPrice)}</span>
                             <span className="text-sm text-gray-400 line-through">
                               {formatPrice(item.precio)}
                             </span>
-                            <span className="text-xs bg-red-500 text-white px-2 py-1 rounded">
+                            <span className="rounded bg-red-500 px-2 py-1 text-xs text-white">
                               -{item.descuento}% OFF
                             </span>
                           </>
                         ) : (
-                          <span className="font-bold text-black">
-                            {formatPrice(item.precio)}
-                          </span>
+                          <span className="font-bold text-black">{formatPrice(item.precio)}</span>
                         )}
                       </div>
 
@@ -217,13 +217,11 @@ export default function CarritoPage() {
                                 toast.error(error.message || 'Error al actualizar cantidad')
                               }
                             }}
-                            className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded hover:bg-gray-100 transition-colors"
+                            className="flex h-8 w-8 items-center justify-center rounded border border-gray-300 transition-colors hover:bg-gray-100"
                           >
                             <Minus size={16} />
                           </button>
-                          <span className="w-12 text-center font-medium">
-                            {item.cantidad}
-                          </span>
+                          <span className="w-12 text-center font-medium">{item.cantidad}</span>
                           <button
                             onClick={() => {
                               try {
@@ -232,8 +230,12 @@ export default function CarritoPage() {
                                 toast.error(error.message || 'Error al actualizar cantidad')
                               }
                             }}
-                            className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded hover:bg-gray-100 transition-colors"
-                            disabled={item.stock && item.talle ? (item.stock[item.talle] || 0) < item.cantidad + 1 : false}
+                            className="flex h-8 w-8 items-center justify-center rounded border border-gray-300 transition-colors hover:bg-gray-100"
+                            disabled={
+                              item.stock && item.talle
+                                ? (item.stock[item.talle] || 0) < item.cantidad + 1
+                                : false
+                            }
                           >
                             <Plus size={16} />
                           </button>
@@ -247,7 +249,7 @@ export default function CarritoPage() {
 
                         <button
                           onClick={() => removeFromCart(item.id, item.talle)}
-                          className="text-red-600 hover:text-red-800 transition-colors"
+                          className="text-red-600 transition-colors hover:text-red-800"
                         >
                           <Trash2 size={20} />
                         </button>
@@ -259,7 +261,7 @@ export default function CarritoPage() {
             })}
           </div>
 
-          <div className="md:col-span-1 space-y-6">
+          <div className="space-y-6 md:col-span-1">
             {/* Calculadora de Envío */}
             <ShippingCalculator
               onSelectMethod={setSelectedShipping}
@@ -269,10 +271,10 @@ export default function CarritoPage() {
             />
 
             {/* Resumen */}
-            <div className="bg-gray-50 rounded-lg p-6 sticky top-24">
-              <h2 className="text-xl font-bold text-black mb-4">Resumen</h2>
+            <div className="sticky top-24 rounded-lg bg-gray-50 p-6">
+              <h2 className="mb-4 text-xl font-bold text-black">Resumen</h2>
 
-              <div className="space-y-2 mb-6">
+              <div className="mb-6 space-y-2">
                 <div className="flex justify-between text-gray-600">
                   <span>Subtotal</span>
                   <span>{formatPrice(getTotalPrice())}</span>
@@ -280,14 +282,11 @@ export default function CarritoPage() {
                 <div className="flex justify-between text-gray-600">
                   <span>Envío</span>
                   <span>
-                    {selectedShipping 
-                      ? formatPrice(selectedShipping.precio)
-                      : 'Calculado arriba'
-                    }
+                    {selectedShipping ? formatPrice(selectedShipping.precio) : 'Calculado arriba'}
                   </span>
                 </div>
-                <div className="border-t border-gray-300 pt-2 mt-2">
-                  <div className="flex justify-between font-bold text-black text-lg">
+                <div className="mt-2 border-t border-gray-300 pt-2">
+                  <div className="flex justify-between text-lg font-bold text-black">
                     <span>Total</span>
                     <span>{formatPrice(totalWithShipping)}</span>
                   </div>
@@ -296,12 +295,12 @@ export default function CarritoPage() {
 
               <button
                 onClick={handleCheckout}
-                disabled={isProcessing || (!selectedShipping && getTotalPrice() > 0)}
-                className="w-full py-4 bg-black text-white font-semibold rounded-lg hover:bg-gray-800 transition-all mb-4 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                disabled={isProcessing || cart.length === 0}
+                className="mb-4 flex w-full items-center justify-center gap-2 rounded-lg bg-black py-4 font-semibold text-white transition-all hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isProcessing ? (
                   <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    <div className="h-5 w-5 animate-spin rounded-full border-b-2 border-white"></div>
                     <span>Procesando...</span>
                   </>
                 ) : (
@@ -310,14 +309,14 @@ export default function CarritoPage() {
               </button>
 
               {!selectedShipping && getTotalPrice() > 0 && (
-                <p className="text-xs text-gray-500 text-center mb-4">
-                  ⚠️ Seleccioná un método de envío antes de continuar
+                <p className="mb-4 text-center text-xs text-amber-600">
+                  💡 Podés calcular el envío arriba o continuar sin envío (retiro en local)
                 </p>
               )}
 
               <button
                 onClick={() => router.push('/catalogo')}
-                className="w-full py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+                className="w-full rounded-lg border border-gray-300 py-3 text-gray-700 transition-colors hover:bg-gray-100"
               >
                 Seguir Comprando
               </button>
@@ -328,6 +327,3 @@ export default function CarritoPage() {
     </main>
   )
 }
-
-
-

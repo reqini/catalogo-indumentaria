@@ -12,11 +12,15 @@ export interface MercadoPagoConfig {
 
 /**
  * Valida las credenciales de Mercado Pago
+ *
+ * CRÍTICO: Esta función NO debe romper el build si falta el token.
+ * Solo valida y reporta errores, pero permite que el código continúe.
  */
 export function validateMercadoPagoConfig(): MercadoPagoConfig {
+  // CRÍTICO: Leer variables de entorno en runtime, no al cargar módulo
   const accessToken = process.env.MP_ACCESS_TOKEN
   const publicKey = process.env.NEXT_PUBLIC_MP_PUBLIC_KEY
-  
+
   const errors: string[] = []
   let isProduction = false
   let isValid = false
@@ -29,8 +33,15 @@ export function validateMercadoPagoConfig(): MercadoPagoConfig {
   } else if (accessToken.startsWith('TEST-')) {
     // Token de TEST es válido para desarrollo
     isProduction = false
-    if (process.env.NODE_ENV === 'production') {
-      errors.push('MP_ACCESS_TOKEN es de TEST pero estamos en producción. Se requiere token de PRODUCCIÓN')
+    // CRÍTICO: Solo marcar error si estamos en producción real de Vercel
+    // No marcar error si estamos en preview o development
+    const isVercelProduction = process.env.VERCEL_ENV === 'production'
+    const isNodeProduction = process.env.NODE_ENV === 'production'
+
+    if (isVercelProduction && isNodeProduction) {
+      errors.push(
+        'MP_ACCESS_TOKEN es de TEST pero estamos en producción. Se requiere token de PRODUCCIÓN'
+      )
     }
   } else if (accessToken.startsWith('APP_USR-') || accessToken.length > 50) {
     // Token de producción válido
@@ -40,14 +51,20 @@ export function validateMercadoPagoConfig(): MercadoPagoConfig {
   }
 
   // Validar Public Key (opcional pero recomendado)
+  // CRÍTICO: No marcar como error crítico, solo warning
   if (!publicKey) {
-    errors.push('NEXT_PUBLIC_MP_PUBLIC_KEY no está configurado (recomendado para frontend)')
+    // No agregar a errors, solo loggear
+    console.warn(
+      '[MP-VALIDATE] NEXT_PUBLIC_MP_PUBLIC_KEY no está configurado (recomendado para frontend)'
+    )
   } else if (publicKey === 'TEST-xxxxxxxxxxxxxxxxxxxx' || publicKey.includes('xxxxx')) {
-    errors.push('NEXT_PUBLIC_MP_PUBLIC_KEY es un placeholder, debe ser reemplazado por una key real')
+    // No agregar a errors críticos, solo warning
+    console.warn('[MP-VALIDATE] NEXT_PUBLIC_MP_PUBLIC_KEY es un placeholder')
   }
 
   // Determinar si es válido
-  isValid = errors.length === 0 && !!accessToken && accessToken.length > 20
+  // CRÍTICO: Considerar válido si tiene accessToken aunque tenga warnings
+  isValid = !!accessToken && accessToken.length > 20 && !accessToken.includes('xxxxx')
 
   return {
     accessToken,
@@ -71,19 +88,18 @@ export function getMercadoPagoErrorMessage(config: MercadoPagoConfig): string {
   }
 
   const mainError = config.errors[0]
-  
+
   if (mainError.includes('no está configurado')) {
     return `Mercado Pago no está configurado. ${mainError}. Por favor, configura las variables de entorno en .env.local (local) o Vercel (producción).`
   }
-  
+
   if (mainError.includes('placeholder')) {
     return `Mercado Pago tiene valores de ejemplo. ${mainError}. Por favor, reemplaza con credenciales reales de Mercado Pago.`
   }
-  
+
   if (mainError.includes('TEST') && mainError.includes('producción')) {
     return 'Mercado Pago está usando token de TEST en producción. Se requiere token de PRODUCCIÓN. Obtén uno en https://www.mercadopago.com.ar/developers/panel'
   }
 
   return `Error en configuración de Mercado Pago: ${mainError}`
 }
-
