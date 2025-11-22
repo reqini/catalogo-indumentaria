@@ -9,8 +9,10 @@ import {
   getCompraLogs,
   createStockLog,
 } from '@/lib/supabase-helpers'
+import { validateMercadoPagoConfig } from '@/lib/mercadopago/validate'
 
-const MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN
+const mpConfig = validateMercadoPagoConfig()
+const MP_ACCESS_TOKEN = mpConfig.accessToken
 const MP_WEBHOOK_SECRET = process.env.MP_WEBHOOK_SECRET
 
 function verifySignature(body: string, signature: string, secret: string): boolean {
@@ -21,9 +23,16 @@ function verifySignature(body: string, signature: string, secret: string): boole
 
 export async function POST(request: Request) {
   try {
-    if (!MP_ACCESS_TOKEN) {
+    if (!mpConfig.isValid || !MP_ACCESS_TOKEN) {
       console.error('[MP-WEBHOOK] ❌ Mercado Pago no configurado')
-      return NextResponse.json({ error: 'Mercado Pago no configurado' }, { status: 500 })
+      console.error('[MP-WEBHOOK] Errores:', mpConfig.errors)
+      return NextResponse.json(
+        { 
+          error: 'Mercado Pago no configurado',
+          details: mpConfig.errors.join(', '),
+        },
+        { status: 500 }
+      )
     }
 
     const bodyText = await request.text()

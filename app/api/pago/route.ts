@@ -2,8 +2,11 @@ import { NextResponse } from 'next/server'
 import { pagoSchema } from '@/utils/validations'
 import { getProductById, getProductos } from '@/lib/supabase-helpers'
 import { createCompraLog } from '@/lib/supabase-helpers'
+import { validateMercadoPagoConfig, getMercadoPagoErrorMessage } from '@/lib/mercadopago/validate'
 
-const MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN
+// Validar configuración de Mercado Pago al cargar el módulo
+const mpConfig = validateMercadoPagoConfig()
+const MP_ACCESS_TOKEN = mpConfig.accessToken
 
 export async function POST(request: Request) {
   try {
@@ -51,19 +54,37 @@ export async function POST(request: Request) {
       )
     }
 
-    if (!MP_ACCESS_TOKEN || MP_ACCESS_TOKEN === 'TEST-xxxxxxxxxxxxxxxxxxxx' || MP_ACCESS_TOKEN.includes('xxxxx')) {
-      console.error('[MP-PAYMENT] ⚠️ Mercado Pago no configurado correctamente')
-      console.error('[MP-PAYMENT] Por favor, configura MP_ACCESS_TOKEN en .env.local con un token real de Mercado Pago')
+    // Validar configuración de Mercado Pago
+    if (!mpConfig.isValid) {
+      const errorMessage = getMercadoPagoErrorMessage(mpConfig)
+      console.error('[MP-PAYMENT] ❌ Mercado Pago no configurado correctamente')
+      console.error('[MP-PAYMENT] Errores detectados:', mpConfig.errors)
+      console.error('[MP-PAYMENT] Access Token presente:', !!MP_ACCESS_TOKEN)
+      console.error('[MP-PAYMENT] Access Token length:', MP_ACCESS_TOKEN?.length || 0)
+      console.error('[MP-PAYMENT] Access Token starts with:', MP_ACCESS_TOKEN?.substring(0, 10) || 'N/A')
+      console.error('[MP-PAYMENT] Entorno:', process.env.NODE_ENV || 'development')
+      console.error('[MP-PAYMENT] VERCEL_ENV:', process.env.VERCEL_ENV || 'local')
+      
       return NextResponse.json(
         { 
           error: 'Mercado Pago no configurado',
-          details: 'Por favor, configura MP_ACCESS_TOKEN en .env.local con un token real de Mercado Pago. Ver /docs/configuracion-mercadopago.md'
+          details: errorMessage,
+          errors: mpConfig.errors,
+          help: {
+            local: 'Configura MP_ACCESS_TOKEN en .env.local',
+            production: 'Configura MP_ACCESS_TOKEN en Vercel Dashboard → Settings → Environment Variables',
+            docs: '/docs/configuracion-mercadopago.md',
+            panel: 'https://www.mercadopago.com.ar/developers/panel',
+          },
         },
         { status: 500 }
       )
     }
     
-    console.log('[MP-PAYMENT] Token configurado correctamente')
+    console.log('[MP-PAYMENT] ✅ Token configurado correctamente')
+    console.log('[MP-PAYMENT] Tipo:', mpConfig.isProduction ? 'PRODUCCIÓN' : 'TEST')
+    console.log('[MP-PAYMENT] Token length:', MP_ACCESS_TOKEN?.length || 0)
+    console.log('[MP-PAYMENT] Token preview:', MP_ACCESS_TOKEN?.substring(0, 15) + '...' || 'N/A')
 
     // Verificar stock antes de crear preferencia
     console.log('[MP-PAYMENT] Verificando stock para', items.length, 'items')
