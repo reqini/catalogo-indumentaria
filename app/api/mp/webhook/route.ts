@@ -66,6 +66,14 @@ export async function POST(request: Request) {
       console.log(`[MP-WEBHOOK] Payment ID: ${payment.id}`)
       console.log(`[MP-WEBHOOK] Preference ID: ${payment.preference_id}`)
       console.log(`[MP-WEBHOOK] Transaction Amount: ${payment.transaction_amount}`)
+      console.log(`[MP-WEBHOOK] 🎯 QA LOG - Webhook recibido:`, {
+        paymentId: payment.id,
+        status: payment.status,
+        preferenceId: payment.preference_id,
+        amount: payment.transaction_amount,
+        itemsCount: payment.additional_info?.items?.length || 0,
+        timestamp: new Date().toISOString(),
+      })
       
       // Procesar según el estado del pago
       if (payment.status === 'approved') {
@@ -86,8 +94,27 @@ export async function POST(request: Request) {
         // Procesar items del pago
         const items = payment.additional_info?.items || []
         const itemsProcesados: Array<{ producto: any; talle: string; cantidad: number; precio: number }> = []
+        
+        // Detectar y extraer costo de envío del pago
+        let costoEnvio = 0
+        let metodoEnvio: string | null = null
+        const envioItem = items.find((item: any) => 
+          item.id === 'envio' || 
+          (item.title && item.title.toLowerCase().includes('envío')) ||
+          (item.title && item.title.toLowerCase().includes('envio'))
+        )
+        
+        if (envioItem) {
+          costoEnvio = (envioItem.unit_price || 0) * (envioItem.quantity || 1)
+          metodoEnvio = envioItem.title || 'Envío estándar'
+          console.log(`[MP-WEBHOOK] 📦 Envío detectado: ${metodoEnvio}, Costo: $${costoEnvio}`)
+        }
 
         for (const item of items) {
+          // Saltar el item de envío (ya lo procesamos arriba)
+          if (item.id === 'envio' || (item.title && item.title.toLowerCase().includes('envío'))) {
+            continue
+          }
           try {
             // Buscar producto por ID (preferido) o por nombre (fallback)
             let producto = null
@@ -168,7 +195,7 @@ export async function POST(request: Request) {
                 stock: nuevoStock,
               })
 
-              // Crear log de compra
+              // Crear log de compra (incluyendo costo de envío si existe)
               await createCompraLog({
                 producto_id: producto.id,
                 preferencia_id: payment.preference_id,
@@ -177,7 +204,10 @@ export async function POST(request: Request) {
                 fecha: new Date().toISOString(),
                 cantidad,
                 precio_total: (item.unit_price || 0) * cantidad,
-                metadata: talle ? { talle } : {},
+                metadata: {
+                  ...(talle ? { talle } : {}),
+                  ...(costoEnvio > 0 ? { costo_envio: costoEnvio, metodo_envio: metodoEnvio } : {}),
+                },
               })
 
               // Registrar en historial de stock
@@ -217,6 +247,7 @@ export async function POST(request: Request) {
             }).join('')
             
             const totalAmount = payment.transaction_amount || payment.transaction_details?.total_paid_amount || 0
+            const subtotal = itemsProcesados.reduce((sum, item) => sum + (item.precio * item.cantidad), 0)
             
             await sendEmail({
               to: emailCliente,
@@ -228,12 +259,17 @@ export async function POST(request: Request) {
                   <ul style="list-style: none; padding: 0;">
                     ${itemsList}
                   </ul>
-                  <p><strong>Total:</strong> $${totalAmount.toFixed(2)}</p>
+                  <div style="border-top: 1px solid #ddd; padding-top: 10px; margin-top: 15px;">
+                    <p><strong>Subtotal:</strong> $${subtotal.toFixed(2)}</p>
+                    ${costoEnvio > 0 ? `<p><strong>Envío (${metodoEnvio}):</strong> $${costoEnvio.toFixed(2)}</p>` : ''}
+                    <p style="font-size: 18px; font-weight: bold; margin-top: 10px;"><strong>Total:</strong> $${totalAmount.toFixed(2)}</p>
+                  </div>
                   <p><strong>Pago ID:</strong> ${payment.id}</p>
+                  ${costoEnvio > 0 ? `<p><strong>Método de envío:</strong> ${metodoEnvio}</p>` : ''}
                   <p>Te contactaremos pronto para coordinar el envío.</p>
                 </div>
               `,
-              text: `Gracias por tu compra. Pago ID: ${payment.id}, Total: $${totalAmount.toFixed(2)}`,
+              text: `Gracias por tu compra. Pago ID: ${payment.id}, Subtotal: $${subtotal.toFixed(2)}${costoEnvio > 0 ? `, Envío: $${costoEnvio.toFixed(2)}` : ''}, Total: $${totalAmount.toFixed(2)}`,
               type: 'compra',
             })
             console.log(`[MP-WEBHOOK] ✅ Email de confirmación enviado a ${emailCliente}`)

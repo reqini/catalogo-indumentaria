@@ -14,10 +14,11 @@ const calcularEnvioSchema = z.object({
 /**
  * Calcula el costo de envío según código postal y peso
  * 
- * Esta es una implementación básica que simula los costos de:
- * - OCA Estándar
- * - OCA Express
+ * Implementación mejorada con múltiples transportistas:
+ * - OCA Estándar y Express
  * - Correo Argentino
+ * - Andreani Estándar y Express
+ * - Mercado Envíos (si aplica)
  * 
  * En producción, esto debería integrarse con las APIs reales de cada transportista.
  */
@@ -30,63 +31,121 @@ function calcularCostoEnvio(
   precio: number
   demora: string
   disponible: boolean
+  transportista: string
 }> {
   // Extraer código de área (primeros caracteres del CP)
   const codigoArea = codigoPostal.substring(0, 1).toUpperCase()
+  const cpNumero = parseInt(codigoPostal.replace(/\D/g, '')) || 0
   
-  // Base de cálculo (simulado)
-  // En producción, esto vendría de una tabla de tarifas o API externa
-  const baseOCA = 2000
-  const baseCorreo = 1500
-  const porKgOCA = 500
-  const porKgCorreo = 400
-  const porValorOCA = 0.02 // 2% del valor del producto
-  const porValorCorreo = 0.015 // 1.5% del valor del producto
+  // Validar código postal
+  if (codigoPostal.length < 4 || codigoPostal.length > 8) {
+    return []
+  }
   
-  // Ajuste por zona (simulado)
-  // Zona A (Buenos Aires Capital): más barato
-  // Zona B (GBA): medio
-  // Zona C (Interior): más caro
+  // Base de cálculo mejorada (valores más realistas)
+  const baseOCA = 2500
+  const baseCorreo = 1800
+  const baseAndreani = 2800
+  const porKgOCA = 600
+  const porKgCorreo = 450
+  const porKgAndreani = 650
+  const porValorOCA = 0.025 // 2.5% del valor del producto
+  const porValorCorreo = 0.02 // 2% del valor del producto
+  const porValorAndreani = 0.03 // 3% del valor del producto
+  
+  // Ajuste por zona geográfica (más preciso)
   let multiplicadorZona = 1.0
   if (codigoArea === 'B' || codigoArea === 'C') {
-    multiplicadorZona = 1.0 // Capital y GBA
-  } else if (codigoArea >= 'A' && codigoArea <= 'Z') {
-    multiplicadorZona = 1.3 // Interior
+    // Buenos Aires Capital y GBA
+    multiplicadorZona = 1.0
+  } else if (codigoArea === 'A' || (cpNumero >= 1000 && cpNumero < 2000)) {
+    // CABA y alrededores
+    multiplicadorZona = 1.1
+  } else if (codigoArea >= 'D' && codigoArea <= 'M') {
+    // Interior cercano (Córdoba, Rosario, etc.)
+    multiplicadorZona = 1.4
+  } else {
+    // Interior lejano
+    multiplicadorZona = 1.8
   }
   
   // Calcular costos base
   const costoOCAEstándar = Math.round(
     (baseOCA + (peso * porKgOCA) + (precio * porValorOCA)) * multiplicadorZona
   )
-  const costoOCAExpress = Math.round(costoOCAEstándar * 1.4) // 40% más caro
+  const costoOCAExpress = Math.round(costoOCAEstándar * 1.5) // 50% más caro
+  
   const costoCorreo = Math.round(
     (baseCorreo + (peso * porKgCorreo) + (precio * porValorCorreo)) * multiplicadorZona
   )
   
-  // Verificar disponibilidad según código postal
-  // Algunos códigos postales pueden no tener servicio
-  const disponible = codigoPostal.length >= 4 && codigoPostal.length <= 8
+  const costoAndreaniEstándar = Math.round(
+    (baseAndreani + (peso * porKgAndreani) + (precio * porValorAndreani)) * multiplicadorZona
+  )
+  const costoAndreaniExpress = Math.round(costoAndreaniEstándar * 1.6) // 60% más caro
   
-  return [
+  // Mercado Envíos (solo disponible para ciertos CP y con límites)
+  const costoMercadoEnvíos = precio > 50000 && codigoArea === 'B' 
+    ? Math.round(costoOCAEstándar * 0.8) // 20% más barato que OCA
+    : null
+  
+  const metodos: Array<{
+    nombre: string
+    precio: number
+    demora: string
+    disponible: boolean
+    transportista: string
+  }> = [
     {
       nombre: 'OCA Estándar',
-      precio: disponible ? costoOCAEstándar : 0,
+      precio: costoOCAEstándar,
       demora: '3-5 días hábiles',
-      disponible,
+      disponible: true,
+      transportista: 'OCA',
     },
     {
       nombre: 'OCA Express',
-      precio: disponible ? costoOCAExpress : 0,
+      precio: costoOCAExpress,
       demora: '1-2 días hábiles',
-      disponible,
+      disponible: true,
+      transportista: 'OCA',
     },
     {
       nombre: 'Correo Argentino',
-      precio: disponible ? costoCorreo : 0,
+      precio: costoCorreo,
       demora: '4-6 días hábiles',
-      disponible,
+      disponible: true,
+      transportista: 'Correo Argentino',
+    },
+    {
+      nombre: 'Andreani Estándar',
+      precio: costoAndreaniEstándar,
+      demora: '3-5 días hábiles',
+      disponible: true,
+      transportista: 'Andreani',
+    },
+    {
+      nombre: 'Andreani Express',
+      precio: costoAndreaniExpress,
+      demora: '1-2 días hábiles',
+      disponible: true,
+      transportista: 'Andreani',
     },
   ]
+  
+  // Agregar Mercado Envíos si está disponible
+  if (costoMercadoEnvíos !== null) {
+    metodos.push({
+      nombre: 'Mercado Envíos',
+      precio: costoMercadoEnvíos,
+      demora: '2-4 días hábiles',
+      disponible: true,
+      transportista: 'Mercado Envíos',
+    })
+  }
+  
+  // Ordenar por precio (más barato primero)
+  return metodos.sort((a, b) => a.precio - b.precio)
 }
 
 export async function POST(request: Request) {

@@ -4,6 +4,7 @@ import { Toaster } from 'react-hot-toast'
 import { CartProvider } from '@/context/CartContext'
 import { AuthProvider } from '@/context/AuthContext'
 import Navbar from '@/components/Navbar'
+import Footer from '@/components/Footer'
 import { AutoFixErrorBoundary } from '@/autofix'
 import { AutoFixInit } from '@/autofix/AutoFixInit'
 import ScrollToTop from '@/components/ScrollToTop'
@@ -80,8 +81,13 @@ export default function RootLayout({
           <AutoFixInit />
           <AuthProvider>
             <CartProvider>
-              <Navbar />
-              {children}
+              <div className="flex flex-col min-h-screen">
+                <Navbar />
+                <main className="flex-1">
+                  {children}
+                </main>
+                <Footer />
+              </div>
               <ScrollToTop />
               <Toaster 
                 position="top-center"

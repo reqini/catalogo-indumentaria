@@ -316,6 +316,13 @@ export async function POST(request: Request) {
     console.log('[MP-PAYMENT] Preference ID:', data.id)
     console.log('[MP-PAYMENT] Init Point:', data.init_point?.substring(0, 50) + '...')
     console.log('[MP-PAYMENT] Items:', items.length)
+    console.log('[MP-PAYMENT] 🎯 QA LOG - Preferencia creada:', {
+      preferenceId: data.id,
+      itemsCount: items.length,
+      hasShipping: items.some(i => i.id === 'envio'),
+      backUrls: preferenceData.back_urls,
+      timestamp: new Date().toISOString(),
+    })
 
     // Guardar logs de compra
     try {

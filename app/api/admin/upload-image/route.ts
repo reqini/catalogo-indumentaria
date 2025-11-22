@@ -225,6 +225,14 @@ export async function POST(request: Request) {
       path: filePath,
       url: publicUrl.substring(0, 80) + '...',
     })
+    console.log('[UPLOAD-IMAGE] 🎯 QA LOG - Upload exitoso:', {
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type,
+      path: filePath,
+      url: publicUrl.substring(0, 100),
+      timestamp: new Date().toISOString(),
+    })
 
     // 10. Retornar URL pública
     return NextResponse.json({
