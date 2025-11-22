@@ -39,6 +39,7 @@
     "prebuild": "pnpm lint || echo '⚠️ Lint completed with warnings' && pnpm typecheck || echo '⚠️ Typecheck completed with errors'",
     "prebuild:vercel": "pnpm lint || echo '⚠️ Lint completed with warnings' && pnpm typecheck || echo '⚠️ Typecheck completed with errors'",
     "verify-mp": "node scripts/verify-mp-config.mjs",
+    "verify-mp-prod": "node scripts/verificar-credenciales-mp-produccion.mjs",
     "test-mp-checkout": "node scripts/test-mp-checkout.mjs",
     "prepare": "husky || true"
   },
