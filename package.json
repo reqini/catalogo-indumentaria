@@ -35,10 +35,11 @@
     "test:ui": "playwright test",
     "test:coverage": "vitest run --coverage",
     "qa": "pnpm lint && pnpm typecheck && pnpm test",
-    "prebuild": "pnpm lint && pnpm typecheck && node scripts/verify-mp-config.mjs",
+    "prebuild": "pnpm lint && pnpm typecheck",
+    "prebuild:vercel": "pnpm lint && pnpm typecheck && node scripts/verify-mp-config.mjs",
     "verify-mp": "node scripts/verify-mp-config.mjs",
     "test-mp-checkout": "node scripts/test-mp-checkout.mjs",
-    "prepare": "husky install"
+    "prepare": "husky"
   },
   "dependencies": {
     "axios": "^1.7.2",
