@@ -9,8 +9,10 @@ const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
 /**
  * Genera un nombre único para el archivo
  * CRÍTICO: Normaliza el nombre para evitar doble extensión (.jpg.jpg)
+ * CRÍTICO: NO incluye tenantId ni carpetas - sube directamente al bucket productos
  */
 function generateFileName(tenantId: string, originalName: string): string {
+  // tenantId se recibe pero NO se usa en el path (compatibilidad con código existente)
   const timestamp = Date.now()
   const random = Math.random().toString(36).substring(2, 9)
   
@@ -34,6 +36,7 @@ function generateFileName(tenantId: string, originalName: string): string {
   
   // Construir nombre final: timestamp-random-sanitizedName.extension
   // CRÍTICO: NO incluir tenantId ni carpeta default/ - subir directamente al bucket productos
+  // El path es directamente el nombre del archivo en el bucket productos
   const finalName = sanitizedName || 'image' // Fallback si el nombre queda vacío
   const fileName = `${timestamp}-${random}-${finalName}.${extension}`
   
@@ -120,9 +123,10 @@ export async function POST(request: Request) {
       )
     }
 
-    // 5. Generar nombre único para el archivo
-    const fileName = generateFileName(tenant.tenantId, file.name)
-    const filePath = fileName
+    // 5. Generar nombre único para el archivo (SIN tenantId ni carpetas)
+    // CRÍTICO: Subir directamente al bucket productos sin subcarpetas
+    const fileName = generateFileName('', file.name) // tenantId no se usa en el path
+    const filePath = fileName // Directamente el nombre del archivo en el bucket
 
     // 6. NO verificar bucket - asumimos que existe (creado manualmente en Supabase Dashboard)
     // Si el bucket no existe, el error se mostrará al intentar subir el archivo
