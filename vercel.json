@@ -4,6 +4,16 @@
   "installCommand": "pnpm install --frozen-lockfile",
   "framework": "nextjs",
   "regions": ["iad1"],
+  "git": {
+    "deploymentEnabled": {
+      "main": true
+    }
+  },
+  "github": {
+    "autoDeployOnPush": true,
+    "autoJobCancelation": true,
+    "silent": false
+  },
   "env": {
     "NODE_ENV": "production"
   },

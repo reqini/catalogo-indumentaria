@@ -10,6 +10,9 @@ export default function Footer() {
   const buildTime = process.env.NEXT_PUBLIC_VERCEL_BUILD_TIME 
     ? new Date(process.env.NEXT_PUBLIC_VERCEL_BUILD_TIME).toLocaleDateString('es-AR')
     : 'local'
+  
+  const buildId = process.env.NEXT_PUBLIC_BUILD_ID || `dev-${Date.now()}`
+  const environment = process.env.NEXT_PUBLIC_VERCEL_ENV || 'development'
 
   return (
     <footer className="bg-black text-white mt-auto">
@@ -58,7 +61,10 @@ export default function Footer() {
               © {new Date().getFullYear()} Catálogo Indumentaria. Todos los derechos reservados.
             </p>
             <div className="text-gray-500 text-xs font-mono">
-              v{buildVersion} • {buildTime}
+              <div>v{buildVersion} • {buildTime}</div>
+              {environment === 'production' && (
+                <div className="mt-1 text-gray-600">Build: {buildId.split('-')[0]}</div>
+              )}
             </div>
           </div>
         </div>

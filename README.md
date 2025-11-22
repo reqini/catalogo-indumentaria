@@ -1,5 +1,53 @@
 # Catálogo de Indumentaria
 
+## 🚀 Deploy Automático
+
+Este proyecto está configurado para **deploy automático a producción** cada vez que se hace push al branch `main`.
+
+### Flujo de Deploy
+
+```
+Push a main → GitHub Actions → Deploy a Vercel Production → catalogo-indumentaria.vercel.app
+```
+
+### Configuración Requerida
+
+1. **Secrets en GitHub** (Settings → Secrets and variables → Actions):
+   - `VERCEL_TOKEN` - Token de Vercel (Settings → Tokens)
+   - `VERCEL_ORG_ID` - Organization ID (Settings → General)
+   - `VERCEL_PROJECT_ID` - Project ID (Project Settings → General)
+
+2. **Verificar Deploy**:
+   - Cada push a `main` dispara deploy automático
+   - Ver versión en footer del sitio
+   - Ver logs en GitHub Actions
+
+### Documentación Completa
+
+Ver [`docs/DEPLOY_AUTOMATICO.md`](docs/DEPLOY_AUTOMATICO.md) para guía detallada.
+
+---
+
+## 📦 Sistema de Envíos
+
+El sistema de envíos está implementado con soporte para:
+- **Envíopack** (recomendado - múltiples transportistas)
+- **OCA** (directo)
+- **Correo Argentino** (directo)
+- **Mercado Envíos Flex**
+
+### Configuración de Envíopack
+
+1. Registrarse en https://www.enviopack.com
+2. Obtener `ENVIOPACK_API_KEY` y `ENVIOPACK_API_SECRET`
+3. Configurar en `.env.local` y Vercel
+
+Ver [`docs/CHECKLIST_ENVIOS_PRODUCTIVOS.md`](docs/CHECKLIST_ENVIOS_PRODUCTIVOS.md) para checklist completo.
+
+---
+
+# Catálogo de Indumentaria
+
 Catálogo premium de indumentaria desarrollado con Next.js 14, React 18 y TailwindCSS. Diseño moderno inspirado en Adidas.com, optimizado para móviles y con panel de administración completo.
 
 ## 🚀 Características

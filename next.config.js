@@ -7,6 +7,10 @@ const nextConfig = {
     NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA: process.env.VERCEL_GIT_COMMIT_SHA || '',
     NEXT_PUBLIC_VERCEL_GIT_COMMIT_REF: process.env.VERCEL_GIT_COMMIT_REF || 'main',
     NEXT_PUBLIC_VERCEL_BUILD_TIME: process.env.VERCEL_BUILD_TIME || new Date().toISOString(),
+    // BUILD_ID único para identificar cada deploy
+    NEXT_PUBLIC_BUILD_ID: process.env.VERCEL_GIT_COMMIT_SHA 
+      ? `${process.env.VERCEL_GIT_COMMIT_SHA.substring(0, 7)}-${Date.now()}`
+      : `dev-${Date.now()}`,
   },
   async headers() {
     return [
