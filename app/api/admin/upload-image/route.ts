@@ -32,9 +32,19 @@ function generateFileName(tenantId: string, originalName: string): string {
     .replace(/^_|_$/g, '') // Remover guiones bajos al inicio y final
     .substring(0, 50) // Limitar longitud
   
-  // Construir nombre final: tenantId/timestamp-random-sanitizedName.extension
+  // Construir nombre final: timestamp-random-sanitizedName.extension
+  // CRÍTICO: NO incluir tenantId ni carpeta default/ - subir directamente al bucket productos
   const finalName = sanitizedName || 'image' // Fallback si el nombre queda vacío
-  const fileName = `${tenantId}/${timestamp}-${random}-${finalName}.${extension}`
+  const fileName = `${timestamp}-${random}-${finalName}.${extension}`
+  
+  // Validar que no haya doble extensión
+  const doubleExtPattern = /\.(jpg|png|webp|jpeg|gif)\.(jpg|png|webp|jpeg|gif)$/i
+  if (doubleExtPattern.test(fileName)) {
+    console.error('[UPLOAD-IMAGE] ❌ ERROR: Doble extensión detectada en:', fileName)
+    const correctedFileName = fileName.replace(doubleExtPattern, `.${extension}`)
+    console.log('[UPLOAD-IMAGE] ✅ Corregido a:', correctedFileName)
+    return correctedFileName
+  }
   
   console.log('[UPLOAD-IMAGE] 📝 Generando nombre de archivo:', {
     originalName,
@@ -136,7 +146,7 @@ export async function POST(request: Request) {
       .upload(filePath, uint8Array, {
         contentType: file.type,
         cacheControl: '3600',
-        upsert: false, // No sobrescribir archivos existentes
+        upsert: true, // Permitir reemplazo en caso de edición
       })
 
     if (uploadError) {

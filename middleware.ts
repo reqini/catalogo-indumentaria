@@ -19,7 +19,7 @@ const cspHeader = `
   style-src 'self' 'unsafe-inline';
   img-src 'self' blob: data: https: https://*.supabase.co ${SUPABASE_DOMAIN};
   font-src 'self' data:;
-  connect-src 'self' https://api.mercadopago.com https://www.google-analytics.com https://*.supabase.co ${SUPABASE_DOMAIN} wss://*.supabase.co wss://${SUPABASE_PROJECT_ID}.supabase.co;
+  connect-src 'self' https://api.mercadopago.com https://www.google-analytics.com https://*.supabase.co ${SUPABASE_DOMAIN} ${SUPABASE_DOMAIN}/storage/v1 ${SUPABASE_DOMAIN}/storage/v1/bucket ${SUPABASE_DOMAIN}/storage/v1/object ${SUPABASE_DOMAIN}/storage/v1/object/* wss://*.supabase.co wss://${SUPABASE_PROJECT_ID}.supabase.co;
   frame-src 'self' https://www.mercadopago.com;
   object-src 'none';
   base-uri 'self';
