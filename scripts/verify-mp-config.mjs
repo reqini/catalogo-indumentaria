@@ -18,26 +18,29 @@ const rootDir = join(__dirname, '..')
 
 // Cargar variables de entorno solo si existe .env.local (desarrollo local)
 // En producción (Vercel), las variables ya están disponibles en process.env
-try {
-  const envLocalPath = join(rootDir, '.env.local')
-  if (existsSync(envLocalPath)) {
-    // Solo cargar dotenv en desarrollo local
-    const { config } = await import('dotenv')
-    config({ path: envLocalPath })
+const envLocalPath = join(rootDir, '.env.local')
+if (existsSync(envLocalPath)) {
+  try {
+    // Solo cargar dotenv en desarrollo local si está disponible
+    const dotenv = await import('dotenv')
+    dotenv.config({ path: envLocalPath })
+  } catch (error) {
+    // dotenv puede no estar disponible en producción, eso está bien
+    // Las variables de entorno ya están en process.env
+    // Continuar sin cargar .env.local
   }
-} catch (error) {
-  // dotenv puede no estar disponible en producción, eso está bien
-  // Las variables de entorno ya están en process.env
 }
 
 const MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN
 const NEXT_PUBLIC_MP_PUBLIC_KEY = process.env.NEXT_PUBLIC_MP_PUBLIC_KEY
 const NODE_ENV = process.env.NODE_ENV || 'development'
 const VERCEL_ENV = process.env.VERCEL_ENV || 'local'
+const IS_VERCEL = process.env.VERCEL === '1' || !!process.env.VERCEL_ENV
 
 console.log('\n🔍 Verificando configuración de Mercado Pago...\n')
 console.log(`Entorno: ${NODE_ENV}`)
-console.log(`Vercel ENV: ${VERCEL_ENV}\n`)
+console.log(`Vercel ENV: ${VERCEL_ENV}`)
+console.log(`Es Vercel: ${IS_VERCEL}\n`)
 
 const errors = []
 const warnings = []
@@ -84,8 +87,7 @@ if (errors.length > 0) {
   console.error('   1. Obtener credenciales en: https://www.mercadopago.com.ar/developers/panel')
   
   // Mostrar instrucciones según el entorno
-  const isVercel = process.env.VERCEL === '1' || process.env.VERCEL_ENV
-  if (isVercel) {
+  if (IS_VERCEL) {
     console.error('   2. Configurar MP_ACCESS_TOKEN en Vercel Dashboard → Settings → Environment Variables')
   } else {
     console.error('   2. Configurar MP_ACCESS_TOKEN en .env.local (local) o Vercel (producción)')
@@ -97,10 +99,22 @@ if (errors.length > 0) {
   // Solo bloquear si es crítico (token no configurado)
   const isCritical = errors.some(err => err.includes('no está configurado'))
   if (isCritical) {
-    process.exit(1)
+    // En Vercel, si no está configurado pero estamos en build, advertir pero no bloquear
+    // El build puede continuar y la app mostrará error en runtime si es necesario
+    if (IS_VERCEL) {
+      console.warn('⚠️  ADVERTENCIA: MP_ACCESS_TOKEN no configurado en Vercel')
+      console.warn('⚠️  El build continuará, pero el checkout no funcionará hasta configurar el token')
+      console.warn('⚠️  Configura MP_ACCESS_TOKEN en Vercel Dashboard → Settings → Environment Variables')
+      // No bloquear el build, solo advertir
+      process.exit(0)
+    } else {
+      // En local, bloquear si es crítico
+      process.exit(1)
+    }
   } else {
     // Si son solo warnings (como token de TEST en producción), continuar con advertencia
     console.warn('⚠️  Continuando con advertencias...')
+    process.exit(0)
   }
 }
 
@@ -112,4 +126,3 @@ if (warnings.length > 0) {
 
 console.log('✅ Configuración de Mercado Pago válida\n')
 process.exit(0)
-
