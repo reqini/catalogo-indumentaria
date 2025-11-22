@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
+import { calcularEnvioConEnvioPack } from '@/lib/shipping/envioPack'
 
 /**
  * Schema de validación para cálculo de envío
@@ -155,16 +156,33 @@ export async function POST(request: Request) {
     // Validar datos de entrada
     const validatedData = calcularEnvioSchema.parse(body)
     
-    const { codigoPostal, peso, precio } = validatedData
+    const { codigoPostal, peso, precio, provincia } = validatedData
     
     console.log('[API-ENVIOS] Calculando envío:', {
       codigoPostal,
       peso,
       precio,
+      provincia,
     })
     
-    // Calcular métodos de envío disponibles
-    const metodos = calcularCostoEnvio(codigoPostal, peso, precio)
+    // Intentar usar Envíopack API si está configurado, sino usar cálculo simulado
+    let metodos: Array<{
+      nombre: string
+      precio: number
+      demora: string
+      disponible: boolean
+      transportista: string
+    }> = []
+    
+    try {
+      // Intentar obtener cotización real de Envíopack
+      metodos = await calcularEnvioConEnvioPack(codigoPostal, peso, precio, provincia)
+      console.log('[API-ENVIOS] ✅ Métodos obtenidos de Envíopack:', metodos.length)
+    } catch (error: any) {
+      console.warn('[API-ENVIOS] ⚠️ Error con Envíopack, usando cálculo simulado:', error.message)
+      // Fallback a cálculo simulado
+      metodos = calcularCostoEnvio(codigoPostal, peso, precio)
+    }
     
     // Filtrar solo métodos disponibles
     const metodosDisponibles = metodos.filter(m => m.disponible)
