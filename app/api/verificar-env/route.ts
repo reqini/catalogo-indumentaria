@@ -32,7 +32,8 @@ export async function GET() {
   const optionalVars = {
     MP_ACCESS_TOKEN: process.env.MP_ACCESS_TOKEN,
     MP_WEBHOOK_SECRET: process.env.MP_WEBHOOK_SECRET,
-    NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY: process.env.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY,
+    NEXT_PUBLIC_MP_PUBLIC_KEY: process.env.NEXT_PUBLIC_MP_PUBLIC_KEY,
+    NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY: process.env.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY, // Legacy
   }
 
   const missing: string[] = []
@@ -68,8 +69,14 @@ export async function GET() {
 
   // Verificar variables opcionales
   Object.entries(optionalVars).forEach(([key, value]) => {
-    if (value && value.startsWith('TEST-')) {
-      warnings.push(`${key}: Parece ser un token de test, usar token de producción`)
+    if (!value) {
+      if (key === 'MP_ACCESS_TOKEN') {
+        warnings.push(`${key}: No configurado - Checkout no funcionará`)
+      }
+    } else if (value === 'TEST-xxxxxxxxxxxxxxxxxxxx' || value.includes('xxxxx')) {
+      warnings.push(`${key}: Es un placeholder, debe ser reemplazado por valor real`)
+    } else if (value.startsWith('TEST-') && process.env.NODE_ENV === 'production') {
+      warnings.push(`${key}: Es token de TEST pero estamos en producción - usar token de PRODUCCIÓN`)
     }
   })
 
