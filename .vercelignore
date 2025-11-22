@@ -48,27 +48,47 @@ Thumbs.db
 .turbo
 .vercel
 
-# Scripts de desarrollo (solo ignorar scripts de shell y tests)
+# Scripts de desarrollo (ignorar solo scripts innecesarios)
 # PERMITIR scripts críticos para producción:
-# - verify-mp-config.mjs (verificación Mercado Pago)
-# - create-pwa-icons.mjs (generación de íconos PWA)
-# - create-real-pwa-icons.mjs (generación de íconos PWA)
-# - generar-jwt-secret.mjs (generación de JWT secrets)
-# - verificar-produccion.mjs (verificación de producción)
+# - verify-mp-config.mjs (verificación Mercado Pago - ejecutado en prebuild:vercel) ✅ CRÍTICO
+# - create-pwa-icons.mjs (generación de íconos PWA - puede ser necesario)
+# - create-real-pwa-icons.mjs (generación de íconos PWA - puede ser necesario)
+# - verificar-produccion.mjs (verificación de producción - puede ser necesario)
+# - generar-jwt-secret.mjs (generación de JWT secrets - puede ser necesario)
+
+# IMPORTANTE: Estos scripts NO deben ser ignorados (se usan en build/producción)
+# Nota: Como no hay patrones que los ignoren, no necesitamos usar ! aquí
+# Pero los listamos para documentación y referencia
+
+# Ignorar solo scripts específicos que NO se necesitan en producción
 scripts/*.sh
 scripts/test-*.mjs
-scripts/seed*.mjs
-scripts/migrate-*.mjs
-scripts/init-*.mjs
-scripts/setup-*.mjs
-scripts/config-*.mjs
-scripts/crear-*.mjs
-scripts/qa-*.mjs
-scripts/guia-*.mjs
-scripts/print-*.mjs
-scripts/start-*.mjs
-scripts/deploy-*.sh
-scripts/setup-*.sh
+scripts/seed.mjs
+scripts/seed-plans.mjs
+scripts/migrate-to-*.mjs
+scripts/init-saas.mjs
+scripts/setup-supabase-env.mjs
+scripts/configurar-credenciales-provistas.mjs
+scripts/crear-datos-reales-supabase.mjs
+scripts/qa-test-complete.mjs
+scripts/guia-interactiva-supabase.mjs
+scripts/print-urls.mjs
+scripts/start-complete.mjs
+scripts/verificar-supabase-setup.mjs
+scripts/verificar-config-completa.mjs
+scripts/test-produccion.mjs
+scripts/test-mp-checkout.mjs
+scripts/test-mp-api.mjs
+scripts/test-compra.mjs
+scripts/test-crud-completo.mjs
+scripts/test-flujos-completos.mjs
+scripts/test-pago-directo.mjs
+scripts/test-atlas-connection.mjs
+scripts/test-supabase.mjs
+scripts/create-icons-simple.mjs
+scripts/create-icons.mjs
+scripts/create-pwa-icons-fix.mjs
+scripts/create-pwa-icons-simple.mjs
 
 # Documentación (opcional, pero puede ser útil mantenerla)
 # docs/
