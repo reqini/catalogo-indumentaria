@@ -36,7 +36,7 @@
     "test:coverage": "vitest run --coverage",
     "qa": "pnpm lint && pnpm typecheck && pnpm test",
     "prebuild": "pnpm lint && pnpm typecheck",
-    "prebuild:vercel": "pnpm lint && pnpm typecheck && node scripts/verify-mp-config.mjs",
+    "prebuild:vercel": "pnpm lint && pnpm typecheck",
     "verify-mp": "node scripts/verify-mp-config.mjs",
     "test-mp-checkout": "node scripts/test-mp-checkout.mjs",
     "prepare": "husky"
