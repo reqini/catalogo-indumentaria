@@ -49,8 +49,10 @@ Thumbs.db
 .vercel
 
 # Scripts de desarrollo
-# SOLUCIÓN DEFINITIVA: NO excluir scripts críticos para producción
-# Solo ignorar scripts específicos de desarrollo/tests que NO se necesitan en build
+# ============================================
+# SOLUCIÓN DEFINITIVA: Permitir TODOS los scripts .mjs por defecto
+# Solo ignorar scripts específicos que NO se necesitan en build/producción
+# ============================================
 
 # CRÍTICO: Estos scripts DEBEN estar disponibles (NO ignorar):
 # ✅ verify-mp-config.mjs - Verificación Mercado Pago
@@ -58,11 +60,16 @@ Thumbs.db
 # ✅ create-real-pwa-icons.mjs - Generación íconos PWA reales
 # ✅ verificar-produccion.mjs - Verificación producción
 # ✅ generar-jwt-secret.mjs - Generación JWT secrets
+# ✅ verificar-mp.mjs - Verificación MP alternativa
 
-# Ignorar SOLO scripts de shell (nunca se necesitan en build)
+# ============================================
+# IGNORAR SOLO ESTOS SCRIPTS ESPECÍFICOS:
+# ============================================
+
+# Scripts de shell (nunca se necesitan en build)
 scripts/*.sh
 
-# Ignorar SOLO scripts de test específicos
+# Scripts de test (no se ejecutan en producción)
 scripts/test-*.mjs
 scripts/test-produccion.mjs
 scripts/test-mp-checkout.mjs
@@ -74,7 +81,7 @@ scripts/test-pago-directo.mjs
 scripts/test-atlas-connection.mjs
 scripts/test-supabase.mjs
 
-# Ignorar SOLO scripts de desarrollo/setup específicos (NO críticos)
+# Scripts de desarrollo/setup (no críticos para build)
 scripts/seed.mjs
 scripts/seed-plans.mjs
 scripts/migrate-to-*.mjs
@@ -88,13 +95,17 @@ scripts/print-urls.mjs
 scripts/start-complete.mjs
 scripts/verificar-supabase-setup.mjs
 scripts/verificar-config-completa.mjs
+
+# Variantes de scripts de íconos (solo mantener los principales)
 scripts/create-icons-simple.mjs
 scripts/create-icons.mjs
 scripts/create-pwa-icons-fix.mjs
 scripts/create-pwa-icons-simple.mjs
 
+# ============================================
 # IMPORTANTE: Todos los demás scripts .mjs se PERMITEN por defecto
-# Esto incluye los scripts críticos listados arriba
+# Esto garantiza que los scripts críticos estén disponibles
+# ============================================
 
 # Documentación (opcional, pero puede ser útil mantenerla)
 # docs/
