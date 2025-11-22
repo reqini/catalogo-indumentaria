@@ -21,6 +21,36 @@ export function validateMercadoPagoConfig(): MercadoPagoConfig {
   const accessToken = process.env.MP_ACCESS_TOKEN
   const publicKey = process.env.NEXT_PUBLIC_MP_PUBLIC_KEY
 
+  // Logs de diagnóstico para debugging (solo en desarrollo o cuando falta el token)
+  const isDevelopment = process.env.NODE_ENV === 'development' || !process.env.VERCEL_ENV
+  if (!accessToken || isDevelopment) {
+    console.log('[MP-VALIDATE] 🔍 Diagnóstico de configuración:')
+    console.log('[MP-VALIDATE]   - MP_ACCESS_TOKEN presente:', !!accessToken)
+    console.log('[MP-VALIDATE]   - Entorno:', process.env.NODE_ENV || 'development')
+    console.log('[MP-VALIDATE]   - VERCEL_ENV:', process.env.VERCEL_ENV || 'local')
+    console.log('[MP-VALIDATE]   - VERCEL:', process.env.VERCEL || 'no definido')
+
+    if (!accessToken) {
+      // Listar todas las variables que contienen "MP" para debugging
+      const mpRelatedVars = Object.keys(process.env).filter(
+        (key) => key.toUpperCase().includes('MP') || key.toUpperCase().includes('MERCADO')
+      )
+      if (mpRelatedVars.length > 0) {
+        console.warn(
+          '[MP-VALIDATE] ⚠️ Variables relacionadas encontradas:',
+          mpRelatedVars.join(', ')
+        )
+        console.warn('[MP-VALIDATE] ⚠️ Pero MP_ACCESS_TOKEN específicamente NO está presente')
+      } else {
+        console.error('[MP-VALIDATE] ❌ No se encontraron variables relacionadas con MP')
+        console.error(
+          '[MP-VALIDATE] ❌ Verifica que las variables estén configuradas en Vercel Dashboard'
+        )
+        console.error('[MP-VALIDATE] ❌ Y que hayas hecho REDEPLOY después de agregarlas')
+      }
+    }
+  }
+
   const errors: string[] = []
   let isProduction = false
   let isValid = false

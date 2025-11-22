@@ -1,0 +1,39 @@
+═══════════════════════════════════════════════════════════════
+  VARIABLES DE ENTORNO PARA CONFIGURAR EN VERCEL
+═══════════════════════════════════════════════════════════════
+
+📍 UBICACIÓN EN VERCEL:
+   Dashboard → Tu Proyecto → Settings → Environment Variables
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  VARIABLE 1: MP_ACCESS_TOKEN (OBLIGATORIA)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Key:   MP_ACCESS_TOKEN
+  
+  Value: APP_USR-8653596253805253-111810-82e52430f28c34008907e68d10af95b0-24582974
+  
+  Environments: ✅ Production ✅ Preview ✅ Development
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  VARIABLE 2: NEXT_PUBLIC_MP_PUBLIC_KEY (Opcional)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Key:   NEXT_PUBLIC_MP_PUBLIC_KEY
+  
+  Value: APP_USR-c5bf7fca-29e2-4cf7-bc4c-947f1f407bd6
+  
+  Environments: ✅ Production ✅ Preview ✅ Development
+
+═══════════════════════════════════════════════════════════════
+  PASOS RÁPIDOS:
+═══════════════════════════════════════════════════════════════
+
+  1. Ve a: https://vercel.com/dashboard
+  2. Selecciona proyecto: catalogo-indumentaria
+  3. Settings → Environment Variables
+  4. Agrega las 2 variables arriba
+  5. Marca los 3 entornos para cada una
+  6. Guarda y haz REDEPLOY
+
+═══════════════════════════════════════════════════════════════
