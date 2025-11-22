@@ -49,8 +49,15 @@ Thumbs.db
 .vercel
 
 # Scripts de desarrollo
-# SOLUCIÓN URGENTE: Permitir TODOS los scripts .mjs excepto los específicos de desarrollo
-# Esto asegura que verify-mp-config.mjs y otros scripts críticos estén disponibles
+# SOLUCIÓN DEFINITIVA: NO excluir scripts críticos para producción
+# Solo ignorar scripts específicos de desarrollo/tests que NO se necesitan en build
+
+# CRÍTICO: Estos scripts DEBEN estar disponibles (NO ignorar):
+# ✅ verify-mp-config.mjs - Verificación Mercado Pago
+# ✅ create-pwa-icons.mjs - Generación íconos PWA
+# ✅ create-real-pwa-icons.mjs - Generación íconos PWA reales
+# ✅ verificar-produccion.mjs - Verificación producción
+# ✅ generar-jwt-secret.mjs - Generación JWT secrets
 
 # Ignorar SOLO scripts de shell (nunca se necesitan en build)
 scripts/*.sh
@@ -67,7 +74,7 @@ scripts/test-pago-directo.mjs
 scripts/test-atlas-connection.mjs
 scripts/test-supabase.mjs
 
-# Ignorar SOLO scripts de desarrollo/setup específicos
+# Ignorar SOLO scripts de desarrollo/setup específicos (NO críticos)
 scripts/seed.mjs
 scripts/seed-plans.mjs
 scripts/migrate-to-*.mjs
@@ -86,14 +93,8 @@ scripts/create-icons.mjs
 scripts/create-pwa-icons-fix.mjs
 scripts/create-pwa-icons-simple.mjs
 
-# PERMITIR EXPLÍCITAMENTE scripts críticos (por si acaso)
-# Estos scripts DEBEN estar disponibles en producción:
-# - verify-mp-config.mjs ✅ CRÍTICO (ejecutado en prebuild:vercel)
-# - create-pwa-icons.mjs
-# - create-real-pwa-icons.mjs
-# - verificar-produccion.mjs
-# - generar-jwt-secret.mjs
-# Todos los demás scripts .mjs también se permiten por defecto
+# IMPORTANTE: Todos los demás scripts .mjs se PERMITEN por defecto
+# Esto incluye los scripts críticos listados arriba
 
 # Documentación (opcional, pero puede ser útil mantenerla)
 # docs/

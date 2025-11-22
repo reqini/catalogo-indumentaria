@@ -30,57 +30,51 @@ Ver [`docs/DEPLOY_AUTOMATICO.md`](docs/DEPLOY_AUTOMATICO.md) para guía detallad
 
 ## ⚙️ Configuración de Build en Vercel
 
-### Scripts Críticos para Producción
+### ⚠️ IMPORTANTE - Scripts Críticos
 
-**⚠️ IMPORTANTE:** Los siguientes scripts son **CRÍTICOS** para el funcionamiento correcto del proyecto y **NO deben eliminarse** del deployment:
+**Los siguientes scripts son CRÍTICOS y NO deben eliminarse del deployment:**
 
-- `scripts/verify-mp-config.mjs` - Verificación de configuración de Mercado Pago (ejecutado en prebuild)
-- `scripts/create-pwa-icons.mjs` - Generación de íconos PWA
-- `scripts/create-real-pwa-icons.mjs` - Generación de íconos PWA con branding
-- `scripts/generar-jwt-secret.mjs` - Generación de JWT secrets
-- `scripts/verificar-produccion.mjs` - Verificación de configuración de producción
+- ✅ `scripts/verify-mp-config.mjs` - Verificación Mercado Pago
+- ✅ `scripts/create-pwa-icons.mjs` - Generación íconos PWA
+- ✅ `scripts/create-real-pwa-icons.mjs` - Generación íconos PWA reales
+- ✅ `scripts/verificar-produccion.mjs` - Verificación producción
+- ✅ `scripts/generar-jwt-secret.mjs` - Generación JWT secrets
 
-### Configuración de `.vercelignore`
+**El archivo `.vercelignore` está configurado para PERMITIR estos scripts.**
 
-El archivo `.vercelignore` está configurado para:
-- ✅ **PERMITIR** scripts críticos necesarios para el build
-- ❌ **IGNORAR** scripts de desarrollo, tests y migraciones
+### Variables de Entorno Requeridas en Vercel
 
-**NO modificar** `.vercelignore` para excluir scripts críticos, ya que esto causará errores en el build de Vercel.
+Configurar en **Vercel Dashboard → Project Settings → Environment Variables**:
 
-### Lifecycle Scripts de Dependencias
+```
+NEXT_PUBLIC_SUPABASE_URL=https://yqggrzxjhylnxjuagfyr.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_anon_key
+SUPABASE_SERVICE_ROLE_KEY=tu_service_role_key
+MP_ACCESS_TOKEN=tu_access_token
+NEXT_PUBLIC_MP_PUBLIC_KEY=tu_public_key
+JWT_SECRET=tu_jwt_secret
+MONGODB_URI=tu_mongodb_uri
+```
 
-El proyecto autoriza explícitamente los siguientes lifecycle scripts de dependencias transitivas:
+### Supabase Storage - Bucket "productos"
 
-- `core-js` - Polyfills necesarios (viene de `cloudinary`)
-- `esbuild` - Bundler usado por `vite/vitest`
-- `unrs-resolver` - Resolver TypeScript para ESLint
+**CRÍTICO:** El bucket `productos` debe existir en Supabase Dashboard:
 
-Esta configuración se maneja mediante:
-- `.pnpmfile.cjs` - Autorización explícita de scripts
-- `.npmrc` - Configuración `enable-pre-post-scripts=true`
-- `vercel.json` - Variable de entorno `VERCEL_ALLOW_RUN_SCRIPTS`
+1. Ir a Supabase Dashboard → Storage
+2. Crear bucket `productos`
+3. Configurar políticas RLS (INSERT/SELECT público)
 
 ### Build Command
 
-El build en Vercel ejecuta automáticamente:
+El build en Vercel ejecuta:
 ```bash
-pnpm approve-builds && pnpm prebuild:vercel && pnpm build
+pnpm prebuild:vercel && pnpm build
 ```
 
-Esto garantiza:
-1. Autorización de lifecycle scripts necesarios
-2. Ejecución de validaciones (lint, typecheck, verify-mp-config)
-3. Build de producción limpio
+### Documentación Completa
 
-### Solución de Problemas
-
-Si aparecen warnings sobre "Ignored build scripts":
-1. Verificar que `.pnpmfile.cjs` existe y contiene las dependencias correctas
-2. Verificar que `vercel.json` tiene `VERCEL_ALLOW_RUN_SCRIPTS` configurado
-3. Verificar que `package.json` ejecuta `pnpm approve-builds` antes del build
-
-**Documentación completa:** Ver [`docs/VERCEL_BUILD_CONFIG.md`](docs/VERCEL_BUILD_CONFIG.md)
+- **Solución Definitiva:** [`docs/SOLUCION_DEFINITIVA_VERCEL.md`](docs/SOLUCION_DEFINITIVA_VERCEL.md)
+- **Configuración Build:** [`docs/VERCEL_BUILD_CONFIG.md`](docs/VERCEL_BUILD_CONFIG.md)
 
 ---
 
