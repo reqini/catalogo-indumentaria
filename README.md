@@ -28,6 +28,62 @@ Ver [`docs/DEPLOY_AUTOMATICO.md`](docs/DEPLOY_AUTOMATICO.md) para guía detallad
 
 ---
 
+## ⚙️ Configuración de Build en Vercel
+
+### Scripts Críticos para Producción
+
+**⚠️ IMPORTANTE:** Los siguientes scripts son **CRÍTICOS** para el funcionamiento correcto del proyecto y **NO deben eliminarse** del deployment:
+
+- `scripts/verify-mp-config.mjs` - Verificación de configuración de Mercado Pago (ejecutado en prebuild)
+- `scripts/create-pwa-icons.mjs` - Generación de íconos PWA
+- `scripts/create-real-pwa-icons.mjs` - Generación de íconos PWA con branding
+- `scripts/generar-jwt-secret.mjs` - Generación de JWT secrets
+- `scripts/verificar-produccion.mjs` - Verificación de configuración de producción
+
+### Configuración de `.vercelignore`
+
+El archivo `.vercelignore` está configurado para:
+- ✅ **PERMITIR** scripts críticos necesarios para el build
+- ❌ **IGNORAR** scripts de desarrollo, tests y migraciones
+
+**NO modificar** `.vercelignore` para excluir scripts críticos, ya que esto causará errores en el build de Vercel.
+
+### Lifecycle Scripts de Dependencias
+
+El proyecto autoriza explícitamente los siguientes lifecycle scripts de dependencias transitivas:
+
+- `core-js` - Polyfills necesarios (viene de `cloudinary`)
+- `esbuild` - Bundler usado por `vite/vitest`
+- `unrs-resolver` - Resolver TypeScript para ESLint
+
+Esta configuración se maneja mediante:
+- `.pnpmfile.cjs` - Autorización explícita de scripts
+- `.npmrc` - Configuración `enable-pre-post-scripts=true`
+- `vercel.json` - Variable de entorno `VERCEL_ALLOW_RUN_SCRIPTS`
+
+### Build Command
+
+El build en Vercel ejecuta automáticamente:
+```bash
+pnpm approve-builds && pnpm prebuild:vercel && pnpm build
+```
+
+Esto garantiza:
+1. Autorización de lifecycle scripts necesarios
+2. Ejecución de validaciones (lint, typecheck, verify-mp-config)
+3. Build de producción limpio
+
+### Solución de Problemas
+
+Si aparecen warnings sobre "Ignored build scripts":
+1. Verificar que `.pnpmfile.cjs` existe y contiene las dependencias correctas
+2. Verificar que `vercel.json` tiene `VERCEL_ALLOW_RUN_SCRIPTS` configurado
+3. Verificar que `package.json` ejecuta `pnpm approve-builds` antes del build
+
+**Documentación completa:** Ver [`docs/VERCEL_BUILD_CONFIG.md`](docs/VERCEL_BUILD_CONFIG.md)
+
+---
+
 ## 📦 Sistema de Envíos
 
 El sistema de envíos está implementado con soporte para:

@@ -48,10 +48,27 @@ Thumbs.db
 .turbo
 .vercel
 
-# Scripts de desarrollo (no necesarios en producción)
-scripts/*.mjs
-scripts/*.js
-!scripts/verificar-produccion.mjs
+# Scripts de desarrollo (solo ignorar scripts de shell y tests)
+# PERMITIR scripts críticos para producción:
+# - verify-mp-config.mjs (verificación Mercado Pago)
+# - create-pwa-icons.mjs (generación de íconos PWA)
+# - create-real-pwa-icons.mjs (generación de íconos PWA)
+# - generar-jwt-secret.mjs (generación de JWT secrets)
+# - verificar-produccion.mjs (verificación de producción)
+scripts/*.sh
+scripts/test-*.mjs
+scripts/seed*.mjs
+scripts/migrate-*.mjs
+scripts/init-*.mjs
+scripts/setup-*.mjs
+scripts/config-*.mjs
+scripts/crear-*.mjs
+scripts/qa-*.mjs
+scripts/guia-*.mjs
+scripts/print-*.mjs
+scripts/start-*.mjs
+scripts/deploy-*.sh
+scripts/setup-*.sh
 
 # Documentación (opcional, pero puede ser útil mantenerla)
 # docs/

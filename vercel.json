@@ -1,5 +1,5 @@
 {
-  "buildCommand": "pnpm prebuild:vercel && pnpm build",
+  "buildCommand": "pnpm approve-builds && pnpm prebuild:vercel && pnpm build",
   "devCommand": "pnpm dev",
   "installCommand": "pnpm install --frozen-lockfile",
   "framework": "nextjs",
@@ -15,7 +15,8 @@
     "silent": false
   },
   "env": {
-    "NODE_ENV": "production"
+    "NODE_ENV": "production",
+    "VERCEL_ALLOW_RUN_SCRIPTS": "core-js esbuild unrs-resolver"
   },
   "headers": [
     {
