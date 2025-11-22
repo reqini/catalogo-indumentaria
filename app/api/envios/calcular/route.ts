@@ -174,13 +174,28 @@ export async function POST(request: Request) {
       transportista: string
     }> = []
     
-    try {
-      // Intentar obtener cotización real de Envíopack
-      metodos = await calcularEnvioConEnvioPack(codigoPostal, peso, precio, provincia)
-      console.log('[API-ENVIOS] ✅ Métodos obtenidos de Envíopack:', metodos.length)
-    } catch (error: any) {
-      console.warn('[API-ENVIOS] ⚠️ Error con Envíopack, usando cálculo simulado:', error.message)
-      // Fallback a cálculo simulado
+    const tieneEnvioPack = !!process.env.ENVIOPACK_API_KEY && !!process.env.ENVIOPACK_API_SECRET
+    
+    if (tieneEnvioPack) {
+      try {
+        // Intentar obtener cotización real de Envíopack
+        console.log('[API-ENVIOS] 🔄 Intentando obtener cotización real de Envíopack...')
+        metodos = await calcularEnvioConEnvioPack(codigoPostal, peso, precio, provincia)
+        
+        if (metodos.length > 0) {
+          console.log('[API-ENVIOS] ✅ Métodos obtenidos de Envíopack (REAL):', metodos.length)
+        } else {
+          console.warn('[API-ENVIOS] ⚠️ Envíopack no devolvió métodos, usando cálculo simulado')
+          metodos = calcularCostoEnvio(codigoPostal, peso, precio)
+        }
+      } catch (error: any) {
+        console.warn('[API-ENVIOS] ⚠️ Error con Envíopack, usando cálculo simulado:', error.message)
+        // Fallback a cálculo simulado
+        metodos = calcularCostoEnvio(codigoPostal, peso, precio)
+      }
+    } else {
+      // No hay credenciales de Envíopack, usar cálculo simulado
+      console.log('[API-ENVIOS] 📊 Usando cálculo simulado (Envíopack no configurado)')
       metodos = calcularCostoEnvio(codigoPostal, peso, precio)
     }
     
