@@ -180,6 +180,14 @@ export async function POST(request: Request) {
     }
     
     console.log('[API-ENVIOS] Métodos calculados:', metodosDisponibles.length)
+    console.log('[API-ENVIOS] 🎯 QA LOG - Cálculo de envío:', {
+      codigoPostal,
+      peso,
+      precio,
+      metodosCount: metodosDisponibles.length,
+      metodos: metodosDisponibles.map(m => ({ nombre: m.nombre, precio: m.precio, transportista: m.transportista })),
+      timestamp: new Date().toISOString(),
+    })
     
     return NextResponse.json({
       metodos: metodosDisponibles,
