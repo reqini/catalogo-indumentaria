@@ -46,9 +46,18 @@ export async function POST(request: Request) {
       })
     }
 
-    if (!MP_ACCESS_TOKEN) {
+    // CRÍTICO: Validar configuración en runtime
+    const mpConfig = validateMercadoPagoConfig()
+    const MP_ACCESS_TOKEN = mpConfig.accessToken
+
+    if (!mpConfig.isValid || !MP_ACCESS_TOKEN) {
+      console.error('[MP-SUBSCRIPTION-CREATE] ❌ Mercado Pago no configurado')
+      console.error('[MP-SUBSCRIPTION-CREATE] Errores:', mpConfig.errors)
       return NextResponse.json(
-        { error: 'Mercado Pago no configurado' },
+        { 
+          error: 'Mercado Pago no configurado',
+          details: mpConfig.errors.join(', '),
+        },
         { status: 500 }
       )
     }

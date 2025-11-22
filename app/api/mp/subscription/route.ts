@@ -24,8 +24,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'Ignored topic' }, { status: 200 })
     }
 
-    if (!MP_ACCESS_TOKEN) {
-      throw new Error('Mercado Pago access token not configured')
+    // CRÍTICO: Validar configuración en runtime
+    const mpConfig = validateMercadoPagoConfig()
+    const MP_ACCESS_TOKEN = mpConfig.accessToken
+
+    if (!mpConfig.isValid || !MP_ACCESS_TOKEN) {
+      console.error('[MP-SUBSCRIPTION-WEBHOOK] ❌ Mercado Pago no configurado')
+      console.error('[MP-SUBSCRIPTION-WEBHOOK] Errores:', mpConfig.errors)
+      throw new Error(`Mercado Pago no configurado: ${mpConfig.errors.join(', ')}`)
     }
 
     // Obtener datos de la suscripción desde MP
