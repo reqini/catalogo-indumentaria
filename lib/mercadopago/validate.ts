@@ -19,9 +19,17 @@ export interface MercadoPagoConfig {
 export function validateMercadoPagoConfig(): MercadoPagoConfig {
   // CRÍTICO: Leer variables de entorno en runtime, no al cargar módulo
   // Usar múltiples formas de lectura para asegurar compatibilidad
-  const accessToken = process.env.MP_ACCESS_TOKEN || process.env['MP_ACCESS_TOKEN']
+  // Intentar todas las variantes posibles
+  const accessToken =
+    process.env.MP_ACCESS_TOKEN ||
+    process.env['MP_ACCESS_TOKEN'] ||
+    process.env.MERCADOPAGO_ACCESS_TOKEN || // Fallback legacy
+    process.env['MERCADOPAGO_ACCESS_TOKEN'] // Fallback legacy
   const publicKey =
-    process.env.NEXT_PUBLIC_MP_PUBLIC_KEY || process.env['NEXT_PUBLIC_MP_PUBLIC_KEY']
+    process.env.NEXT_PUBLIC_MP_PUBLIC_KEY ||
+    process.env['NEXT_PUBLIC_MP_PUBLIC_KEY'] ||
+    process.env.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY || // Fallback legacy
+    process.env['NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY'] // Fallback legacy
 
   const VERCEL_ENV = process.env.VERCEL_ENV || 'local'
   const NODE_ENV = process.env.NODE_ENV || 'development'

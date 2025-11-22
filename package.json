@@ -41,7 +41,9 @@
     "verify-mp": "node scripts/verify-mp-config.mjs",
     "verify-mp-prod": "node scripts/verificar-credenciales-mp-produccion.mjs",
     "diagnose-mp-env": "node scripts/diagnostico-mp-env.mjs",
+    "diagnose-mp-complete": "node scripts/diagnostico-completo-mp.mjs",
     "test-mp-checkout": "node scripts/test-mp-checkout.mjs",
+    "test-mp-production": "node scripts/test-mp-production.mjs",
     "prepare": "husky || true"
   },
   "dependencies": {
