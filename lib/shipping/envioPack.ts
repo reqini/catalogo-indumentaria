@@ -61,7 +61,8 @@ export async function calcularEnvioConEnvioPack(
     console.log('[ENVIOPACK] 📤 Calculando envío real:', requestData)
 
     // Llamar a Envíopack API
-    // NOTA: La URL exacta puede variar, verificar en documentación oficial
+    // NOTA: La URL y estructura pueden variar según la versión de la API
+    // Verificar documentación oficial: https://developers.enviopack.com o contactar soporte
     const response = await fetch('https://api.enviopack.com/cotizar', {
       method: 'POST',
       headers: {
@@ -70,6 +71,8 @@ export async function calcularEnvioConEnvioPack(
         'X-API-Secret': apiSecret,
       },
       body: JSON.stringify(requestData),
+      // Timeout de 10 segundos
+      signal: AbortSignal.timeout(10000),
     })
 
     if (!response.ok) {
