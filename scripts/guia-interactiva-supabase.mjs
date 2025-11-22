@@ -3,8 +3,33 @@
 /**
  * Guía interactiva paso a paso para configurar Supabase
  * 
- * Uso:
- *   pnpm guide-supabase
+ * PROPÓSITO:
+ *   Proporciona una guía interactiva paso a paso para configurar Supabase
+ *   Incluye prompts y pausas para que el usuario siga las instrucciones
+ * 
+ * CUÁNDO EJECUTAR:
+ *   - Manualmente durante el setup inicial del proyecto
+ *   - Cuando necesites ayuda para configurar Supabase
+ *   - NO se ejecuta automáticamente en build de Vercel
+ * 
+ * USO:
+ *   pnpm supabase:help
+ * 
+ * REQUISITOS:
+ *   - Node.js con módulo readline (incluido por defecto)
+ *   - Terminal interactiva (NO funciona en CI/CD)
+ * 
+ * NOTA CRÍTICA:
+ *   Este script NO debe ejecutarse en el build de Vercel porque:
+ *   1. Requiere entrada interactiva del usuario (readline)
+ *   2. Espera que el usuario presione Enter en cada paso
+ *   3. No tiene sentido en un entorno automatizado
+ *   4. Causaría que el build se quede colgado esperando input
+ * 
+ * ALTERNATIVA:
+ *   Si necesitas configurar Supabase en CI/CD, usa:
+ *   - Variables de entorno pre-configuradas
+ *   - Scripts no interactivos (setup-supabase-env.mjs)
  */
 
 import { readFileSync, existsSync } from 'fs'
@@ -185,4 +210,3 @@ main().catch((error) => {
   rl.close()
   process.exit(1)
 })
-

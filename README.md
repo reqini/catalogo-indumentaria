@@ -97,6 +97,42 @@ npm run dev
 http://localhost:3000
 ```
 
+## 🛠️ Scripts de Utilidad
+
+El proyecto incluye varios scripts de utilidad para desarrollo y setup:
+
+### Iconos PWA
+```bash
+# Generar iconos PWA básicos
+pnpm pwa:icons
+
+# Generar iconos PWA con branding "AS" (recomendado)
+pnpm pwa:icons:real
+```
+
+**Nota:** Los iconos PWA deben estar commitados en el repositorio. No se generan automáticamente en el build.
+
+### Generación de Secrets
+```bash
+# Generar JWT_SECRET seguro
+pnpm jwt:generate
+```
+
+**Después de ejecutar:** Copia el valor generado y configúralo en `.env.local` y Vercel Dashboard.
+
+### Guías Interactivas
+```bash
+# Guía paso a paso para configurar Supabase
+pnpm supabase:help
+```
+
+**Nota:** Este script requiere terminal interactiva y NO debe ejecutarse en CI/CD.
+
+### Documentación Completa
+Ver [`docs/SCRIPTS_UTILIDADES.md`](docs/SCRIPTS_UTILIDADES.md) para documentación detallada de todos los scripts.
+
+---
+
 ## 🏗️ Estructura del Proyecto
 
 ```

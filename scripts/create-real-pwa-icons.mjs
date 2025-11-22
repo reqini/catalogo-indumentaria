@@ -2,7 +2,31 @@
 
 /**
  * Script para crear íconos PWA REALES (192x192 y 512x512)
- * Genera PNGs válidos usando sharp (más confiable que canvas)
+ * 
+ * PROPÓSITO:
+ *   Genera PNGs válidos usando sharp (más confiable que canvas)
+ *   Crea iconos con el branding "AS" (Así Somos)
+ * 
+ * CUÁNDO EJECUTAR:
+ *   - Manualmente cuando cambies el logo o necesites regenerar iconos
+ *   - Localmente durante desarrollo/setup inicial
+ *   - NO se ejecuta automáticamente en build de Vercel
+ * 
+ * USO:
+ *   pnpm pwa:icons:real
+ * 
+ * REQUISITOS:
+ *   - Dependencia opcional: sharp (preferido) o canvas (fallback)
+ *   - Si ninguna está disponible, el script fallará con instrucciones alternativas
+ * 
+ * NOTA:
+ *   Este script NO debe ejecutarse en el build de Vercel porque:
+ *   1. Requiere dependencias opcionales (sharp/canvas) que pueden no estar disponibles
+ *   2. Los iconos deben estar commitados en el repo, no generarse en cada build
+ *   3. Es un paso manual que se hace cuando cambia el logo
+ * 
+ * RECOMENDACIÓN:
+ *   Usa este script en lugar de create-pwa-icons.mjs porque es más robusto
  */
 
 import fs from 'fs'
@@ -136,4 +160,3 @@ async function main() {
 }
 
 main().catch(console.error)
-

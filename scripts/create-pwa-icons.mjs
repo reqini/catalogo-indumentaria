@@ -1,6 +1,28 @@
+#!/usr/bin/env node
+
 /**
  * Script para crear iconos PWA válidos
- * Genera iconos de 192x192 y 512x512 píxeles
+ * 
+ * PROPÓSITO:
+ *   Genera iconos de 192x192 y 512x512 píxeles para PWA
+ * 
+ * CUÁNDO EJECUTAR:
+ *   - Manualmente cuando cambies el logo o necesites regenerar iconos
+ *   - Localmente durante desarrollo/setup inicial
+ *   - NO se ejecuta automáticamente en build de Vercel
+ * 
+ * USO:
+ *   pnpm pwa:icons
+ * 
+ * REQUISITOS:
+ *   - Dependencia opcional: canvas (se instala automáticamente si está disponible)
+ *   - Si canvas no está disponible, el script fallará con instrucciones alternativas
+ * 
+ * NOTA:
+ *   Este script NO debe ejecutarse en el build de Vercel porque:
+ *   1. Requiere dependencias opcionales (canvas) que pueden no estar disponibles
+ *   2. Los iconos deben estar commitados en el repo, no generarse en cada build
+ *   3. Es un paso manual que se hace cuando cambia el logo
  */
 
 import fs from 'fs'
@@ -62,7 +84,6 @@ try {
   console.log('\n📝 Alternativa: Usa un servicio online como:')
   console.log('   - https://realfavicongenerator.net/')
   console.log('   - https://www.favicon-generator.org/')
-  console.log('   O instala canvas: pnpm add canvas')
+  console.log('   O instala canvas: pnpm add -D canvas')
   process.exit(1)
 }
-
