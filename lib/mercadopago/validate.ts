@@ -18,36 +18,56 @@ export interface MercadoPagoConfig {
  */
 export function validateMercadoPagoConfig(): MercadoPagoConfig {
   // CRÍTICO: Leer variables de entorno en runtime, no al cargar módulo
-  const accessToken = process.env.MP_ACCESS_TOKEN
-  const publicKey = process.env.NEXT_PUBLIC_MP_PUBLIC_KEY
+  // Usar múltiples formas de lectura para asegurar compatibilidad
+  const accessToken = process.env.MP_ACCESS_TOKEN || process.env['MP_ACCESS_TOKEN']
+  const publicKey =
+    process.env.NEXT_PUBLIC_MP_PUBLIC_KEY || process.env['NEXT_PUBLIC_MP_PUBLIC_KEY']
 
-  // Logs de diagnóstico para debugging (solo en desarrollo o cuando falta el token)
-  const isDevelopment = process.env.NODE_ENV === 'development' || !process.env.VERCEL_ENV
-  if (!accessToken || isDevelopment) {
-    console.log('[MP-VALIDATE] 🔍 Diagnóstico de configuración:')
-    console.log('[MP-VALIDATE]   - MP_ACCESS_TOKEN presente:', !!accessToken)
-    console.log('[MP-VALIDATE]   - Entorno:', process.env.NODE_ENV || 'development')
-    console.log('[MP-VALIDATE]   - VERCEL_ENV:', process.env.VERCEL_ENV || 'local')
-    console.log('[MP-VALIDATE]   - VERCEL:', process.env.VERCEL || 'no definido')
+  const VERCEL_ENV = process.env.VERCEL_ENV || 'local'
+  const NODE_ENV = process.env.NODE_ENV || 'development'
+  const IS_VERCEL = !!process.env.VERCEL
 
-    if (!accessToken) {
-      // Listar todas las variables que contienen "MP" para debugging
-      const mpRelatedVars = Object.keys(process.env).filter(
-        (key) => key.toUpperCase().includes('MP') || key.toUpperCase().includes('MERCADO')
-      )
-      if (mpRelatedVars.length > 0) {
+  // Logs de diagnóstico SIEMPRE cuando falta el token (incluso en producción)
+  if (!accessToken) {
+    console.error('[MP-VALIDATE] ❌ MP_ACCESS_TOKEN NO ENCONTRADO')
+    console.error('[MP-VALIDATE] ==========================================')
+    console.error('[MP-VALIDATE] Entorno:', NODE_ENV)
+    console.error('[MP-VALIDATE] VERCEL_ENV:', VERCEL_ENV)
+    console.error('[MP-VALIDATE] VERCEL:', IS_VERCEL ? 'SÍ' : 'NO')
+    console.error('[MP-VALIDATE] VERCEL_URL:', process.env.VERCEL_URL || 'no definido')
+
+    // Listar TODAS las variables que contienen "MP" para debugging
+    const mpRelatedVars = Object.keys(process.env).filter(
+      (key) => key.toUpperCase().includes('MP') || key.toUpperCase().includes('MERCADO')
+    )
+
+    if (mpRelatedVars.length > 0) {
+      console.warn('[MP-VALIDATE] ⚠️ Variables relacionadas encontradas:', mpRelatedVars.length)
+      mpRelatedVars.forEach((key) => {
+        const value = process.env[key]
         console.warn(
-          '[MP-VALIDATE] ⚠️ Variables relacionadas encontradas:',
-          mpRelatedVars.join(', ')
+          `[MP-VALIDATE]   - ${key}: ${value ? `${value.substring(0, 20)}...` : 'undefined'}`
         )
-        console.warn('[MP-VALIDATE] ⚠️ Pero MP_ACCESS_TOKEN específicamente NO está presente')
-      } else {
-        console.error('[MP-VALIDATE] ❌ No se encontraron variables relacionadas con MP')
-        console.error(
-          '[MP-VALIDATE] ❌ Verifica que las variables estén configuradas en Vercel Dashboard'
-        )
-        console.error('[MP-VALIDATE] ❌ Y que hayas hecho REDEPLOY después de agregarlas')
-      }
+      })
+      console.warn('[MP-VALIDATE] ⚠️ Pero MP_ACCESS_TOKEN específicamente NO está presente')
+      console.warn('[MP-VALIDATE] ⚠️ Verifica que el nombre sea exactamente: MP_ACCESS_TOKEN')
+    } else {
+      console.error('[MP-VALIDATE] ❌ No se encontraron variables relacionadas con MP')
+      console.error('[MP-VALIDATE] ❌ Esto significa que las variables NO están disponibles')
+      console.error('[MP-VALIDATE] ❌ Posibles causas:')
+      console.error('[MP-VALIDATE]    1. Variables no agregadas en Vercel Dashboard')
+      console.error('[MP-VALIDATE]    2. Variables agregadas pero NO se hizo REDEPLOY')
+      console.error('[MP-VALIDATE]    3. Variables en entorno incorrecto (Preview vs Production)')
+      console.error('[MP-VALIDATE]    4. Nombre de variable incorrecto')
+    }
+    console.error('[MP-VALIDATE] ==========================================')
+  } else {
+    // Log solo en desarrollo cuando el token está presente
+    const isDevelopment = NODE_ENV === 'development' || !IS_VERCEL
+    if (isDevelopment) {
+      console.log('[MP-VALIDATE] ✅ MP_ACCESS_TOKEN encontrado')
+      console.log('[MP-VALIDATE]   - Longitud:', accessToken.length)
+      console.log('[MP-VALIDATE]   - Empieza con:', accessToken.substring(0, 15) + '...')
     }
   }
 

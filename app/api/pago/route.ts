@@ -9,6 +9,57 @@ import { validateMercadoPagoConfig, getMercadoPagoErrorMessage } from '@/lib/mer
 
 export async function POST(request: Request) {
   try {
+    // CRÍTICO: Leer variable directamente primero para diagnóstico
+    const MP_ACCESS_TOKEN_DIRECT = process.env.MP_ACCESS_TOKEN
+    const VERCEL_ENV = process.env.VERCEL_ENV || 'local'
+    const NODE_ENV = process.env.NODE_ENV || 'development'
+    const IS_VERCEL = !!process.env.VERCEL
+
+    // Logs detallados de diagnóstico ANTES de validar
+    console.log('[MP-PAYMENT] 🔍 DIAGNÓSTICO COMPLETO DE VARIABLES DE ENTORNO')
+    console.log('[MP-PAYMENT] ==========================================')
+    console.log('[MP-PAYMENT] Entorno:', NODE_ENV)
+    console.log('[MP-PAYMENT] VERCEL_ENV:', VERCEL_ENV)
+    console.log('[MP-PAYMENT] VERCEL:', IS_VERCEL ? 'SÍ' : 'NO')
+    console.log('[MP-PAYMENT] VERCEL_URL:', process.env.VERCEL_URL || 'no definido')
+    console.log('[MP-PAYMENT] ------------------------------------------')
+    console.log(
+      '[MP-PAYMENT] MP_ACCESS_TOKEN (directo):',
+      MP_ACCESS_TOKEN_DIRECT ? '✅ PRESENTE' : '❌ NO ENCONTRADO'
+    )
+    if (MP_ACCESS_TOKEN_DIRECT) {
+      console.log('[MP-PAYMENT]   - Longitud:', MP_ACCESS_TOKEN_DIRECT.length)
+      console.log('[MP-PAYMENT]   - Empieza con:', MP_ACCESS_TOKEN_DIRECT.substring(0, 15) + '...')
+      console.log(
+        '[MP-PAYMENT]   - Formato válido:',
+        MP_ACCESS_TOKEN_DIRECT.startsWith('APP_USR-') || MP_ACCESS_TOKEN_DIRECT.startsWith('TEST-')
+          ? '✅'
+          : '❌'
+      )
+    }
+
+    // Listar TODAS las variables que contienen MP o MERCADO
+    const allMPVars = Object.keys(process.env).filter(
+      (key) => key.toUpperCase().includes('MP') || key.toUpperCase().includes('MERCADO')
+    )
+    console.log('[MP-PAYMENT] Variables relacionadas con MP encontradas:', allMPVars.length)
+    if (allMPVars.length > 0) {
+      allMPVars.forEach((key) => {
+        const value = process.env[key]
+        const preview = value ? `${value.substring(0, 20)}...` : 'undefined'
+        console.log(`[MP-PAYMENT]   - ${key}: ${preview} (length: ${value?.length || 0})`)
+      })
+    } else {
+      console.error('[MP-PAYMENT] ❌ NO se encontraron variables relacionadas con MP')
+      console.error(
+        '[MP-PAYMENT] ❌ Esto significa que las variables NO están disponibles en este deployment'
+      )
+      console.error(
+        '[MP-PAYMENT] ❌ SOLUCIÓN: Hacer REDEPLOY después de agregar variables en Vercel Dashboard'
+      )
+    }
+    console.log('[MP-PAYMENT] ==========================================')
+
     // CRÍTICO: Validar configuración en runtime (no al cargar módulo)
     // Esto asegura que detectamos cambios en variables de entorno
     const mpConfig = validateMercadoPagoConfig()
@@ -20,8 +71,9 @@ export async function POST(request: Request) {
       isProduction: mpConfig.isProduction,
       hasAccessToken: !!MP_ACCESS_TOKEN,
       tokenLength: MP_ACCESS_TOKEN?.length || 0,
-      environment: process.env.NODE_ENV || 'development',
-      vercelEnv: process.env.VERCEL_ENV || 'local',
+      environment: NODE_ENV,
+      vercelEnv: VERCEL_ENV,
+      directCheck: !!MP_ACCESS_TOKEN_DIRECT,
     })
 
     const body = await request.json()
@@ -65,33 +117,53 @@ export async function POST(request: Request) {
     }
 
     // Validar configuración de Mercado Pago
-    if (!mpConfig.isValid) {
+    if (!mpConfig.isValid || !MP_ACCESS_TOKEN) {
       const errorMessage = getMercadoPagoErrorMessage(mpConfig)
+
+      // Logs detallados del error
       console.error('[MP-PAYMENT] ❌ Mercado Pago no configurado correctamente')
+      console.error('[MP-PAYMENT] ==========================================')
       console.error('[MP-PAYMENT] Errores detectados:', mpConfig.errors)
       console.error('[MP-PAYMENT] Access Token presente:', !!MP_ACCESS_TOKEN)
+      console.error('[MP-PAYMENT] Access Token (directo) presente:', !!MP_ACCESS_TOKEN_DIRECT)
       console.error('[MP-PAYMENT] Access Token length:', MP_ACCESS_TOKEN?.length || 0)
       console.error(
         '[MP-PAYMENT] Access Token starts with:',
         MP_ACCESS_TOKEN?.substring(0, 10) || 'N/A'
       )
-      console.error('[MP-PAYMENT] Entorno:', process.env.NODE_ENV || 'development')
-      console.error('[MP-PAYMENT] VERCEL_ENV:', process.env.VERCEL_ENV || 'local')
+      console.error('[MP-PAYMENT] Entorno:', NODE_ENV)
+      console.error('[MP-PAYMENT] VERCEL_ENV:', VERCEL_ENV)
+      console.error('[MP-PAYMENT] Es Vercel:', IS_VERCEL)
+      console.error('[MP-PAYMENT] ==========================================')
 
+      // CRÍTICO: Retornar 503 (Service Unavailable) en vez de 500 (Internal Server Error)
+      // Esto es más amigable y no rompe el sitio
       return NextResponse.json(
         {
-          error: 'Mercado Pago no configurado',
-          details: errorMessage,
-          errors: mpConfig.errors,
+          error: 'checkout-disabled',
+          message:
+            'El servicio de pago está temporalmente deshabilitado. Estamos actualizando la configuración.',
+          details: IS_VERCEL
+            ? 'Las variables de entorno no están disponibles en este deployment. Por favor, verifica que MP_ACCESS_TOKEN esté configurado en Vercel Dashboard y haz un redeploy.'
+            : 'MP_ACCESS_TOKEN no está configurado. Configura la variable en .env.local para desarrollo local.',
+          technical: {
+            hasToken: !!MP_ACCESS_TOKEN,
+            hasTokenDirect: !!MP_ACCESS_TOKEN_DIRECT,
+            errors: mpConfig.errors,
+            environment: VERCEL_ENV,
+            allMPVars: allMPVars,
+          },
           help: {
             local: 'Configura MP_ACCESS_TOKEN en .env.local',
             production:
-              'Configura MP_ACCESS_TOKEN en Vercel Dashboard → Settings → Environment Variables',
+              'Configura MP_ACCESS_TOKEN en Vercel Dashboard → Settings → Environment Variables → Production',
+            redeploy: 'Después de agregar la variable, haz REDEPLOY en Vercel',
             docs: '/docs/configuracion-mercadopago.md',
             panel: 'https://www.mercadopago.com.ar/developers/panel',
+            verifyEndpoint: '/api/mp/verify-config',
           },
         },
-        { status: 500 }
+        { status: 503 } // Service Unavailable - más amigable que 500
       )
     }
 

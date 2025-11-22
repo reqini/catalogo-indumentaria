@@ -111,24 +111,42 @@ export default function CarritoPage() {
       }
     } catch (error: any) {
       console.error('[MP-PAYMENT] Error en frontend:', error)
-      const errorMessage =
-        error?.response?.data?.error || error?.message || 'Error al procesar el pago'
-      const errorDetails = error?.response?.data?.details || ''
+      const errorData = error?.response?.data || {}
+      const errorMessage = errorData.error || error?.message || 'Error al procesar el pago'
+      const errorDetails = errorData.details || errorData.message || ''
+      const statusCode = error?.response?.status || 500
 
-      if (errorMessage.includes('Stock insuficiente')) {
+      // Manejo específico de errores
+      if (errorMessage === 'checkout-disabled' || statusCode === 503) {
+        // Servicio temporalmente deshabilitado - mensaje amigable
+        toast.error(
+          'El servicio de pago está temporalmente deshabilitado. Estamos actualizando la configuración. Por favor, intentá nuevamente en unos minutos.',
+          {
+            duration: 5000,
+          }
+        )
+        console.error('[MP-PAYMENT] Checkout deshabilitado:', errorData)
+      } else if (errorMessage.includes('Stock insuficiente')) {
         toast.error(errorMessage)
       } else if (
         errorMessage.includes('No se pudo iniciar el pago') ||
-        errorMessage.includes('Error al crear preferencia')
+        errorMessage.includes('Error al crear preferencia') ||
+        errorMessage.includes('Mercado Pago no configurado')
       ) {
-        // Mostrar detalles del error si están disponibles
-        const mpError = error?.response?.data?.mpError
+        // Error de configuración de Mercado Pago
+        const mpError = errorData.mpError || errorData.technical
         if (mpError?.message) {
           toast.error(`Error de Mercado Pago: ${mpError.message}`)
         } else {
-          toast.error('No se pudo iniciar el pago. Intentalo nuevamente en unos minutos.')
+          toast.error(
+            'No se pudo iniciar el pago. Por favor, intentá nuevamente en unos minutos.',
+            {
+              duration: 5000,
+            }
+          )
         }
         console.error('[MP-PAYMENT] Error completo:', error)
+        console.error('[MP-PAYMENT] Error data:', errorData)
       } else {
         toast.error(errorDetails ? `${errorMessage}: ${errorDetails}` : errorMessage)
       }
