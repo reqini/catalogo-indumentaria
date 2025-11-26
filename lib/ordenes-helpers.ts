@@ -91,47 +91,78 @@ export interface Order {
  */
 export async function createOrder(orderData: OrderData): Promise<Order | null> {
   try {
-    const { data, error } = await supabaseAdmin
-      .from('ordenes')
-      .insert({
-        cliente_nombre: orderData.cliente.nombre,
-        cliente_email: orderData.cliente.email,
-        cliente_telefono: orderData.cliente.telefono,
-        direccion_calle: orderData.direccion.calle,
-        direccion_numero: orderData.direccion.numero,
-        direccion_piso_depto: orderData.direccion.pisoDepto,
-        direccion_codigo_postal: orderData.direccion.codigoPostal,
-        direccion_localidad: orderData.direccion.localidad,
-        direccion_provincia: orderData.direccion.provincia,
-        direccion_pais: orderData.direccion.pais || 'Argentina',
-        envio_tipo: orderData.envio.tipo,
-        envio_metodo: orderData.envio.metodo,
-        envio_costo: orderData.envio.costo,
-        envio_proveedor: orderData.envio.proveedor,
-        items: orderData.items,
-        subtotal: orderData.subtotal,
-        descuento: orderData.descuento || 0,
-        envio_costo_total: orderData.envioCosto,
-        total: orderData.total,
-        pago_metodo: 'mercadopago',
-        pago_estado: 'pendiente',
-        estado: 'pendiente',
-        notas: orderData.notas,
-        metadata: {},
-      })
-      .select()
-      .single()
+    console.log('[ORDENES] 🔍 Iniciando creación de orden:', {
+      cliente: orderData.cliente.nombre,
+      email: orderData.cliente.email,
+      itemsCount: orderData.items.length,
+      total: orderData.total,
+      envioCosto: orderData.envioCosto,
+    })
 
-    if (error) {
-      console.error('[ORDENES] Error creando orden:', error)
-      return null
+    // Validar que supabaseAdmin esté configurado
+    if (!supabaseAdmin) {
+      console.error('[ORDENES] ❌ supabaseAdmin no está configurado')
+      throw new Error('Supabase no está configurado correctamente')
     }
 
-    console.log('[ORDENES] ✅ Orden creada:', data.id)
+    // Preparar datos de inserción con validaciones
+    const insertData = {
+      cliente_nombre: orderData.cliente.nombre,
+      cliente_email: orderData.cliente.email,
+      cliente_telefono: orderData.cliente.telefono || null,
+      direccion_calle: orderData.direccion.calle,
+      direccion_numero: orderData.direccion.numero,
+      direccion_piso_depto: orderData.direccion.pisoDepto || null,
+      direccion_codigo_postal: orderData.direccion.codigoPostal,
+      direccion_localidad: orderData.direccion.localidad,
+      direccion_provincia: orderData.direccion.provincia,
+      direccion_pais: orderData.direccion.pais || 'Argentina',
+      envio_tipo: orderData.envio.tipo,
+      envio_metodo: orderData.envio.metodo || null,
+      envio_costo: Number(orderData.envio.costo) || 0,
+      envio_proveedor: orderData.envio.proveedor || null,
+      items: orderData.items as any, // JSONB
+      subtotal: Number(orderData.subtotal) || 0,
+      descuento: Number(orderData.descuento) || 0,
+      envio_costo_total: Number(orderData.envioCosto) || 0,
+      total: Number(orderData.total) || 0,
+      pago_metodo: 'mercadopago',
+      pago_estado: 'pendiente',
+      estado: 'pendiente',
+      estado_fecha: new Date().toISOString(),
+      notas: orderData.notas || null,
+      metadata: {} as any,
+    }
+
+    console.log('[ORDENES] 📤 Insertando orden en BD:', {
+      cliente_nombre: insertData.cliente_nombre,
+      itemsCount: Array.isArray(insertData.items) ? insertData.items.length : 0,
+      total: insertData.total,
+    })
+
+    const { data, error } = await supabaseAdmin.from('ordenes').insert(insertData).select().single()
+
+    if (error) {
+      console.error('[ORDENES] ❌ Error creando orden en Supabase:')
+      console.error('[ORDENES]   - Código:', error.code)
+      console.error('[ORDENES]   - Mensaje:', error.message)
+      console.error('[ORDENES]   - Detalles:', error.details)
+      console.error('[ORDENES]   - Hint:', error.hint)
+      console.error('[ORDENES]   - Datos enviados:', JSON.stringify(insertData, null, 2))
+      throw new Error(`Error al crear orden en BD: ${error.message} (${error.code})`)
+    }
+
+    if (!data) {
+      console.error('[ORDENES] ❌ No se retornó data después de insert')
+      throw new Error('No se pudo crear la orden: respuesta vacía de Supabase')
+    }
+
+    console.log('[ORDENES] ✅ Orden creada exitosamente:', data.id)
     return data as Order
   } catch (error: any) {
-    console.error('[ORDENES] Error inesperado creando orden:', error)
-    return null
+    console.error('[ORDENES] ❌ Error inesperado creando orden:', error)
+    console.error('[ORDENES]   - Stack:', error.stack)
+    throw error // Re-lanzar para que el endpoint pueda manejarlo
   }
 }
 

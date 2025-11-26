@@ -158,18 +158,9 @@ export default function CheckoutPage() {
         }
       })
 
-      // Si hay envío, agregarlo como item
-      if (selectedShipping && selectedShipping.precio > 0) {
-        orderItems.push({
-          id: 'envio',
-          nombre: `Envío - ${selectedShipping.nombre}`,
-          precio: selectedShipping.precio,
-          cantidad: 1,
-          talle: '',
-          subtotal: selectedShipping.precio,
-          imagenPrincipal: '',
-        })
-      }
+      // Si hay envío, agregarlo como item (pero NO incluirlo en items de la orden)
+      // El envío se maneja por separado en el campo envio
+      // No agregar envío a orderItems porque se filtra después
 
       const orderData = {
         cliente: {
@@ -216,8 +207,21 @@ export default function CheckoutPage() {
       })
 
       if (!orderResponse.ok) {
-        const errorData = await orderResponse.json()
-        throw new Error(errorData.error || 'Error al crear la orden')
+        let errorData
+        try {
+          errorData = await orderResponse.json()
+        } catch {
+          errorData = { error: `Error HTTP ${orderResponse.status}` }
+        }
+
+        console.error('[CHECKOUT] ❌ Error del servidor:', errorData)
+
+        // Mostrar mensaje de error más detallado
+        const errorMessage = errorData.details
+          ? `${errorData.error}: ${errorData.details}`
+          : errorData.error || 'Error al crear la orden'
+
+        throw new Error(errorMessage)
       }
 
       const { orderId, preferenceId, initPoint } = await orderResponse.json()

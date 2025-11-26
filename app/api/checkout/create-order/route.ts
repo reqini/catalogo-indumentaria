@@ -48,10 +48,34 @@ const createOrderSchema = z.object({
 
 export async function POST(request: Request) {
   try {
+    console.log('[CHECKOUT] 📥 Request recibido en /api/checkout/create-order')
+
     const body = await request.json()
+    console.log('[CHECKOUT] 📋 Body recibido:', {
+      cliente: body.cliente?.nombre,
+      itemsCount: body.items?.length,
+      envioCosto: body.envioCosto,
+      total: body.total,
+    })
 
     // Validar datos
-    const validatedData = createOrderSchema.parse(body)
+    let validatedData
+    try {
+      validatedData = createOrderSchema.parse(body)
+      console.log('[CHECKOUT] ✅ Validación de datos exitosa')
+    } catch (validationError: any) {
+      console.error('[CHECKOUT] ❌ Error de validación:', validationError)
+      if (validationError instanceof z.ZodError) {
+        return NextResponse.json(
+          {
+            error: 'Datos inválidos',
+            details: validationError.errors,
+          },
+          { status: 400 }
+        )
+      }
+      throw validationError
+    }
 
     // Validar stock antes de crear orden
     for (const item of validatedData.items) {
@@ -90,10 +114,36 @@ export async function POST(request: Request) {
     }
 
     // Crear orden en la base de datos
-    const order = await createOrder(validatedData as OrderData)
+    let order: Order | null = null
+    try {
+      order = await createOrder(validatedData as OrderData)
+    } catch (orderError: any) {
+      console.error('[CHECKOUT] ❌ Error detallado al crear orden:', orderError)
+      console.error('[CHECKOUT]   - Mensaje:', orderError.message)
+      console.error('[CHECKOUT]   - Stack:', orderError.stack)
+
+      return NextResponse.json(
+        {
+          error: 'Error al crear la orden en la base de datos',
+          details: orderError.message || 'Error desconocido',
+          code: orderError.code || 'UNKNOWN',
+          hint:
+            orderError.hint ||
+            'Verifica que la tabla "ordenes" exista y tenga la estructura correcta',
+        },
+        { status: 500 }
+      )
+    }
 
     if (!order) {
-      return NextResponse.json({ error: 'Error al crear la orden' }, { status: 500 })
+      console.error('[CHECKOUT] ❌ createOrder retornó null sin lanzar error')
+      return NextResponse.json(
+        {
+          error: 'Error al crear la orden',
+          details: 'La función createOrder retornó null sin información adicional',
+        },
+        { status: 500 }
+      )
     }
 
     console.log('[CHECKOUT] ✅ Orden creada:', order.id)
