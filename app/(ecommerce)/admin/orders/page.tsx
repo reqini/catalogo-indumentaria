@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Package, CheckCircle2, Clock, XCircle, Truck, Eye, Loader2 } from 'lucide-react'
@@ -54,11 +54,7 @@ export default function AdminOrdersPage() {
   )
   const [updatingOrder, setUpdatingOrder] = useState<string | null>(null)
 
-  useEffect(() => {
-    fetchOrders()
-  }, [filter])
-
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     try {
       setLoading(true)
       const params = new URLSearchParams()
@@ -79,7 +75,11 @@ export default function AdminOrdersPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [filter])
+
+  useEffect(() => {
+    fetchOrders()
+  }, [fetchOrders])
 
   const updateOrderStatus = async (orderId: string, newStatus: 'enviada' | 'entregada') => {
     try {

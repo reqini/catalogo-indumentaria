@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import {
@@ -76,11 +76,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
   const [logs, setLogs] = useState<OrderLog[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    fetchOrder()
-  }, [params.id])
-
-  const fetchOrder = async () => {
+  const fetchOrder = useCallback(async () => {
     try {
       setLoading(true)
       const response = await fetch(`/api/admin/orders/${params.id}`)
@@ -97,7 +93,11 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
     } finally {
       setLoading(false)
     }
-  }
+  }, [params.id])
+
+  useEffect(() => {
+    fetchOrder()
+  }, [fetchOrder])
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('es-AR', {

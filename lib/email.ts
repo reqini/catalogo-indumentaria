@@ -18,28 +18,35 @@ async function getTransporter(): Promise<any | null> {
 
   if (cachedTransporter) return cachedTransporter
 
-  // Import dinámico usando require envuelto en try/catch.
+  // Import dinámico usando import() para evitar errores en build time
   // Se tipa como any para evitar depender de los tipos de nodemailer en build.
-  let nodemailer: any
   try {
-    // eslint-disable-next-line global-require
-    nodemailer = require('nodemailer')
-  } catch {
-    console.warn('[Email] nodemailer no instalado, usando modo simulado')
+    // Usar import dinámico que no falla en build time si el módulo no existe
+    const nodemailerModule = await import('nodemailer').catch(() => null)
+
+    if (!nodemailerModule || !nodemailerModule.default) {
+      console.warn('[Email] nodemailer no instalado, usando modo simulado')
+      return null
+    }
+
+    const nodemailer = nodemailerModule.default
+
+    cachedTransporter = nodemailer.createTransport({
+      host: SMTP_HOST,
+      port: Number(SMTP_PORT),
+      secure: Number(SMTP_PORT) === 465,
+      auth: {
+        user: SMTP_USER,
+        pass: SMTP_PASS,
+      },
+    })
+
+    return cachedTransporter
+  } catch (error: any) {
+    console.warn('[Email] Error al inicializar nodemailer:', error.message)
+    console.warn('[Email] Usando modo simulado')
     return null
   }
-
-  cachedTransporter = (nodemailer as any).createTransport({
-    host: SMTP_HOST,
-    port: Number(SMTP_PORT),
-    secure: Number(SMTP_PORT) === 465,
-    auth: {
-      user: SMTP_USER,
-      pass: SMTP_PASS,
-    },
-  })
-
-  return cachedTransporter
 }
 
 export async function sendEmail(options: EmailOptions): Promise<{ simulated: boolean }> {
@@ -66,5 +73,3 @@ export async function sendEmail(options: EmailOptions): Promise<{ simulated: boo
   await transporter.sendMail(payload)
   return { simulated: false }
 }
-
-

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, Suspense } from 'react'
+import { useEffect, useState, Suspense, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import {
@@ -38,13 +38,9 @@ function TrackingContent() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (trackingNumber) {
-      fetchTracking()
-    }
-  }, [trackingNumber])
+  const fetchTracking = useCallback(async () => {
+    if (!trackingNumber) return
 
-  const fetchTracking = async () => {
     try {
       setLoading(true)
       setError(null)
@@ -60,7 +56,7 @@ function TrackingContent() {
         return
       }
 
-      const data = await response.json()
+      const data: TrackingInfo = await response.json()
       setTracking(data)
     } catch (err: any) {
       console.error('Error fetching tracking:', err)
@@ -68,7 +64,13 @@ function TrackingContent() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [trackingNumber])
+
+  useEffect(() => {
+    if (trackingNumber) {
+      fetchTracking()
+    }
+  }, [trackingNumber, fetchTracking])
 
   const getStatusIcon = (status: string) => {
     switch (status.toLowerCase()) {
