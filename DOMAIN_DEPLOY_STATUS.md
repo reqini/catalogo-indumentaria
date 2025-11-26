@@ -35,9 +35,9 @@
 
 **URL del Deployment:** `https://catalogo-indumentaria-git-main-billeteraaps-projects.vercel.app`
 
-**Commit SHA:** `35eb019`
+**Commit SHA:** `3a5e700`
 
-**Mensaje del Commit:** `docs: reporte de estado de deploy - configuración producción completa`
+**Mensaje del Commit:** `docs: reporte estado dominio deploy - configuración producción completa`
 
 **Fecha/Hora:** ${new Date().toLocaleString('es-AR')}
 
