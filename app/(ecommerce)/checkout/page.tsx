@@ -451,8 +451,20 @@ export default function CheckoutPage() {
         errorMessage = 'La solicitud tardó demasiado. Intentá nuevamente.'
       }
 
-      toast.error(errorMessage)
+      // Mostrar error visible con duración extendida
+      toast.error(errorMessage, {
+        duration: 6000,
+        style: {
+          background: '#dc2626',
+          color: '#fff',
+          fontSize: '16px',
+          padding: '16px',
+        },
+      })
+
+      // Resetear estado de procesamiento
       setIsProcessing(false)
+      console.log('[CHECKOUT][CLIENT] ✅ Estado resetado después de error')
     }
   }
 
