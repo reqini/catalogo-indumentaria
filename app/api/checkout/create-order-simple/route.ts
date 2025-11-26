@@ -155,7 +155,7 @@ export async function POST(request: Request) {
             request.headers.get('origin') ||
             'https://catalogo-indumentaria.vercel.app'
           const createTableResponse = await fetch(
-            `${baseUrl}/api/admin/crear-tabla-ordenes-urgente`,
+            `${baseUrl}/api/admin/crear-tabla-ordenes-emergencia`,
             {
               method: 'POST',
               headers: {
@@ -172,7 +172,7 @@ export async function POST(request: Request) {
               // Esperar un momento para que se actualice el cache
               await new Promise((resolve) => setTimeout(resolve, 2000))
 
-              // Reintentar crear orden
+              // Reintentar crear orden (simpleOrderData está en scope)
               const retryOrder = await createSimpleOrder(simpleOrderData)
               if (retryOrder && retryOrder.id) {
                 orderId = retryOrder.id
