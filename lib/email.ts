@@ -18,19 +18,18 @@ async function getTransporter(): Promise<any | null> {
 
   if (cachedTransporter) return cachedTransporter
 
-  // Import dinámico usando import() para evitar errores en build time
-  // Se tipa como any para evitar depender de los tipos de nodemailer en build.
+  // Import completamente opcional usando require dinámico
+  // Esto evita que webpack intente resolver el módulo en build time
   try {
-    // Usar import dinámico que no falla en build time si el módulo no existe
-    // @ts-ignore - nodemailer es opcional, puede no estar instalado
-    const nodemailerModule = await import('nodemailer').catch(() => null)
+    // Usar require dinámico que solo se ejecuta en runtime
+    // Esto evita que webpack lo analice en build time
+    const requireDynamic = new Function('moduleName', 'return require(moduleName)')
+    const nodemailer = requireDynamic('nodemailer')
 
-    if (!nodemailerModule || !nodemailerModule.default) {
-      console.warn('[Email] nodemailer no instalado, usando modo simulado')
+    if (!nodemailer || !nodemailer.createTransport) {
+      console.warn('[Email] nodemailer no disponible, usando modo simulado')
       return null
     }
-
-    const nodemailer = nodemailerModule.default
 
     cachedTransporter = nodemailer.createTransport({
       host: SMTP_HOST,
@@ -44,8 +43,8 @@ async function getTransporter(): Promise<any | null> {
 
     return cachedTransporter
   } catch (error: any) {
-    console.warn('[Email] Error al inicializar nodemailer:', error.message)
-    console.warn('[Email] Usando modo simulado')
+    // Si nodemailer no está instalado, simplemente usar modo simulado
+    console.warn('[Email] nodemailer no instalado o no disponible, usando modo simulado')
     return null
   }
 }
