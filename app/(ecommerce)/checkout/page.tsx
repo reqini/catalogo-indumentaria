@@ -416,27 +416,66 @@ export default function CheckoutPage() {
       }
 
       // Validar estructura de respuesta
-      if (!responseData.ok || !responseData.initPoint) {
-        console.error('[CHECKOUT][CLIENT] ❌ Respuesta inválida:', responseData)
+      if (!responseData.ok) {
+        console.error('[CHECKOUT][CLIENT] ❌ [ERROR] Respuesta indica error:', {
+          ok: responseData.ok,
+          code: responseData.code,
+          message: responseData.message,
+          detail: responseData.detail,
+          fullResponse: responseData,
+        })
         const errorMsg =
           responseData.message || responseData.error || 'No se pudo crear la preferencia de pago'
         throw new Error(errorMsg)
       }
 
-      const { orderId, preferenceId, initPoint } = responseData
+      // Validar que initPoint esté presente (puede venir como initPoint o mpInitPoint)
+      if (!responseData.initPoint && !responseData.mpInitPoint) {
+        console.error('[CHECKOUT][CLIENT] ❌ [ERROR] Respuesta sin initPoint:', {
+          hasInitPoint: !!responseData.initPoint,
+          hasMpInitPoint: !!responseData.mpInitPoint,
+          responseKeys: Object.keys(responseData),
+          fullResponse: responseData,
+        })
+        throw new Error('No se recibió una URL válida de Mercado Pago en la respuesta')
+      }
+
+      // Validar estructura de respuesta
+      const orderId = responseData.orderId
+      const preferenceId = responseData.preferenceId
+      const initPoint = responseData.initPoint || responseData.mpInitPoint
 
       if (!initPoint || typeof initPoint !== 'string') {
-        console.error('[CHECKOUT][CLIENT] ❌ initPoint inválido:', initPoint)
+        console.error('[CHECKOUT][CLIENT] ❌ [ERROR] initPoint inválido:', {
+          hasInitPoint: !!initPoint,
+          type: typeof initPoint,
+          responseDataKeys: Object.keys(responseData),
+          fullResponse: responseData,
+        })
         throw new Error('No se recibió una URL válida de Mercado Pago')
       }
 
       // Validar que initPoint es una URL válida
       try {
-        new URL(initPoint)
+        const url = new URL(initPoint)
+        if (!url.protocol.startsWith('http')) {
+          throw new Error('URL debe usar protocolo HTTP/HTTPS')
+        }
       } catch (urlError) {
-        console.error('[CHECKOUT][CLIENT] ❌ initPoint no es una URL válida:', initPoint)
+        console.error('[CHECKOUT][CLIENT] ❌ [ERROR] initPoint no es una URL válida:', {
+          initPoint: initPoint.substring(0, 100),
+          error: urlError,
+        })
         throw new Error('La URL de pago recibida no es válida')
       }
+
+      console.log('[CHECKOUT][CLIENT] ✅ [SUCCESS] Respuesta válida recibida:', {
+        orderId,
+        preferenceId,
+        initPoint: initPoint.substring(0, 50) + '...',
+        totals: responseData.totals,
+        shipping: responseData.shipping,
+      })
 
       console.log('[CHECKOUT][CLIENT] 🎯 Redirigiendo a Mercado Pago...', {
         orderId,
@@ -449,6 +488,10 @@ export default function CheckoutPage() {
 
       // Redirigir a Mercado Pago después de un breve delay para que el usuario vea el mensaje
       setTimeout(() => {
+        console.log(
+          '[CHECKOUT][CLIENT] 🚀 Ejecutando redirección a:',
+          initPoint.substring(0, 50) + '...'
+        )
         window.location.href = initPoint
       }, 500)
     } catch (error: any) {
