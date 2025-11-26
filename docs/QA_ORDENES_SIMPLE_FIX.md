@@ -1,181 +1,74 @@
-# 🧪 QA: Fix Urgente de Error PGRST205 - Tabla Ordenes
+# 🧪 QA: Fix Definitivo de Error PGRST205 - Tabla Ordenes
 
 **Fecha:** 2024-11-26  
-**Prioridad:** 🔴 **CRÍTICA** - Bloquea todas las compras  
+**Prioridad:** 🔴 **CRÍTICA**  
 **Estado:** ⏳ **EN PROGRESO**
 
 ---
 
 ## 🎯 OBJETIVO
 
-Resolver definitivamente el error `PGRST205 - Could not find the table 'public.ordenes'` que está bloqueando todas las compras en producción.
+Verificar que el error `PGRST205` está completamente resuelto y que el flujo de creación de orden funciona correctamente en producción.
 
 ---
 
-## 🔍 DIAGNÓSTICO INICIAL
+## ✅ CHECKLIST DE VERIFICACIÓN
 
-### Error Detectado:
+### 1. Verificación de Tabla en Supabase
 
-```
-POST /api/checkout/create-order-simple → 500 Internal Server Error
-Error: Could not find the table 'public.ordenes' in the schema cache (PGRST205)
-```
+- [ ] Tabla `ordenes` existe en Supabase Dashboard → Table Editor
+- [ ] Estructura correcta (columnas: id, productos, comprador, envio, total, estado, created*at, updated_at, pago*\*)
+- [ ] Índices creados correctamente
+- [ ] Políticas RLS configuradas
 
-### Causa Raíz:
+### 2. Verificación de Endpoint
 
-- La tabla `ordenes` no existe en Supabase
-- La migración `006_create_ordenes_simple.sql` nunca se ejecutó
-- Sin tabla → no se pueden guardar órdenes → checkout falla
+- [ ] `GET /api/admin/verificar-y-crear-ordenes` retorna `exists: true`
+- [ ] `POST /api/admin/crear-ordenes-inmediato` funciona correctamente
+- [ ] Endpoint retorna SQL si la tabla no existe
 
----
+### 3. Prueba de Compra Completa
 
-## ✅ SOLUCIONES IMPLEMENTADAS
-
-### 1. Script Automático de Creación
-
-**Archivo:** `scripts/crear-tabla-ordenes-urgente.mjs`
-
-- ✅ Verifica si la tabla existe
-- ✅ Crea tabla automáticamente si no existe
-- ✅ Verifica funcionamiento con inserción de prueba
-- ✅ Logs detallados para debugging
-
-### 2. Endpoint API de Creación Automática
-
-**Archivo:** `app/api/admin/crear-tabla-ordenes-urgente/route.ts`
-
-- ✅ Endpoint POST para crear tabla automáticamente
-- ✅ Ejecuta SQL completo con todos los campos
-- ✅ Retorna SQL para ejecución manual si falla
-- ✅ Verifica creación después de ejecutar
-
-### 3. Endpoint de Verificación
-
-**Archivo:** `app/api/admin/verificar-y-crear-ordenes/route.ts`
-
-- ✅ Verifica existencia de tabla
-- ✅ Prueba inserción de orden de prueba
-- ✅ Retorna instrucciones claras si no existe
-- ✅ Incluye SQL completo para ejecución manual
-
-### 4. Mejoras en Código de Checkout
-
-**Archivo:** `app/api/checkout/create-order-simple/route.ts`
-
-- ✅ Detección automática de error PGRST205
-- ✅ Intento automático de crear tabla
-- ✅ Reintento de creación de orden después de crear tabla
-- ✅ Mensajes de error mejorados con instrucciones
-
-### 5. Mejoras en Helpers de Órdenes
-
-**Archivo:** `lib/ordenes-helpers-simple.ts`
-
-- ✅ Retry logic con backoff exponencial
-- ✅ Manejo mejorado de errores PGRST205
-- ✅ Logs detallados para debugging
-
-### 6. Migración SQL Actualizada
-
-**Archivo:** `supabase/migrations/006_create_ordenes_simple.sql`
-
-- ✅ SQL completo con todos los campos necesarios
-- ✅ Incluye campos de pago (pago_preferencia_id, pago_id, pago_estado, pago_fecha)
-- ✅ Índices para mejor performance
-- ✅ Políticas RLS configuradas
-- ✅ Trigger para updated_at automático
-
----
-
-## 🧪 CASOS DE PRUEBA
-
-### TC-001: Verificar Existencia de Tabla
+#### TC-001: Compra Simple con Retiro en Local
 
 **Pasos:**
 
-1. Llamar a `GET /api/admin/verificar-y-crear-ordenes`
-2. Verificar respuesta
+1. Ir a `/catalogo`
+2. Agregar producto al carrito
+3. Ir a `/carrito`
+4. Click en "Finalizar compra"
+5. Completar datos:
+   - Nombre: "Test Usuario"
+   - Email: "test@example.com"
+   - Teléfono: "+54 11 1234-5678"
+6. Seleccionar "Retiro en el local"
+7. Click en "Continuar a Resumen"
+8. Verificar resumen
+9. Click en "Pagar Ahora"
 
 **Resultado Esperado:**
 
-- Si tabla existe: `{"exists": true, "working": true}`
-- Si tabla NO existe: `{"exists": false, "error": "PGRST205", "sql": "..."}`
+- ✅ Orden creada en BD sin error PGRST205
+- ✅ Response 200 con `orderId` y `initPoint`
+- ✅ Redirección a Mercado Pago (o mensaje si no está configurado)
+- ✅ Orden visible en Supabase Table Editor
 
-**Resultado Real:** [PENDIENTE DE EJECUTAR]
+**Resultado Real:** [COMPLETAR DESPUÉS DE PRUEBA]
+
+**Logs Esperados:**
+
+```
+[CHECKOUT-SIMPLE] ✅ Orden creada exitosamente: {orderId}
+[ORDENES-SIMPLE] ✅ Orden creada exitosamente: {orderId}
+```
+
+**Logs Reales:** [COMPLETAR DESPUÉS DE PRUEBA]
 
 **Screenshots:** `/qa/screenshots/ordenes/TC-001/`
 
 ---
 
-### TC-002: Crear Tabla Automáticamente
-
-**Pasos:**
-
-1. Llamar a `POST /api/admin/crear-tabla-ordenes-urgente`
-2. Verificar respuesta
-3. Llamar nuevamente a verificación
-
-**Resultado Esperado:**
-
-- Primera llamada: `{"success": true, "action": "created"}`
-- Segunda llamada: `{"exists": true, "working": true}`
-
-**Resultado Real:** [PENDIENTE DE EJECUTAR]
-
-**Screenshots:** `/qa/screenshots/ordenes/TC-002/`
-
----
-
-### TC-003: Crear Orden de Compra Completa
-
-**Pasos:**
-
-1. Agregar producto al carrito
-2. Ir a `/checkout`
-3. Completar datos personales:
-   - Nombre: "Test User"
-   - Email: "test@example.com"
-   - Teléfono: "+54 11 1234-5678"
-4. Seleccionar "Retiro en local"
-5. Click en "Pagar Ahora"
-6. Verificar respuesta del servidor
-
-**Resultado Esperado:**
-
-- ✅ Status 200 (no 500)
-- ✅ Respuesta con `orderId`, `preferenceId`, `initPoint`
-- ✅ Orden guardada en Supabase
-- ✅ Sin error PGRST205
-
-**Resultado Real:** [PENDIENTE DE EJECUTAR]
-
-**Screenshots:** `/qa/screenshots/ordenes/TC-003/`
-
----
-
-### TC-004: Verificar Orden en Base de Datos
-
-**Pasos:**
-
-1. Después de crear orden exitosamente
-2. Ir a Supabase Dashboard → Table Editor → `ordenes`
-3. Buscar orden por ID o email
-4. Verificar estructura de datos
-
-**Resultado Esperado:**
-
-- ✅ Orden visible en tabla
-- ✅ Campos completos: productos, comprador, envio, total, estado
-- ✅ `created_at` con timestamp correcto
-- ✅ `estado = 'pendiente'`
-
-**Resultado Real:** [PENDIENTE DE EJECUTAR]
-
-**Screenshots:** `/qa/screenshots/ordenes/TC-004/`
-
----
-
-### TC-005: Crear Orden con Envío a Domicilio
+#### TC-002: Compra con Envío a Domicilio
 
 **Pasos:**
 
@@ -194,78 +87,168 @@ Error: Could not find the table 'public.ordenes' in the schema cache (PGRST205)
 
 **Resultado Esperado:**
 
-- ✅ Orden creada con `envio.tipo = 'estandar'` o `'express'`
-- ✅ `envio.costo > 0`
-- ✅ `envio.direccion` completo
-- ✅ Total incluye costo de envío
+- ✅ Orden creada con datos de envío completos
+- ✅ `envio.direccion` guardado correctamente en JSONB
+- ✅ Sin error PGRST205
 
-**Resultado Real:** [PENDIENTE DE EJECUTAR]
+**Resultado Real:** [COMPLETAR DESPUÉS DE PRUEBA]
 
-**Screenshots:** `/qa/screenshots/ordenes/TC-005/`
+**Screenshots:** `/qa/screenshots/ordenes/TC-002/`
+
+---
+
+#### TC-003: Manejo de Error PGRST205 (Si ocurre)
+
+**Pasos:**
+
+1. Simular tabla no existente (si es posible)
+2. Intentar crear orden
+3. Verificar mensaje de error
+
+**Resultado Esperado:**
+
+- ✅ Error claro con código PGRST205
+- ✅ Mensaje con instrucciones para crear tabla
+- ✅ SQL proporcionado en la respuesta
+- ✅ Instrucciones paso a paso
+
+**Resultado Real:** [COMPLETAR DESPUÉS DE PRUEBA]
 
 ---
 
 ## 📊 RESULTADOS DE PRUEBAS
 
-| Caso                         | Estado       | Observaciones |
-| ---------------------------- | ------------ | ------------- |
-| TC-001: Verificar tabla      | ⏳ PENDIENTE | -             |
-| TC-002: Crear tabla          | ⏳ PENDIENTE | -             |
-| TC-003: Crear orden completa | ⏳ PENDIENTE | -             |
-| TC-004: Verificar en BD      | ⏳ PENDIENTE | -             |
-| TC-005: Orden con envío      | ⏳ PENDIENTE | -             |
+| Test Case                 | Estado       | Observaciones |
+| ------------------------- | ------------ | ------------- |
+| TC-001: Compra con Retiro | ⏳ PENDIENTE | -             |
+| TC-002: Compra con Envío  | ⏳ PENDIENTE | -             |
+| TC-003: Manejo de Error   | ⏳ PENDIENTE | -             |
 
 ---
 
-## 🔧 INSTRUCCIONES DE EJECUCIÓN MANUAL
+## 🔍 VERIFICACIÓN EN BASE DE DATOS
 
-Si los métodos automáticos fallan, ejecuta manualmente:
+### Query para verificar estructura:
 
-### Paso 1: Ir a Supabase Dashboard
+```sql
+SELECT
+  column_name,
+  data_type,
+  is_nullable,
+  column_default
+FROM information_schema.columns
+WHERE table_schema = 'public'
+AND table_name = 'ordenes'
+ORDER BY ordinal_position;
+```
 
-1. https://supabase.com/dashboard
-2. Seleccionar proyecto
+### Query para verificar órdenes creadas:
 
-### Paso 2: Abrir SQL Editor
+```sql
+SELECT
+  id,
+  estado,
+  total,
+  comprador->>'nombre' as nombre_cliente,
+  comprador->>'email' as email_cliente,
+  envio->>'tipo' as tipo_envio,
+  created_at
+FROM public.ordenes
+ORDER BY created_at DESC
+LIMIT 10;
+```
 
-1. Click en "SQL Editor" en menú lateral
-2. Click en "New query"
+### Resultado Esperado:
 
-### Paso 3: Ejecutar SQL
-
-1. Copiar contenido de `supabase/migrations/006_create_ordenes_simple.sql`
-2. Pegar en editor
-3. Click en "Run" o `Ctrl+Enter` / `Cmd+Enter`
-
-### Paso 4: Verificar
-
-1. Ir a "Table Editor"
-2. Buscar tabla `ordenes`
-3. Verificar que tiene todas las columnas
+- Tabla con todas las columnas correctas
+- Al menos una orden de prueba visible
+- Datos en formato JSONB correctos
 
 ---
 
-## 📋 CHECKLIST DE VERIFICACIÓN
+## 📝 LOGS DE SERVIDOR
+
+### Logs Esperados en Vercel:
+
+```
+[CHECKOUT-SIMPLE] 📥 Request recibido
+[CHECKOUT-SIMPLE] 📋 Body recibido: {comprador, productosCount, total}
+[CHECKOUT-SIMPLE] ✅ Validación exitosa
+[CHECKOUT-SIMPLE] 📤 Creando orden...
+[ORDENES-SIMPLE] 🔍 Iniciando creación de orden
+[ORDENES-SIMPLE] 📤 Insertando orden en BD
+[ORDENES-SIMPLE] ✅ Orden creada exitosamente: {orderId}
+[CHECKOUT-SIMPLE] ✅ Orden creada: {orderId}
+[CHECKOUT-SIMPLE] ✅ Preferencia creada: {preferenceId}
+```
+
+### Logs Reales: [COMPLETAR DESPUÉS DE PRUEBA]
+
+---
+
+## 🐛 ERRORES DETECTADOS
+
+### Error 1: PGRST205
+
+**Estado:** ⏳ **VERIFICANDO**
+
+**Descripción:** Tabla ordenes no encontrada en schema cache
+
+**Solución Aplicada:**
+
+- Script automático de creación
+- Endpoint de verificación y creación
+- SQL completo documentado
+- Manejo robusto de errores con reintentos
+
+**Resultado:** [COMPLETAR DESPUÉS DE VERIFICACIÓN]
+
+---
+
+## ✅ CRITERIOS DE ÉXITO
 
 - [ ] Tabla `ordenes` existe en Supabase
-- [ ] Todas las columnas presentes
-- [ ] Índices creados
-- [ ] Políticas RLS configuradas
-- [ ] Endpoint `/api/checkout/create-order-simple` responde 200
-- [ ] Orden se guarda correctamente en BD
+- [ ] Estructura correcta verificada
+- [ ] Compra de prueba exitosa (TC-001)
+- [ ] Compra con envío exitosa (TC-002)
 - [ ] Sin errores PGRST205 en logs
-- [ ] Flujo de checkout completo funciona
+- [ ] Orden visible en BD después de compra
+- [ ] Response 200 del endpoint create-order-simple
+
+---
+
+## 📸 EVIDENCIA VISUAL
+
+### Screenshots Requeridos:
+
+1. **Supabase Dashboard → Table Editor:**
+   - Tabla `ordenes` visible
+   - Estructura de columnas
+
+2. **Supabase Dashboard → SQL Editor:**
+   - SQL ejecutado exitosamente
+   - Mensaje de éxito
+
+3. **Vercel Dashboard → Logs:**
+   - Logs de creación exitosa
+   - Sin errores PGRST205
+
+4. **Checkout en Producción:**
+   - Formulario completado
+   - Respuesta exitosa
+   - Redirección a MP (si configurado)
 
 ---
 
 ## 🚀 PRÓXIMOS PASOS DESPUÉS DEL FIX
 
-1. ✅ Probar compra completa end-to-end
-2. ✅ Conectar con Mercado Pago
-3. ✅ Probar creación de envío
-4. ✅ Verificar tracking
+1. ✅ Tabla ordenes creada y verificada
+2. ⏳ Probar compra completa end-to-end
+3. ⏳ Conectar Mercado Pago
+4. ⏳ Probar webhook de MP
+5. ⏳ Verificar actualización de orden después de pago
 
 ---
 
 **Última actualización:** 2024-11-26  
-**Estado:** ⏳ **EN PROGRESO - ESPERANDO EJECUCIÓN DE SQL**
+**Estado:** ⏳ **EN VERIFICACIÓN**

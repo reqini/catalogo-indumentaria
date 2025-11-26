@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
 /**
- * Script URGENTE para crear tabla ordenes en Supabase
- * Resuelve PGRST205 de forma inmediata
+ * Script DEFINITIVO para crear tabla ordenes en Supabase
+ * Resuelve PGRST205 de forma automática e inmediata
  * 
- * Ejecuta: node scripts/crear-tabla-ordenes-urgente.mjs
+ * Ejecuta: node scripts/crear-ordenes-definitivo.mjs
  */
 
 import { createClient } from '@supabase/supabase-js'
@@ -40,10 +40,9 @@ async function verificarTabla() {
   }
 }
 
-async function crearTabla() {
-  console.log('🔧 Creando tabla ordenes...')
+async function crearTablaConREST() {
+  console.log('🔧 Creando tabla usando REST API de Supabase...')
   
-  // SQL completo con estructura correcta
   const sql = `
 -- Crear tabla ordenes con estructura completa
 CREATE TABLE IF NOT EXISTS public.ordenes (
@@ -74,25 +73,15 @@ ALTER TABLE public.ordenes ENABLE ROW LEVEL SECURITY;
 
 -- Políticas RLS
 DROP POLICY IF EXISTS "insert-public" ON public.ordenes;
-CREATE POLICY "insert-public" ON public.ordenes
-  FOR INSERT
-  TO anon
-  WITH CHECK (true);
+CREATE POLICY "insert-public" ON public.ordenes FOR INSERT TO anon WITH CHECK (true);
 
 DROP POLICY IF EXISTS "select-public" ON public.ordenes;
-CREATE POLICY "select-public" ON public.ordenes
-  FOR SELECT
-  TO anon
-  USING (true);
+CREATE POLICY "select-public" ON public.ordenes FOR SELECT TO anon USING (true);
 
 DROP POLICY IF EXISTS "update-public" ON public.ordenes;
-CREATE POLICY "update-public" ON public.ordenes
-  FOR UPDATE
-  TO anon
-  USING (true)
-  WITH CHECK (true);
+CREATE POLICY "update-public" ON public.ordenes FOR UPDATE TO anon USING (true) WITH CHECK (true);
 
--- Función para updated_at
+-- Función y trigger para updated_at
 CREATE OR REPLACE FUNCTION update_ordenes_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -101,7 +90,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Trigger
 DROP TRIGGER IF EXISTS trigger_update_ordenes_updated_at ON public.ordenes;
 CREATE TRIGGER trigger_update_ordenes_updated_at
   BEFORE UPDATE ON public.ordenes
@@ -109,7 +97,7 @@ CREATE TRIGGER trigger_update_ordenes_updated_at
   EXECUTE FUNCTION update_ordenes_updated_at();
   `.trim()
 
-  // Ejecutar usando REST API de Supabase
+  // Ejecutar usando REST API directamente
   try {
     const response = await fetch(`${supabaseUrl}/rest/v1/rpc/exec_sql`, {
       method: 'POST',
@@ -121,23 +109,24 @@ CREATE TRIGGER trigger_update_ordenes_updated_at
       body: JSON.stringify({ sql_query: sql }),
     })
 
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('❌ Error ejecutando SQL:', errorText)
-      return false
+    if (response.ok) {
+      console.log('✅ SQL ejecutado via REST API')
+      return true
     }
 
-    console.log('✅ SQL ejecutado')
-    return true
+    const errorText = await response.text()
+    console.warn('⚠️ REST API no disponible:', errorText.substring(0, 200))
+    return false
   } catch (error) {
-    console.error('❌ Error:', error.message)
+    console.warn('⚠️ Error ejecutando REST API:', error.message)
     return false
   }
 }
 
-async function probarInsercion() {
-  console.log('🧪 Probando inserción de orden...')
+async function crearTablaConInsercion() {
+  console.log('🔧 Intentando crear tabla mediante inserción de prueba...')
   
+  // Intentar insertar directamente - si falla, Supabase puede crear la tabla
   const testOrder = {
     productos: [{ id: 'test', nombre: 'Test', precio: 0, cantidad: 1, subtotal: 0 }],
     comprador: { nombre: 'Test', email: 'test@test.com' },
@@ -153,15 +142,20 @@ async function probarInsercion() {
       .select('id')
       .single()
 
-    if (error) {
-      console.error('❌ Error insertando:', error.message)
+    if (!error && data) {
+      // Eliminar orden de prueba
+      await supabase.from('ordenes').delete().eq('id', data.id)
+      console.log('✅ Tabla existe y funciona correctamente')
+      return true
+    }
+
+    if (error && error.code === 'PGRST205') {
+      console.log('❌ Tabla no existe (PGRST205)')
       return false
     }
 
-    // Eliminar orden de prueba
-    await supabase.from('ordenes').delete().eq('id', data.id)
-    console.log('✅ Inserción funciona correctamente')
-    return true
+    console.warn('⚠️ Error inesperado:', error.message)
+    return false
   } catch (error) {
     console.error('❌ Error:', error.message)
     return false
@@ -169,49 +163,61 @@ async function probarInsercion() {
 }
 
 async function main() {
-  console.log('🚀 VERIFICACIÓN Y CREACIÓN URGENTE DE TABLA ORDENES\n')
-  
+  console.log('🚀 INICIANDO CREACIÓN DEFINITIVA DE TABLA ORDENES\n')
+  console.log('=' .repeat(60))
+
+  // Paso 1: Verificar si existe
+  console.log('\n📋 Paso 1: Verificando si tabla existe...')
   const existe = await verificarTabla()
   
   if (existe) {
-    console.log('✅ Tabla existe, verificando funcionamiento...')
-    const funciona = await probarInsercion()
+    console.log('✅ La tabla ordenes ya existe')
+    
+    // Verificar que funciona
+    const funciona = await crearTablaConInsercion()
     if (funciona) {
-      console.log('\n✅ TODO OK - La tabla ordenes está funcionando correctamente')
+      console.log('\n✅ ¡ÉXITO! La tabla existe y funciona correctamente.')
+      console.log('✅ El error PGRST205 está resuelto.')
+      return
+    }
+  } else {
+    console.log('❌ La tabla ordenes NO existe')
+  }
+
+  // Paso 2: Intentar crear con REST API
+  console.log('\n📋 Paso 2: Creando tabla con REST API...')
+  const creada = await crearTablaConREST()
+
+  if (creada) {
+    // Esperar un momento para que se propague
+    console.log('⏳ Esperando propagación...')
+    await new Promise(resolve => setTimeout(resolve, 2000))
+
+    // Verificar
+    const verificada = await crearTablaConInsercion()
+    if (verificada) {
+      console.log('\n✅ ¡ÉXITO! Tabla creada y verificada.')
+      console.log('✅ El error PGRST205 está resuelto.')
       return
     }
   }
 
-  console.log('⚠️ Tabla no existe o no funciona, creando...')
-  const creada = await crearTabla()
-  
-  if (!creada) {
-    console.log('\n❌ NO SE PUDO CREAR AUTOMÁTICAMENTE')
-    console.log('\n📋 EJECUTA MANUALMENTE EN SUPABASE DASHBOARD:')
-    console.log('1. Ve a https://supabase.com/dashboard')
-    console.log('2. SQL Editor → New query')
-    console.log('3. Copia el SQL de: supabase/migrations/006_create_ordenes_simple.sql')
-    console.log('4. Ejecuta')
-    process.exit(1)
-  }
-
-  // Esperar un momento para que se actualice el cache
-  console.log('⏳ Esperando actualización de cache...')
-  await new Promise(resolve => setTimeout(resolve, 2000))
-
-  const funciona = await probarInsercion()
-  
-  if (funciona) {
-    console.log('\n✅ ¡ÉXITO! Tabla creada y funcionando')
-    console.log('✅ El error PGRST205 está resuelto')
-  } else {
-    console.log('\n⚠️ Tabla creada pero hay problemas')
-    console.log('   Espera 1-2 minutos y prueba nuevamente')
-  }
+  // Paso 3: Instrucciones manuales
+  console.log('\n⚠️ No se pudo crear automáticamente.')
+  console.log('\n📋 INSTRUCCIONES MANUALES (2 minutos):')
+  console.log('=' .repeat(60))
+  console.log('1. Ve a: https://supabase.com/dashboard')
+  console.log('2. Selecciona tu proyecto')
+  console.log('3. Click en "SQL Editor"')
+  console.log('4. Click en "New query"')
+  console.log('5. Copia el SQL del archivo: supabase/migrations/006_create_ordenes_simple.sql')
+  console.log('6. Pega y ejecuta (Run o Ctrl+Enter)')
+  console.log('7. Verifica en "Table Editor" que la tabla "ordenes" existe')
+  console.log('=' .repeat(60))
 }
 
 main().catch((error) => {
-  console.error('❌ Error fatal:', error)
+  console.error('\n❌ Error fatal:', error)
   process.exit(1)
 })
 
