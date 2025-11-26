@@ -323,15 +323,23 @@ export default function CheckoutPage() {
         let errorData
         try {
           errorData = await orderResponse.json()
-        } catch {
+        } catch (parseError) {
+          const errorText = await orderResponse.text().catch(() => 'Error desconocido')
+          console.error('[CHECKOUT][CLIENT] ❌ Error parseando respuesta:', parseError)
+          console.error('[CHECKOUT][CLIENT] ❌ Respuesta raw:', errorText)
           errorData = {
             ok: false,
             code: 'CHECKOUT_UNKNOWN_ERROR',
-            message: `Error HTTP ${orderResponse.status}`,
+            message: `Error HTTP ${orderResponse.status}: ${errorText.substring(0, 100)}`,
           }
         }
 
         console.error('[CHECKOUT][CLIENT] ❌ Error del servidor:', errorData)
+        console.error('[CHECKOUT][CLIENT] ❌ Status:', orderResponse.status)
+        console.error(
+          '[CHECKOUT][CLIENT] ❌ Headers:',
+          Object.fromEntries(orderResponse.headers.entries())
+        )
 
         // Mostrar mensaje de error más detallado y amigable usando nueva estructura
         let errorMessage = errorData.message || errorData.error || 'Error al crear la orden'
@@ -374,24 +382,59 @@ export default function CheckoutPage() {
         throw new Error(errorMessage)
       }
 
-      const responseData = await orderResponse.json()
-      console.log('[CHECKOUT][CLIENT] ✅ Respuesta del servidor:', responseData)
+      let responseData
+      try {
+        responseData = await orderResponse.json()
+        console.log('[CHECKOUT][CLIENT] ✅ Respuesta del servidor:', responseData)
+      } catch (parseError) {
+        const errorText = await orderResponse.text().catch(() => 'Error desconocido')
+        console.error('[CHECKOUT][CLIENT] ❌ Error parseando respuesta exitosa:', parseError)
+        console.error('[CHECKOUT][CLIENT] ❌ Respuesta raw:', errorText)
+        throw new Error(`Error al procesar respuesta del servidor: ${errorText.substring(0, 200)}`)
+      }
 
       // Validar estructura de respuesta
       if (!responseData.ok || !responseData.initPoint) {
         console.error('[CHECKOUT][CLIENT] ❌ Respuesta inválida:', responseData)
-        throw new Error(responseData.message || 'No se pudo crear la preferencia de pago')
+        const errorMsg =
+          responseData.message || responseData.error || 'No se pudo crear la preferencia de pago'
+        throw new Error(errorMsg)
       }
 
       const { orderId, preferenceId, initPoint } = responseData
 
-      console.log('[CHECKOUT][CLIENT] 🎯 Redirigiendo a Mercado Pago...', { orderId, preferenceId })
+      if (!initPoint || typeof initPoint !== 'string') {
+        console.error('[CHECKOUT][CLIENT] ❌ initPoint inválido:', initPoint)
+        throw new Error('No se recibió una URL válida de Mercado Pago')
+      }
+
+      console.log('[CHECKOUT][CLIENT] 🎯 Redirigiendo a Mercado Pago...', {
+        orderId,
+        preferenceId,
+        initPoint: initPoint.substring(0, 50) + '...',
+      })
 
       // Redirigir a Mercado Pago
       window.location.href = initPoint
     } catch (error: any) {
-      console.error('[CHECKOUT][CLIENT] ❌ Error:', error)
-      toast.error(error.message || 'Error al procesar el checkout')
+      console.error('[CHECKOUT][CLIENT] ❌ Error completo:', error)
+      console.error('[CHECKOUT][CLIENT] ❌ Stack:', error.stack)
+      console.error('[CHECKOUT][CLIENT] ❌ Tipo:', error.constructor.name)
+
+      // Mensaje de error más detallado
+      let errorMessage = error.message || 'Error al procesar el checkout'
+
+      // Si es un error de red, mostrar mensaje específico
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        errorMessage = 'Error de conexión. Verificá tu conexión a internet e intentá nuevamente.'
+      }
+
+      // Si es un error de timeout
+      if (error.name === 'AbortError' || error.message.includes('timeout')) {
+        errorMessage = 'La solicitud tardó demasiado. Intentá nuevamente.'
+      }
+
+      toast.error(errorMessage)
       setIsProcessing(false)
     }
   }

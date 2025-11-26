@@ -294,44 +294,81 @@ export async function POST(request: Request) {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://catalogo-indumentaria.vercel.app'
     const origin = request.headers.get('origin') || baseUrl
 
-    const paymentResponse = await fetch(`${origin}/api/pago`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        items: mpItems,
-        back_urls: {
-          success: `${origin}/pago/success?orderId=${orderId}`,
-          failure: `${origin}/pago/failure?orderId=${orderId}`,
-          pending: `${origin}/pago/pending?orderId=${orderId}`,
-        },
-        payer: {
-          name: validatedData.comprador.nombre,
-          email: validatedData.comprador.email,
-          phone: validatedData.comprador.telefono
-            ? {
-                area_code: '',
-                number: validatedData.comprador.telefono,
-              }
-            : undefined,
-          address:
-            validatedData.envio.tipo === 'retiro_local'
-              ? undefined
-              : validatedData.envio.direccion
-                ? {
-                    street_name: validatedData.envio.direccion.calle || '',
-                    street_number: parseInt(validatedData.envio.direccion.numero || '0') || 0,
-                    zip_code: validatedData.envio.direccion.codigoPostal || '',
-                  }
-                : undefined,
-        },
-        external_reference: orderId,
-      }),
-    })
+    console.log('[CHECKOUT][API] 📤 Creando preferencia MP...')
+    console.log('[CHECKOUT][API]   - Origin:', origin)
+    console.log('[CHECKOUT][API]   - Base URL:', baseUrl)
+    console.log('[CHECKOUT][API]   - Items:', mpItems.length)
+    console.log('[CHECKOUT][API]   - Order ID:', orderId)
+
+    let paymentResponse
+    try {
+      paymentResponse = await fetch(`${origin}/api/pago`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: mpItems,
+          back_urls: {
+            success: `${origin}/pago/success?orderId=${orderId}`,
+            failure: `${origin}/pago/failure?orderId=${orderId}`,
+            pending: `${origin}/pago/pending?orderId=${orderId}`,
+          },
+          payer: {
+            name: validatedData.comprador.nombre,
+            email: validatedData.comprador.email,
+            phone: validatedData.comprador.telefono
+              ? {
+                  area_code: '',
+                  number: validatedData.comprador.telefono,
+                }
+              : undefined,
+            address:
+              validatedData.envio.tipo === 'retiro_local'
+                ? undefined
+                : validatedData.envio.direccion
+                  ? {
+                      street_name: validatedData.envio.direccion.calle || '',
+                      street_number: parseInt(validatedData.envio.direccion.numero || '0') || 0,
+                      zip_code: validatedData.envio.direccion.codigoPostal || '',
+                    }
+                  : undefined,
+          },
+          external_reference: orderId,
+        }),
+      })
+    } catch (fetchError: any) {
+      console.error('[CHECKOUT][API] ❌ Error en fetch a /api/pago:', fetchError)
+      throw new Error(`Error de conexión al crear preferencia de pago: ${fetchError.message}`)
+    }
 
     if (!paymentResponse.ok) {
-      const errorData = await paymentResponse.json()
-      console.error('[CHECKOUT][API] ❌ Error creando preferencia MP:', errorData)
-      throw new Error(errorData.error || 'Error al crear la preferencia de pago')
+      let errorData
+      try {
+        errorData = await paymentResponse.json()
+      } catch (parseError) {
+        const errorText = await paymentResponse.text().catch(() => 'Error desconocido')
+        console.error('[CHECKOUT][API] ❌ Error parseando respuesta de MP:', parseError)
+        console.error('[CHECKOUT][API] ❌ Respuesta raw:', errorText)
+        errorData = {
+          error: `Error HTTP ${paymentResponse.status}`,
+          details: errorText.substring(0, 200),
+        }
+      }
+
+      console.error('[CHECKOUT][API] ❌ Error creando preferencia MP:')
+      console.error('[CHECKOUT][API]   - Status:', paymentResponse.status)
+      console.error('[CHECKOUT][API]   - Error data:', errorData)
+
+      // Si es error 503 (Service Unavailable), probablemente MP no está configurado
+      if (paymentResponse.status === 503) {
+        throw new Error(
+          errorData.message ||
+            'El servicio de pago está temporalmente deshabilitado. Verificá la configuración de Mercado Pago.'
+        )
+      }
+
+      throw new Error(
+        errorData.error || errorData.message || 'Error al crear la preferencia de pago'
+      )
     }
 
     const preference = await paymentResponse.json()
