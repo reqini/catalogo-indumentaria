@@ -3,7 +3,6 @@ import './globals.css'
 import { Toaster } from 'react-hot-toast'
 import { CartProvider } from '@/context/CartContext'
 import { AuthProvider } from '@/context/AuthContext'
-import { ThemeProvider } from '@/lib/theme-context'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import { AutoFixErrorBoundary } from '@/autofix'
@@ -83,29 +82,27 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <AutoFixErrorBoundary>
           <AutoFixInit />
-          <ThemeProvider>
-            <AuthProvider>
-              <CartProvider>
-                <div className="flex min-h-screen flex-col">
-                  <Navbar />
-                  <main className="flex-1">{children}</main>
-                  <Footer />
-                </div>
-                <ScrollToTop />
-                <Toaster
-                  position="top-center"
-                  toastOptions={{
-                    duration: 3000,
-                    style: {
-                      background: '#000',
-                      color: '#fff',
-                      borderRadius: '8px',
-                    },
-                  }}
-                />
-              </CartProvider>
-            </AuthProvider>
-          </ThemeProvider>
+          <AuthProvider>
+            <CartProvider>
+              <div className="flex min-h-screen flex-col">
+                <Navbar />
+                <main className="flex-1">{children}</main>
+                <Footer />
+              </div>
+              <ScrollToTop />
+              <Toaster
+                position="top-center"
+                toastOptions={{
+                  duration: 3000,
+                  style: {
+                    background: '#000',
+                    color: '#fff',
+                    borderRadius: '8px',
+                  },
+                }}
+              />
+            </CartProvider>
+          </AuthProvider>
         </AutoFixErrorBoundary>
         <script
           dangerouslySetInnerHTML={{

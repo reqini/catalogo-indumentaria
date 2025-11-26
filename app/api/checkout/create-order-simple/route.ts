@@ -235,6 +235,38 @@ export async function POST(request: Request) {
       preference.preference_id || preference.id
     )
 
+    // Actualizar orden con preference ID
+    try {
+      const { supabaseAdmin } = await import('@/lib/supabase')
+      if (supabaseAdmin && orderId) {
+        const { error: updateError } = await supabaseAdmin
+          .from('ordenes')
+          .update({
+            pago_preferencia_id: preference.preference_id || preference.id,
+            pago_estado: 'pendiente',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', orderId)
+
+        if (updateError) {
+          console.warn(
+            '[CHECKOUT-SIMPLE] ⚠️ No se pudo actualizar orden con preference ID:',
+            updateError.message
+          )
+          console.warn(
+            '[CHECKOUT-SIMPLE] 💡 Ejecuta migración: supabase/migrations/007_add_pago_fields_to_ordenes.sql'
+          )
+        } else {
+          console.log('[CHECKOUT-SIMPLE] ✅ Preference ID guardado en orden')
+        }
+      }
+    } catch (updateError) {
+      console.warn(
+        '[CHECKOUT-SIMPLE] ⚠️ No se pudo actualizar orden con preference ID:',
+        updateError
+      )
+    }
+
     return NextResponse.json(
       {
         status: 'ok',

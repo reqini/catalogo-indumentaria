@@ -332,12 +332,33 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Error al crear la preferencia de pago' }, { status: 500 })
     }
 
-    // Actualizar orden con preference ID (usar estructura simplificada)
+    // Actualizar orden con preference ID
     try {
-      const { updateSimpleOrderStatus } = await import('@/lib/ordenes-helpers-simple')
-      // Guardar preference_id en metadata del envio o crear campo separado
-      // Por ahora, solo actualizamos el estado si es necesario
-      // TODO: Agregar campo pago_preferencia_id si se necesita tracking
+      const { supabaseAdmin } = await import('@/lib/supabase')
+      if (supabaseAdmin && orderId) {
+        // Intentar actualizar con campos de pago si existen
+        const { error: updateError } = await supabaseAdmin
+          .from('ordenes')
+          .update({
+            pago_preferencia_id: preference.preference_id || preference.id,
+            pago_estado: 'pendiente',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', orderId)
+
+        if (updateError) {
+          // Si falla por campos no existentes, solo loguear (no crítico)
+          console.warn(
+            '[CHECKOUT] ⚠️ No se pudo actualizar orden con preference ID:',
+            updateError.message
+          )
+          console.warn(
+            '[CHECKOUT] 💡 Ejecuta migración: supabase/migrations/007_add_pago_fields_to_ordenes.sql'
+          )
+        } else {
+          console.log('[CHECKOUT] ✅ Preference ID guardado en orden')
+        }
+      }
     } catch (updateError) {
       console.warn('[CHECKOUT] ⚠️ No se pudo actualizar orden con preference ID:', updateError)
       // No fallar el flujo por esto
