@@ -1,13 +1,11 @@
--- Migración COMPLETA y DEFINITIVA para crear tabla ordenes
--- Esta migración incluye TODOS los campos necesarios
+-- ============================================================================
+-- MIGRACIÓN COMPLETA: Crear tabla ordenes con TODOS los campos necesarios
+-- ============================================================================
 -- Ejecutar en Supabase Dashboard → SQL Editor
--- Fecha: 2024-11-26
+-- Esta migración incluye TODOS los campos necesarios para el checkout completo
+-- ============================================================================
 
--- Eliminar tabla si existe con estructura incorrecta (solo en desarrollo)
--- ⚠️ NO ejecutar esto en producción si ya hay órdenes
--- DROP TABLE IF EXISTS public.ordenes CASCADE;
-
--- Crear tabla ordenes con estructura COMPLETA
+-- Crear tabla ordenes con estructura completa
 CREATE TABLE IF NOT EXISTS public.ordenes (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   productos JSONB NOT NULL,
@@ -35,19 +33,21 @@ CREATE INDEX IF NOT EXISTS ordenes_envio_tracking_number_idx ON public.ordenes (
 -- Habilitar RLS (Row Level Security)
 ALTER TABLE public.ordenes ENABLE ROW LEVEL SECURITY;
 
--- Políticas RLS para permitir operaciones desde el frontend y backend
+-- Política para INSERT (permite crear órdenes desde el frontend)
 DROP POLICY IF EXISTS "insert-public" ON public.ordenes;
 CREATE POLICY "insert-public" ON public.ordenes
   FOR INSERT
   TO anon
   WITH CHECK (true);
 
+-- Política para SELECT (permite leer órdenes)
 DROP POLICY IF EXISTS "select-public" ON public.ordenes;
 CREATE POLICY "select-public" ON public.ordenes
   FOR SELECT
   TO anon
   USING (true);
 
+-- Política para UPDATE (permite actualizar órdenes desde backend)
 DROP POLICY IF EXISTS "update-public" ON public.ordenes;
 CREATE POLICY "update-public" ON public.ordenes
   FOR UPDATE
@@ -95,22 +95,22 @@ BEGIN
     WHERE table_schema = 'public' 
     AND table_name = 'ordenes'
   ) INTO tabla_existe;
-
+  
   IF tabla_existe THEN
-    -- Contar campos críticos
+    -- Contar campos principales
     SELECT COUNT(*) INTO campos_count
     FROM information_schema.columns
     WHERE table_schema = 'public' 
     AND table_name = 'ordenes'
     AND column_name IN ('id', 'productos', 'comprador', 'envio', 'total', 'estado', 'created_at');
     
-    IF campos_count = 7 THEN
-      RAISE NOTICE '✅ Migración completada exitosamente. Tabla ordenes creada con estructura correcta.';
+    IF campos_count >= 7 THEN
+      RAISE NOTICE '✅ Migración completada exitosamente. Tabla ordenes creada con % campos principales.', campos_count;
     ELSE
-      RAISE WARNING '⚠️ Migración incompleta. Campos encontrados: % de 7 esperados', campos_count;
+      RAISE WARNING '⚠️ Migración incompleta. Solo se encontraron % campos principales de 7.', campos_count;
     END IF;
   ELSE
-    RAISE EXCEPTION '❌ ERROR: La tabla ordenes no se creó correctamente';
+    RAISE EXCEPTION '❌ La tabla ordenes NO se creó. Revisa los errores arriba.';
   END IF;
 END $$;
 
