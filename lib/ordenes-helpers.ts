@@ -151,8 +151,36 @@ export async function createOrder(orderData: OrderData): Promise<Order | null> {
       console.error('[ORDENES]   - Mensaje:', error.message)
       console.error('[ORDENES]   - Detalles:', error.details)
       console.error('[ORDENES]   - Hint:', error.hint)
-      console.error('[ORDENES]   - Datos enviados:', JSON.stringify(insertData, null, 2))
-      throw new Error(`Error al crear orden en BD: ${error.message} (${error.code})`)
+      console.error('[ORDENES]   - InsertData keys:', Object.keys(insertData))
+
+      // Mensaje de error más específico con instrucciones claras
+      let errorMessage = 'Error al crear orden en BD'
+      let hint = 'Verifica que la tabla "ordenes" exista y tenga la estructura correcta'
+
+      if (
+        error.code === 'PGRST205' ||
+        error.message.includes('schema cache') ||
+        error.message.includes('does not exist')
+      ) {
+        errorMessage = `Could not find the table 'public.ordenes' in the schema cache (PGRST205)`
+        hint =
+          'La tabla ordenes no existe en Supabase. Ejecuta la migración SQL en Supabase Dashboard: supabase/migrations/005_create_ordenes_table.sql'
+
+        // Crear un error con más información
+        const tableError = new Error(errorMessage)
+        ;(tableError as any).code = 'PGRST205'
+        ;(tableError as any).hint = hint
+        ;(tableError as any).migrationFile = 'supabase/migrations/005_create_ordenes_table.sql'
+        throw tableError
+      } else {
+        errorMessage = `${error.message}`
+        hint = error.hint || hint
+      }
+
+      const dbError = new Error(errorMessage)
+      ;(dbError as any).code = error.code
+      ;(dbError as any).hint = hint
+      throw dbError
     }
 
     if (!data) {
