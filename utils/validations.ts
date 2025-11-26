@@ -63,7 +63,24 @@ export const pagoSchema = z.object({
     failure: z.string().url(),
     pending: z.string().url(),
   }),
+  payer: z
+    .object({
+      name: z.string(),
+      email: z.string().email(),
+      phone: z
+        .object({
+          area_code: z.string(),
+          number: z.string(),
+        })
+        .optional(),
+      address: z
+        .object({
+          street_name: z.string(),
+          street_number: z.number(),
+          zip_code: z.string(),
+        })
+        .optional(),
+    })
+    .optional(),
+  external_reference: z.string().optional(),
 })
-
-
-

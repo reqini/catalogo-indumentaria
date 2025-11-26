@@ -350,6 +350,10 @@ export async function POST(request: Request) {
     // Mercado Pago tiene problemas con auto_return cuando las URLs son localhost
     const isLocalhost = baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1')
 
+    // Extraer payer y external_reference del body si existen
+    const payer = (body as any).payer
+    const externalReference = (body as any).external_reference || `compra-${Date.now()}`
+
     const preferenceData: Record<string, any> = {
       items: items.map((item) => ({
         title: item.title,
@@ -364,7 +368,7 @@ export async function POST(request: Request) {
       },
       notification_url: `${baseUrl}/api/mp/webhook`,
       statement_descriptor: 'CATALOGO INDUMENTARIA',
-      external_reference: `compra-${Date.now()}`,
+      external_reference: externalReference,
       payment_methods: {
         excluded_payment_types: [],
         installments: 12,
@@ -378,6 +382,12 @@ export async function POST(request: Request) {
           unit_price: item.unit_price,
         })),
       },
+    }
+
+    // Agregar payer si está presente
+    if (payer) {
+      preferenceData.payer = payer
+      console.log('[MP-PAYMENT] ✅ Payer incluido en preferencia')
     }
 
     // Solo agregar auto_return si NO es localhost (MP requiere URLs públicas para auto_return)

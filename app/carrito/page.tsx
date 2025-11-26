@@ -46,6 +46,10 @@ export default function CarritoPage() {
       return // Evitar múltiples clicks
     }
 
+    // Redirigir a checkout en vez de procesar directamente
+    router.push('/checkout')
+    return
+
     setIsProcessing(true)
 
     // Validar stock antes de checkout
