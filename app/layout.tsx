@@ -9,6 +9,7 @@ import { AutoFixErrorBoundary } from '@/autofix'
 import { AutoFixInit } from '@/autofix/AutoFixInit'
 import ScrollToTop from '@/components/ScrollToTop'
 import Script from 'next/script'
+import { inter, fontVariables } from '@/lib/fonts'
 
 export const metadata: Metadata = {
   title: 'Catálogo de Indumentaria - Premium Fashion',
@@ -42,14 +43,8 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es">
+    <html lang="es" className={fontVariables}>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Roboto:wght@300;400;500;700&family=Poppins:wght@300;400;500;600;700;800&family=Montserrat:wght@300;400;500;600;700;800&family=Open+Sans:wght@300;400;500;600;700;800&family=Lato:wght@300;400;700;900&family=Raleway:wght@300;400;500;600;700;800&family=Nunito:wght@300;400;500;600;700;800&family=Source+Sans+Pro:wght@300;400;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -79,7 +74,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </>
         )}
       </head>
-      <body>
+      <body className={inter.className}>
         <AutoFixErrorBoundary>
           <AutoFixInit />
           <AuthProvider>
@@ -104,19 +99,22 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </CartProvider>
           </AuthProvider>
         </AutoFixErrorBoundary>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              if ('serviceWorker' in navigator) {
-                window.addEventListener('load', () => {
-                  navigator.serviceWorker.register('/sw.js')
-                    .then((reg) => console.log('SW registered', reg))
-                    .catch((err) => console.log('SW registration failed', err));
-                });
-              }
-            `,
-          }}
-        />
+        {/* Service Worker deshabilitado condicionalmente para evitar cache agresivo */}
+        {process.env.NEXT_PUBLIC_ENABLE_PWA === 'true' && (
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+                if ('serviceWorker' in navigator) {
+                  window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('/sw.js')
+                      .then((reg) => console.log('[PWA] SW registered', reg))
+                      .catch((err) => console.log('[PWA] SW registration failed', err));
+                  });
+                }
+              `,
+            }}
+          />
+        )}
       </body>
     </html>
   )

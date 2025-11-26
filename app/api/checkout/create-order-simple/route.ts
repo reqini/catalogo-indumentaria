@@ -48,10 +48,10 @@ const createOrderSchema = z.object({
 
 export async function POST(request: Request) {
   try {
-    console.log('[CHECKOUT-SIMPLE] 📥 Request recibido')
+    console.log('[CHECKOUT][API] 📥 Request recibido')
 
     const body = await request.json()
-    console.log('[CHECKOUT-SIMPLE] 📋 Body recibido:', {
+    console.log('[CHECKOUT][API] 📋 Body recibido:', {
       comprador: body.comprador?.nombre,
       productosCount: body.productos?.length,
       total: body.total,
@@ -62,13 +62,15 @@ export async function POST(request: Request) {
     let validatedData
     try {
       validatedData = createOrderSchema.parse(body)
-      console.log('[CHECKOUT-SIMPLE] ✅ Validación exitosa')
+      console.log('[CHECKOUT][API] ✅ Validación exitosa')
     } catch (validationError: any) {
-      console.error('[CHECKOUT-SIMPLE] ❌ Error de validación:', validationError)
+      console.error('[CHECKOUT][API] ❌ Error de validación:', validationError)
       if (validationError instanceof z.ZodError) {
         return NextResponse.json(
           {
-            error: 'Datos inválidos',
+            ok: false,
+            code: 'CHECKOUT_VALIDATION_ERROR',
+            message: 'Datos inválidos',
             details: validationError.errors.map((err) => ({
               path: err.path.join('.'),
               message: err.message,
@@ -85,7 +87,11 @@ export async function POST(request: Request) {
       const prod = await getProductById(producto.id)
       if (!prod) {
         return NextResponse.json(
-          { error: `Producto no encontrado: ${producto.nombre}` },
+          {
+            ok: false,
+            code: 'CHECKOUT_PRODUCT_NOT_FOUND',
+            message: `Producto no encontrado: ${producto.nombre}`,
+          },
           { status: 404 }
         )
       }
@@ -96,7 +102,9 @@ export async function POST(request: Request) {
         if (stockTalle < producto.cantidad) {
           return NextResponse.json(
             {
-              error: `Stock insuficiente para ${producto.nombre} (Talle ${producto.talle}). Disponible: ${stockTalle}`,
+              ok: false,
+              code: 'CHECKOUT_INSUFFICIENT_STOCK',
+              message: `Stock insuficiente para ${producto.nombre} (Talle ${producto.talle}). Disponible: ${stockTalle}`,
             },
             { status: 400 }
           )
@@ -106,7 +114,9 @@ export async function POST(request: Request) {
         if (stockTotal < producto.cantidad) {
           return NextResponse.json(
             {
-              error: `Stock insuficiente para ${producto.nombre}. Disponible: ${stockTotal}`,
+              ok: false,
+              code: 'CHECKOUT_INSUFFICIENT_STOCK',
+              message: `Stock insuficiente para ${producto.nombre}. Disponible: ${stockTotal}`,
             },
             { status: 400 }
           )
@@ -125,7 +135,7 @@ export async function POST(request: Request) {
     }
 
     try {
-      console.log('[CHECKOUT-SIMPLE] 📤 Creando orden...')
+      console.log('[CHECKOUT][API] 📤 Creando orden en Supabase...')
       const order = await createSimpleOrder(simpleOrderData)
 
       if (!order || !order.id) {
@@ -133,12 +143,19 @@ export async function POST(request: Request) {
       }
 
       orderId = order.id
-      console.log('[CHECKOUT-SIMPLE] ✅ Orden creada:', orderId)
+      console.log('[CHECKOUT][API] ✅ Orden creada exitosamente:', orderId)
+      console.log('[CHECKOUT][API] 🎯 QA LOG - Orden creada:', {
+        orderId,
+        productosCount: validatedData.productos.length,
+        total: validatedData.total,
+        envioTipo: validatedData.envio.tipo,
+        timestamp: new Date().toISOString(),
+      })
     } catch (orderError: any) {
-      console.error('[CHECKOUT-SIMPLE] ❌ Error creando orden:', orderError)
-      console.error('[CHECKOUT-SIMPLE]   - Código:', orderError.code)
-      console.error('[CHECKOUT-SIMPLE]   - Mensaje:', orderError.message)
-      console.error('[CHECKOUT-SIMPLE]   - Stack:', orderError.stack)
+      console.error('[CHECKOUT][API] ❌ Error creando orden:', orderError)
+      console.error('[CHECKOUT][API]   - Código:', orderError.code)
+      console.error('[CHECKOUT][API]   - Mensaje:', orderError.message)
+      console.error('[CHECKOUT][API]   - Stack:', orderError.stack)
 
       // Si es PGRST205, intentar crear tabla automáticamente
       if (
@@ -184,15 +201,21 @@ export async function POST(request: Request) {
               // Si no se pudo crear automáticamente, dar instrucciones
               return NextResponse.json(
                 {
-                  error: 'Error al crear la orden en la base de datos',
-                  details: 'La tabla ordenes no existe y no se pudo crear automáticamente',
-                  code: 'PGRST205',
+                  ok: false,
+                  code: 'CHECKOUT_CREATE_ORDER_ERROR',
+                  message: 'Error al crear la orden en la base de datos',
+                  detail: 'La tabla ordenes no existe y no se pudo crear automáticamente',
+                  errorCode: 'PGRST205',
                   hint: 'Ejecuta el SQL manualmente en Supabase Dashboard → SQL Editor',
-                  sql: createResult.sql || 'Ver: supabase/migrations/006_create_ordenes_simple.sql',
+                  migrationFile: 'supabase/schemas/checkout-schema-completo.sql',
                   instructions: createResult.instructions || [
                     '1. Ve a https://supabase.com/dashboard',
-                    '2. SQL Editor → New query',
-                    '3. Ejecuta: supabase/migrations/006_create_ordenes_simple.sql',
+                    '2. Selecciona tu proyecto',
+                    '3. Click en "SQL Editor"',
+                    '4. Click en "New query"',
+                    '5. Copia y pega el contenido de: supabase/schemas/checkout-schema-completo.sql',
+                    '6. Click en "Run"',
+                    '7. Verifica éxito',
                   ],
                 },
                 { status: 500 }
@@ -202,11 +225,13 @@ export async function POST(request: Request) {
             // Fallback a mensaje con SQL
             return NextResponse.json(
               {
-                error: 'Error al crear la orden en la base de datos',
-                details: orderError.message || "Could not find the table 'public.ordenes'",
-                code: 'PGRST205',
+                ok: false,
+                code: 'CHECKOUT_CREATE_ORDER_ERROR',
+                message: 'Error al crear la orden en la base de datos',
+                detail: orderError.message || "Could not find the table 'public.ordenes'",
+                errorCode: 'PGRST205',
                 hint: 'Ejecuta el SQL en Supabase Dashboard → SQL Editor',
-                migrationFile: 'supabase/migrations/006_create_ordenes_simple.sql',
+                migrationFile: 'supabase/schemas/checkout-schema-completo.sql',
                 urgent: true,
               },
               { status: 500 }
@@ -220,11 +245,13 @@ export async function POST(request: Request) {
 
           return NextResponse.json(
             {
-              error: 'Error al crear la orden en la base de datos',
-              details: orderError.message || "Could not find the table 'public.ordenes'",
-              code: 'PGRST205',
+              ok: false,
+              code: 'CHECKOUT_CREATE_ORDER_ERROR',
+              message: 'Error al crear la orden en la base de datos',
+              detail: orderError.message || "Could not find the table 'public.ordenes'",
+              errorCode: 'PGRST205',
               hint: 'Ejecuta el SQL manualmente en Supabase Dashboard → SQL Editor',
-              migrationFile: 'supabase/migrations/006_create_ordenes_simple.sql',
+              migrationFile: 'supabase/schemas/checkout-schema-completo.sql',
               urgent: true,
             },
             { status: 500 }
@@ -234,9 +261,11 @@ export async function POST(request: Request) {
         // Otro error
         return NextResponse.json(
           {
-            error: 'Error al crear la orden',
-            details: orderError.message || 'Error desconocido',
-            code: orderError.code,
+            ok: false,
+            code: 'CHECKOUT_CREATE_ORDER_ERROR',
+            message: 'Error al crear la orden',
+            detail: orderError.message || 'Error desconocido',
+            errorCode: orderError.code || 'UNKNOWN',
           },
           { status: 500 }
         )
@@ -301,17 +330,27 @@ export async function POST(request: Request) {
 
     if (!paymentResponse.ok) {
       const errorData = await paymentResponse.json()
+      console.error('[CHECKOUT][API] ❌ Error creando preferencia MP:', errorData)
       throw new Error(errorData.error || 'Error al crear la preferencia de pago')
     }
 
     const preference = await paymentResponse.json()
 
     if (!preference.init_point) {
-      return NextResponse.json({ error: 'Error al crear la preferencia de pago' }, { status: 500 })
+      console.error('[CHECKOUT][API] ❌ Preferencia MP sin init_point:', preference)
+      return NextResponse.json(
+        {
+          ok: false,
+          code: 'CHECKOUT_MP_PREFERENCE_ERROR',
+          message: 'Error al crear la preferencia de pago',
+          detail: 'La preferencia no contiene init_point',
+        },
+        { status: 500 }
+      )
     }
 
     console.log(
-      '[CHECKOUT-SIMPLE] ✅ Preferencia creada:',
+      '[CHECKOUT][API] ✅ Preferencia MP creada:',
       preference.preference_id || preference.id
     )
 
@@ -347,22 +386,37 @@ export async function POST(request: Request) {
       )
     }
 
+    console.log('[CHECKOUT][API] ✅ Checkout completado exitosamente:', {
+      orderId,
+      preferenceId: preference.preference_id || preference.id,
+      initPoint: preference.init_point,
+    })
+
     return NextResponse.json(
       {
-        status: 'ok',
+        ok: true,
+        code: 'CHECKOUT_SUCCESS',
         orderId: orderId,
         preferenceId: preference.preference_id || preference.id,
         initPoint: preference.init_point,
       },
-      { status: 200 }
+      {
+        status: 200,
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+        },
+      }
     )
   } catch (error: any) {
-    console.error('[CHECKOUT-SIMPLE] Error:', error)
+    console.error('[CHECKOUT][API] ❌ Error fatal:', error)
+    console.error('[CHECKOUT][API]   - Stack:', error.stack)
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         {
-          error: 'Datos inválidos',
+          ok: false,
+          code: 'CHECKOUT_VALIDATION_ERROR',
+          message: 'Datos inválidos',
           details: error.errors,
         },
         { status: 400 }
@@ -371,9 +425,17 @@ export async function POST(request: Request) {
 
     return NextResponse.json(
       {
-        error: error.message || 'Error al procesar el checkout',
+        ok: false,
+        code: 'CHECKOUT_INTERNAL_ERROR',
+        message: 'Error al procesar el checkout',
+        detail: error.message || 'Error desconocido',
       },
-      { status: 500 }
+      {
+        status: 500,
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+        },
+      }
     )
   }
 }

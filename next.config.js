@@ -26,9 +26,10 @@ const nextConfig = {
             value: [
               "default-src 'self'",
               "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com",
-              "style-src 'self' 'unsafe-inline'",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+              "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "img-src 'self' blob: data: https: https://*.supabase.co https://yqggrzxjhylnxjuagfyr.supabase.co",
-              "font-src 'self' data:",
+              "font-src 'self' data: https://fonts.gstatic.com",
               "connect-src 'self' https://api.mercadopago.com https://www.google-analytics.com https://*.supabase.co https://yqggrzxjhylnxjuagfyr.supabase.co https://yqggrzxjhylnxjuagfyr.supabase.co/storage/v1 https://yqggrzxjhylnxjuagfyr.supabase.co/storage/v1/bucket https://yqggrzxjhylnxjuagfyr.supabase.co/storage/v1/object https://yqggrzxjhylnxjuagfyr.supabase.co/storage/v1/object/* wss://*.supabase.co wss://yqggrzxjhylnxjuagfyr.supabase.co",
               "frame-src 'self' https://www.mercadopago.com",
               "object-src 'none'",

@@ -1,7 +1,7 @@
 /**
  * Integración con Envíopack API
  * Permite calcular costos reales de envío con múltiples transportistas
- * 
+ *
  * Documentación: https://developers.enviopack.com
  */
 
@@ -33,19 +33,22 @@ export async function calcularEnvioConEnvioPack(
   peso: number,
   precio: number,
   provincia?: string
-): Promise<Array<{
-  nombre: string
-  precio: number
-  demora: string
-  disponible: boolean
-  transportista: string
-}>> {
+): Promise<
+  Array<{
+    nombre: string
+    precio: number
+    demora: string
+    disponible: boolean
+    transportista: string
+  }>
+> {
   const apiKey = process.env.ENVIOPACK_API_KEY
   const apiSecret = process.env.ENVIOPACK_API_SECRET
 
   // Si no hay credenciales, usar cálculo simulado como fallback
+  // Esto NO debe romper el checkout - simplemente deshabilita EnvioPack
   if (!apiKey || !apiSecret) {
-    console.warn('[ENVIOPACK] ⚠️ Credenciales no configuradas, usando cálculo simulado')
+    console.warn('[ENVIOS][ENVIOPACK] ⚠️ Credenciales no configuradas, usando cálculo simulado')
     return calcularEnvioSimulado(codigoPostal, peso, precio)
   }
 
@@ -58,7 +61,7 @@ export async function calcularEnvioConEnvioPack(
       ...(provincia && { provincia }),
     }
 
-    console.log('[ENVIOPACK] 📤 Calculando envío real:', requestData)
+    console.log('[ENVIOS][ENVIOPACK] 📤 Calculando envío real:', requestData)
 
     // Llamar a Envíopack API
     // NOTA: La URL y estructura pueden variar según la versión de la API
@@ -67,7 +70,7 @@ export async function calcularEnvioConEnvioPack(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
+        Authorization: `Bearer ${apiKey}`,
         'X-API-Secret': apiSecret,
       },
       body: JSON.stringify(requestData),
@@ -76,8 +79,9 @@ export async function calcularEnvioConEnvioPack(
     })
 
     if (!response.ok) {
-      console.error('[ENVIOPACK] ❌ Error en API:', response.status, response.statusText)
-      // Fallback a cálculo simulado si falla la API
+      console.error('[ENVIOS][ENVIOPACK] ❌ Error en API:', response.status, response.statusText)
+      // Fallback a cálculo simulado si falla la API - NO debe romper el checkout
+      console.warn('[ENVIOS][ENVIOPACK] ⚠️ Usando cálculo simulado como fallback')
       return calcularEnvioSimulado(codigoPostal, peso, precio)
     }
 
@@ -92,12 +96,13 @@ export async function calcularEnvioConEnvioPack(
       transportista: quote.carrier,
     }))
 
-    console.log('[ENVIOPACK] ✅ Métodos obtenidos:', metodos.length)
+    console.log('[ENVIOS][ENVIOPACK] ✅ Métodos obtenidos:', metodos.length)
 
     return metodos.filter((m: any) => m.disponible)
   } catch (error: any) {
-    console.error('[ENVIOPACK] ❌ Error calculando envío:', error)
-    // Fallback a cálculo simulado si hay error
+    console.error('[ENVIOS][ENVIOPACK] ❌ Error calculando envío:', error)
+    // Fallback a cálculo simulado si hay error - NO debe romper el checkout
+    console.warn('[ENVIOS][ENVIOPACK] ⚠️ Usando cálculo simulado como fallback debido a error')
     return calcularEnvioSimulado(codigoPostal, peso, precio)
   }
 }
@@ -145,14 +150,14 @@ function calcularEnvioSimulado(
   }
 
   const costoOCAEstándar = Math.round(
-    (baseOCA + (peso * porKgOCA) + (precio * porValorOCA)) * multiplicadorZona
+    (baseOCA + peso * porKgOCA + precio * porValorOCA) * multiplicadorZona
   )
   const costoOCAExpress = Math.round(costoOCAEstándar * 1.5)
   const costoCorreo = Math.round(
-    (baseCorreo + (peso * porKgCorreo) + (precio * porValorCorreo)) * multiplicadorZona
+    (baseCorreo + peso * porKgCorreo + precio * porValorCorreo) * multiplicadorZona
   )
   const costoAndreaniEstándar = Math.round(
-    (baseAndreani + (peso * porKgAndreani) + (precio * porValorAndreani)) * multiplicadorZona
+    (baseAndreani + peso * porKgAndreani + precio * porValorAndreani) * multiplicadorZona
   )
   const costoAndreaniExpress = Math.round(costoAndreaniEstándar * 1.6)
 
@@ -194,4 +199,3 @@ function calcularEnvioSimulado(
     },
   ].sort((a, b) => a.precio - b.precio)
 }
-

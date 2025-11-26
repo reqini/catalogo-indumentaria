@@ -312,6 +312,7 @@ export default function CheckoutPage() {
         total: totalWithShipping,
       }
 
+      console.log('[CHECKOUT][CLIENT] 📤 Enviando orden al servidor...')
       const orderResponse = await fetch('/api/checkout/create-order-simple', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -323,15 +324,25 @@ export default function CheckoutPage() {
         try {
           errorData = await orderResponse.json()
         } catch {
-          errorData = { error: `Error HTTP ${orderResponse.status}` }
+          errorData = {
+            ok: false,
+            code: 'CHECKOUT_UNKNOWN_ERROR',
+            message: `Error HTTP ${orderResponse.status}`,
+          }
         }
 
-        console.error('[CHECKOUT] ❌ Error del servidor:', errorData)
+        console.error('[CHECKOUT][CLIENT] ❌ Error del servidor:', errorData)
 
-        // Mostrar mensaje de error más detallado y amigable
-        let errorMessage = errorData.error || 'Error al crear la orden'
+        // Mostrar mensaje de error más detallado y amigable usando nueva estructura
+        let errorMessage = errorData.message || errorData.error || 'Error al crear la orden'
 
-        if (errorData.details && Array.isArray(errorData.details) && errorData.details.length > 0) {
+        // Si es error de validación, mostrar detalles específicos
+        if (
+          errorData.code === 'CHECKOUT_VALIDATION_ERROR' &&
+          errorData.details &&
+          Array.isArray(errorData.details) &&
+          errorData.details.length > 0
+        ) {
           const firstError = errorData.details[0]
           if (firstError.path) {
             const fieldName = firstError.path.split('.').pop() || 'campo'
@@ -339,23 +350,47 @@ export default function CheckoutPage() {
           } else {
             errorMessage = firstError.message || errorMessage
           }
-        } else if (errorData.hint) {
-          errorMessage = errorData.hint
+        }
+        // Si es error de PGRST205 (tabla no existe), mostrar instrucciones claras
+        else if (
+          errorData.errorCode === 'PGRST205' ||
+          errorData.code === 'CHECKOUT_CREATE_ORDER_ERROR'
+        ) {
+          if (errorData.hint) {
+            errorMessage = errorData.hint
+          } else if (errorData.migrationFile) {
+            errorMessage = `Error de configuración: ${errorData.detail || errorData.message}. Ejecuta el SQL en Supabase: ${errorData.migrationFile}`
+          }
+        }
+        // Otros errores específicos
+        else if (errorData.code === 'CHECKOUT_INSUFFICIENT_STOCK') {
+          errorMessage = errorData.message || 'Stock insuficiente'
+        } else if (errorData.code === 'CHECKOUT_PRODUCT_NOT_FOUND') {
+          errorMessage = errorData.message || 'Producto no encontrado'
+        } else if (errorData.code === 'CHECKOUT_MP_PREFERENCE_ERROR') {
+          errorMessage = errorData.message || 'Error al crear la preferencia de pago'
         }
 
         throw new Error(errorMessage)
       }
 
-      const { orderId, preferenceId, initPoint } = await orderResponse.json()
+      const responseData = await orderResponse.json()
+      console.log('[CHECKOUT][CLIENT] ✅ Respuesta del servidor:', responseData)
 
-      if (!initPoint) {
-        throw new Error('No se pudo crear la preferencia de pago')
+      // Validar estructura de respuesta
+      if (!responseData.ok || !responseData.initPoint) {
+        console.error('[CHECKOUT][CLIENT] ❌ Respuesta inválida:', responseData)
+        throw new Error(responseData.message || 'No se pudo crear la preferencia de pago')
       }
+
+      const { orderId, preferenceId, initPoint } = responseData
+
+      console.log('[CHECKOUT][CLIENT] 🎯 Redirigiendo a Mercado Pago...', { orderId, preferenceId })
 
       // Redirigir a Mercado Pago
       window.location.href = initPoint
     } catch (error: any) {
-      console.error('[CHECKOUT] Error:', error)
+      console.error('[CHECKOUT][CLIENT] ❌ Error:', error)
       toast.error(error.message || 'Error al procesar el checkout')
       setIsProcessing(false)
     }
