@@ -377,6 +377,23 @@ export default function CheckoutPage() {
           errorMessage = errorData.message || 'Producto no encontrado'
         } else if (errorData.code === 'CHECKOUT_MP_PREFERENCE_ERROR') {
           errorMessage = errorData.message || 'Error al crear la preferencia de pago'
+        } else if (errorData.code === 'CHECKOUT_MP_NOT_CONFIGURED') {
+          // Error específico: Mercado Pago no configurado
+          errorMessage =
+            errorData.message ||
+            'El servicio de pago no está configurado. Por favor, contactá al administrador.'
+          if (errorData.help?.message) {
+            console.warn('[CHECKOUT][CLIENT] 💡 Ayuda:', errorData.help.message)
+          }
+        } else if (errorData.code === 'CHECKOUT_MP_ERROR') {
+          errorMessage = errorData.message || 'Error al procesar el pago con Mercado Pago'
+        } else if (
+          errorData.code === 'CHECKOUT_INTERNAL_ERROR' &&
+          errorData.detail === 'checkout-disabled'
+        ) {
+          // Error genérico que indica MP no configurado
+          errorMessage =
+            'El servicio de pago está temporalmente deshabilitado. Verificá la configuración de Mercado Pago.'
         }
 
         throw new Error(errorMessage)

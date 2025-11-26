@@ -337,7 +337,15 @@ export async function POST(request: Request) {
       })
     } catch (fetchError: any) {
       console.error('[CHECKOUT][API] ❌ Error en fetch a /api/pago:', fetchError)
-      throw new Error(`Error de conexión al crear preferencia de pago: ${fetchError.message}`)
+      return NextResponse.json(
+        {
+          ok: false,
+          code: 'CHECKOUT_MP_CONNECTION_ERROR',
+          message: 'Error de conexión al crear preferencia de pago',
+          detail: fetchError.message || 'Error desconocido',
+        },
+        { status: 500 }
+      )
     }
 
     if (!paymentResponse.ok) {
@@ -360,14 +368,40 @@ export async function POST(request: Request) {
 
       // Si es error 503 (Service Unavailable), probablemente MP no está configurado
       if (paymentResponse.status === 503) {
-        throw new Error(
+        const mpErrorMessage =
           errorData.message ||
-            'El servicio de pago está temporalmente deshabilitado. Verificá la configuración de Mercado Pago.'
+          'El servicio de pago está temporalmente deshabilitado. Verificá la configuración de Mercado Pago.'
+
+        console.error('[CHECKOUT][API] ❌ Mercado Pago no configurado (503):', errorData)
+
+        return NextResponse.json(
+          {
+            ok: false,
+            code: 'CHECKOUT_MP_NOT_CONFIGURED',
+            message: mpErrorMessage,
+            detail: errorData.error || errorData.details || 'checkout-disabled',
+            help: errorData.help || {
+              message:
+                'Configura MP_ACCESS_TOKEN en Vercel Dashboard → Settings → Environment Variables',
+            },
+          },
+          { status: 503 }
         )
       }
 
-      throw new Error(
+      // Otros errores de MP
+      const mpErrorMsg =
         errorData.error || errorData.message || 'Error al crear la preferencia de pago'
+      console.error('[CHECKOUT][API] ❌ Error de Mercado Pago:', mpErrorMsg)
+
+      return NextResponse.json(
+        {
+          ok: false,
+          code: 'CHECKOUT_MP_ERROR',
+          message: mpErrorMsg,
+          detail: errorData.details || errorData.mpError || null,
+        },
+        { status: paymentResponse.status || 500 }
       )
     }
 
