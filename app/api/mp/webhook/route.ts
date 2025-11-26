@@ -18,6 +18,7 @@ import {
   createOrderLog,
   getOrderById,
 } from '@/lib/ordenes-helpers'
+import { getSimpleOrderById, updateSimpleOrderStatus } from '@/lib/ordenes-helpers-simple'
 import { validateMercadoPagoConfig } from '@/lib/mercadopago/validate'
 import { createShippingRequest } from '@/core/shipping/shipping-service'
 
@@ -96,21 +97,34 @@ export async function POST(request: Request) {
         timestamp: new Date().toISOString(),
       })
 
-      // Buscar orden por external_reference (orderId) o preference_id
+      // Buscar orden por external_reference (orderId) - primero estructura simplificada
       let order = null
+      let simpleOrder = null
+
       if (payment.external_reference) {
-        order = await getOrderById(payment.external_reference)
-        if (!order && payment.preference_id) {
+        // Intentar primero con estructura simplificada
+        simpleOrder = await getSimpleOrderById(payment.external_reference)
+        if (!simpleOrder) {
+          // Fallback a estructura completa
+          order = await getOrderById(payment.external_reference)
+        }
+        if (!order && !simpleOrder && payment.preference_id) {
           order = await getOrderByPreferenceId(payment.preference_id)
         }
       } else if (payment.preference_id) {
         order = await getOrderByPreferenceId(payment.preference_id)
       }
 
-      // Verificar idempotencia: buscar si ya se procesó este pago
+      // Verificar idempotencia (solo para estructura completa por ahora)
       if (order && order.pago_id === payment.id.toString() && order.pago_estado === 'aprobado') {
         console.log(`[MP-WEBHOOK] ⚠️ Pago ya procesado anteriormente: ${payment.id}`)
         return NextResponse.json({ message: 'Payment already processed' })
+      }
+
+      // Si tenemos orden simplificada, actualizar estado
+      if (simpleOrder && payment.status === 'approved') {
+        await updateSimpleOrderStatus(simpleOrder.id, 'pagada')
+        console.log(`[MP-WEBHOOK] ✅ Orden simplificada ${simpleOrder.id} actualizada a pagada`)
       }
 
       // Procesar según el estado del pago
@@ -284,6 +298,7 @@ export async function POST(request: Request) {
         }
 
         // Si hay orden y envío, crear solicitud de envío real
+        // Solo para estructura completa (simpleOrder no tiene campos individuales de envío)
         if (order && order.envio_costo_total > 0 && order.envio_tipo !== 'retiro_local') {
           try {
             console.log(`[MP-WEBHOOK] 📦 Creando solicitud de envío para orden ${order.id}`)
@@ -342,56 +357,76 @@ export async function POST(request: Request) {
 
         // Enviar notificaciones usando el sistema de notificaciones
         try {
-          if (order && itemsProcesados.length > 0) {
+          // Usar orden completa si está disponible, sino usar simpleOrder
+          const orderForNotification = order || simpleOrder
+          if (orderForNotification && itemsProcesados.length > 0) {
+            // Adaptar datos según tipo de orden
+            const orderData = order || {
+              id: simpleOrder?.id,
+              cliente_nombre: simpleOrder?.comprador?.nombre,
+              cliente_email: simpleOrder?.comprador?.email,
+              cliente_telefono: simpleOrder?.comprador?.telefono,
+              subtotal: simpleOrder?.total - (simpleOrder?.envio?.costo || 0),
+              envio_costo_total: simpleOrder?.envio?.costo || 0,
+              total: simpleOrder?.total,
+              envio_metodo: simpleOrder?.envio?.metodo,
+              envio_tracking: null,
+              envio_proveedor: simpleOrder?.envio?.proveedor,
+              direccion_calle: simpleOrder?.envio?.direccion?.calle,
+              direccion_numero: simpleOrder?.envio?.direccion?.numero,
+              direccion_localidad: simpleOrder?.envio?.direccion?.localidad,
+              direccion_provincia: simpleOrder?.envio?.direccion?.provincia,
+              direccion_codigo_postal: simpleOrder?.envio?.direccion?.codigoPostal,
+            }
             const { notifyOrderConfirmed, notifyAdminNewOrder } = await import(
               '@/lib/notifications'
             )
 
             // Notificar al cliente
             await notifyOrderConfirmed({
-              orderId: order.id,
-              clienteNombre: order.cliente_nombre,
-              clienteEmail: order.cliente_email,
-              clienteTelefono: order.cliente_telefono,
+              orderId: orderData.id,
+              clienteNombre: orderData.cliente_nombre,
+              clienteEmail: orderData.cliente_email,
+              clienteTelefono: orderData.cliente_telefono,
               items: itemsProcesados.map((item) => ({
                 nombre: item.producto.nombre,
                 cantidad: item.cantidad,
                 talle: item.talle,
                 precio: item.precio,
               })),
-              subtotal: order.subtotal,
-              envioCosto: order.envio_costo_total,
-              total: order.total,
-              envioMetodo: order.envio_metodo,
-              envioTracking: order.envio_tracking,
-              envioProveedor: order.envio_proveedor,
+              subtotal: orderData.subtotal,
+              envioCosto: orderData.envio_costo_total,
+              total: orderData.total,
+              envioMetodo: orderData.envio_metodo,
+              envioTracking: orderData.envio_tracking,
+              envioProveedor: orderData.envio_proveedor,
               direccion: {
-                calle: order.direccion_calle,
-                numero: order.direccion_numero,
-                localidad: order.direccion_localidad,
-                provincia: order.direccion_provincia,
-                codigoPostal: order.direccion_codigo_postal,
+                calle: orderData.direccion_calle,
+                numero: orderData.direccion_numero,
+                localidad: orderData.direccion_localidad,
+                provincia: orderData.direccion_provincia,
+                codigoPostal: orderData.direccion_codigo_postal,
               },
             })
 
             // Notificar al admin
             await notifyAdminNewOrder({
-              orderId: order.id,
-              clienteNombre: order.cliente_nombre,
-              clienteEmail: order.cliente_email,
-              clienteTelefono: order.cliente_telefono,
+              orderId: orderData.id,
+              clienteNombre: orderData.cliente_nombre,
+              clienteEmail: orderData.cliente_email,
+              clienteTelefono: orderData.cliente_telefono,
               items: itemsProcesados.map((item) => ({
                 nombre: item.producto.nombre,
                 cantidad: item.cantidad,
                 talle: item.talle,
                 precio: item.precio,
               })),
-              subtotal: order.subtotal,
-              envioCosto: order.envio_costo_total,
-              total: order.total,
-              envioMetodo: order.envio_metodo,
-              envioTracking: order.envio_tracking,
-              envioProveedor: order.envio_proveedor,
+              subtotal: orderData.subtotal,
+              envioCosto: orderData.envio_costo_total,
+              total: orderData.total,
+              envioMetodo: orderData.envio_metodo,
+              envioTracking: orderData.envio_tracking,
+              envioProveedor: orderData.envio_proveedor,
             })
 
             console.log(`[MP-WEBHOOK] ✅ Notificaciones enviadas`)
@@ -410,6 +445,9 @@ export async function POST(request: Request) {
             pago_estado: 'pendiente',
             pago_id: payment.id.toString(),
           })
+        } else if (simpleOrder) {
+          // Para orden simplificada, solo actualizar estado
+          await updateSimpleOrderStatus(simpleOrder.id, 'pendiente')
         }
 
         return NextResponse.json({ message: 'Payment pending' })
@@ -432,6 +470,8 @@ export async function POST(request: Request) {
             },
             `Pago rechazado por Mercado Pago`
           )
+        } else if (simpleOrder) {
+          await updateSimpleOrderStatus(simpleOrder.id, 'rechazada')
         }
 
         return NextResponse.json({ message: 'Payment rejected' })

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createOrder, OrderData, Order } from '@/lib/ordenes-helpers'
+import { createSimpleOrder, SimpleOrderData } from '@/lib/ordenes-helpers-simple'
 import { createPayment } from '@/utils/api'
 import { getProductById } from '@/lib/supabase-helpers'
 import { validateMercadoPagoConfig } from '@/lib/mercadopago/validate'
@@ -155,10 +156,58 @@ export async function POST(request: Request) {
       }
     }
 
-    // Crear orden en la base de datos
-    let order: Order | null = null
+    // Crear orden en la base de datos (usar estructura simplificada)
+    let orderId: string | null = null
+
     try {
-      order = await createOrder(validatedData as OrderData)
+      // Convertir datos a estructura simplificada
+      const simpleOrderData: SimpleOrderData = {
+        productos: validatedData.items.map((item) => ({
+          id: item.id,
+          nombre: item.nombre,
+          precio: item.precio,
+          cantidad: item.cantidad,
+          talle: item.talle,
+          subtotal: item.subtotal,
+          imagenPrincipal: item.imagenPrincipal,
+        })),
+        comprador: {
+          nombre: validatedData.cliente.nombre,
+          email: validatedData.cliente.email,
+          telefono: validatedData.cliente.telefono,
+        },
+        envio: {
+          tipo: validatedData.envio.tipo,
+          metodo: validatedData.envio.metodo,
+          costo: validatedData.envio.costo,
+          direccion:
+            validatedData.envio.tipo === 'retiro_local'
+              ? undefined
+              : {
+                  calle: validatedData.direccion.calle,
+                  numero: validatedData.direccion.numero,
+                  pisoDepto: validatedData.direccion.pisoDepto,
+                  codigoPostal: validatedData.direccion.codigoPostal,
+                  localidad: validatedData.direccion.localidad,
+                  provincia: validatedData.direccion.provincia,
+                  pais: validatedData.direccion.pais,
+                },
+          demora: validatedData.envio.demora,
+          proveedor: validatedData.envio.proveedor || undefined,
+        },
+        total: validatedData.total,
+        estado: 'pendiente',
+      }
+
+      console.log('[CHECKOUT] 📤 Creando orden con estructura simplificada...')
+      const simpleOrder = await createSimpleOrder(simpleOrderData)
+
+      if (!simpleOrder || !simpleOrder.id) {
+        throw new Error('No se pudo crear la orden: respuesta vacía')
+      }
+
+      orderId = simpleOrder.id
+      console.log('[CHECKOUT] ✅ Orden creada:', orderId)
     } catch (orderError: any) {
       console.error('[CHECKOUT] ❌ Error detallado al crear orden:', orderError)
       console.error('[CHECKOUT]   - Mensaje:', orderError.message)
@@ -181,8 +230,8 @@ export async function POST(request: Request) {
             code: 'PGRST205',
             hint:
               orderError.hint ||
-              'La tabla ordenes no existe en Supabase. Ejecuta la migración SQL en Supabase Dashboard: supabase/migrations/005_create_ordenes_table.sql',
-            migrationFile: 'supabase/migrations/005_create_ordenes_table.sql',
+              'La tabla ordenes no existe en Supabase. Ejecuta la migración SQL en Supabase Dashboard: supabase/migrations/006_create_ordenes_simple.sql',
+            migrationFile: 'supabase/migrations/006_create_ordenes_simple.sql',
             actionRequired: 'Ejecutar migración SQL en Supabase Dashboard → SQL Editor',
           },
           { status: 500 }
@@ -202,18 +251,16 @@ export async function POST(request: Request) {
       )
     }
 
-    if (!order) {
-      console.error('[CHECKOUT] ❌ createOrder retornó null sin lanzar error')
+    if (!orderId) {
+      console.error('[CHECKOUT] ❌ createSimpleOrder retornó null sin lanzar error')
       return NextResponse.json(
         {
           error: 'Error al crear la orden',
-          details: 'La función createOrder retornó null sin información adicional',
+          details: 'La función createSimpleOrder retornó null sin información adicional',
         },
         { status: 500 }
       )
     }
-
-    console.log('[CHECKOUT] ✅ Orden creada:', order.id)
 
     // Preparar items para Mercado Pago (sin el item de envío, se agrega después)
     const mpItems = validatedData.items
@@ -248,9 +295,9 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         items: mpItems,
         back_urls: {
-          success: `${origin}/pago/success?orderId=${order.id}`,
-          failure: `${origin}/pago/failure?orderId=${order.id}`,
-          pending: `${origin}/pago/pending?orderId=${order.id}`,
+          success: `${origin}/pago/success?orderId=${orderId}`,
+          failure: `${origin}/pago/failure?orderId=${orderId}`,
+          pending: `${origin}/pago/pending?orderId=${orderId}`,
         },
         payer: {
           name: validatedData.cliente.nombre,

@@ -268,11 +268,53 @@ export default function CheckoutPage() {
         total: totalWithShipping,
       }
 
-      // Crear orden en backend
-      const orderResponse = await fetch('/api/checkout/create-order', {
+      // Crear orden en backend (usar endpoint simplificado)
+      // Primero intentar con estructura simplificada
+      const simpleOrderData = {
+        productos: orderItems
+          .filter((item) => item.id !== 'envio')
+          .map((item) => ({
+            id: item.id,
+            nombre: item.nombre,
+            precio: item.precio,
+            cantidad: item.cantidad,
+            talle: item.talle,
+            subtotal: item.subtotal,
+            imagenPrincipal: item.imagenPrincipal,
+          })),
+        comprador: {
+          nombre: formData.nombre!,
+          email: formData.email!,
+          telefono: formData.telefono,
+        },
+        envio: {
+          tipo:
+            selectedShipping?.tipo ||
+            (selectedShipping?.nombre.toLowerCase().includes('express') ? 'express' : 'estandar'),
+          metodo: selectedShipping?.nombre || 'Retiro en local',
+          costo: selectedShipping?.precio || 0,
+          direccion:
+            selectedShipping?.tipo === 'retiro_local'
+              ? undefined
+              : {
+                  calle: formData.calle,
+                  numero: formData.numero,
+                  pisoDepto: formData.pisoDepto,
+                  codigoPostal: formData.codigoPostal,
+                  localidad: formData.localidad,
+                  provincia: formData.provincia,
+                  pais: 'Argentina',
+                },
+          demora: selectedShipping?.demora,
+          proveedor: selectedShipping?.transportista,
+        },
+        total: totalWithShipping,
+      }
+
+      const orderResponse = await fetch('/api/checkout/create-order-simple', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(orderData),
+        body: JSON.stringify(simpleOrderData),
       })
 
       if (!orderResponse.ok) {
