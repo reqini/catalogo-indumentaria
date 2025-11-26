@@ -122,11 +122,11 @@ export async function POST(request: Request) {
     }
 
     // Actualizar orden con tracking
-    if ((order as any).envio) {
+    if (simpleOrder) {
       // Estructura simplificada
       const { updateSimpleOrderWithTracking } = await import('@/lib/ordenes-helpers-simple')
       await updateSimpleOrderWithTracking(orderId, {
-        tracking: shippingResult.trackingNumber,
+        tracking: shippingResult.trackingNumber!,
         provider: shippingResult.provider || 'Envíopack',
         status: 'en_transito',
       })
@@ -134,7 +134,7 @@ export async function POST(request: Request) {
       // Estructura completa
       const { updateOrderShipping } = await import('@/lib/ordenes-helpers')
       await updateOrderShipping(orderId, {
-        envio_tracking: shippingResult.trackingNumber,
+        envio_tracking: shippingResult.trackingNumber!,
         envio_proveedor: shippingResult.provider || 'Envíopack',
         estado: 'enviada',
       })

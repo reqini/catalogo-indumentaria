@@ -428,7 +428,7 @@ export async function POST(request: Request) {
                   trackingNumber: shippingResult.trackingNumber,
                   clienteEmail: envioData.cliente.email,
                   clienteNombre: envioData.cliente.nombre,
-                  envioMetodo: envioData.metodo || 'OCA Estándar',
+                  envioMetodo: envioData.metodo || 'OCA Estándar' || '',
                   envioProveedor: shippingResult.provider,
                 })
                 console.log(`[MP-WEBHOOK] ✅ Notificación de envío enviada al cliente`)
