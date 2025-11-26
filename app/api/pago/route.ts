@@ -466,34 +466,49 @@ export async function POST(request: Request) {
         errorData = await response.json()
       } catch (e) {
         const text = await response.text()
-        console.error('[MP-PAYMENT] Error de Mercado Pago (texto):', text)
+        console.error('[MP-PAYMENT] ❌ [ERROR] Error de Mercado Pago API (texto):', text)
         errorData = { message: text || 'Error desconocido' }
       }
 
-      console.error('[MP-PAYMENT] ❌ Error de Mercado Pago API')
+      console.error('[MP-PAYMENT] ❌ [ERROR] Error de Mercado Pago API')
       console.error('[MP-PAYMENT] Status:', response.status)
       console.error('[MP-PAYMENT] Response:', JSON.stringify(errorData, null, 2))
       console.error(
-        '[MP-PAYMENT] Request body:',
+        '[MP-PAYMENT] Request body (sin datos sensibles):',
         JSON.stringify(
           {
-            items: items.map((i) => ({
-              title: i.title,
-              quantity: i.quantity,
-              unit_price: i.unit_price,
-            })),
-            back_urls,
+            itemsCount: items.length,
+            totalAmount: items.reduce((sum, i) => sum + i.unit_price * i.quantity, 0),
+            hasBackUrls: !!back_urls,
           },
           null,
           2
         )
       )
 
+      // Determinar código de error específico según status
+      let errorCode = 'CHECKOUT_MP_ERROR'
+      let errorMessage =
+        'No pudimos generar el pago con Mercado Pago. Intentalo de nuevo en unos minutos.'
+
+      if (response.status === 401) {
+        errorCode = 'MP_INVALID_TOKEN'
+        errorMessage = 'Credenciales de Mercado Pago inválidas. Verificá la configuración.'
+      } else if (response.status === 400) {
+        errorCode = 'MP_INVALID_REQUEST'
+        errorMessage = 'Datos inválidos enviados a Mercado Pago. Verificá los productos y montos.'
+      } else if (response.status >= 500) {
+        errorCode = 'MP_SERVER_ERROR'
+        errorMessage = 'Error temporal en Mercado Pago. Intentalo de nuevo en unos minutos.'
+      }
+
       return NextResponse.json(
         {
-          error: 'Error al crear preferencia de pago',
-          details: errorData.message || errorData.error || 'Error desconocido de Mercado Pago',
-          mpError: errorData,
+          ok: false,
+          code: errorCode,
+          message: errorMessage,
+          detail: errorData.message || errorData.error || 'Error desconocido de Mercado Pago',
+          mpError: errorData.cause || errorData,
         },
         { status: response.status || 500 }
       )
