@@ -285,10 +285,20 @@ export default function CheckoutPage() {
 
         console.error('[CHECKOUT] ❌ Error del servidor:', errorData)
 
-        // Mostrar mensaje de error más detallado
-        const errorMessage = errorData.details
-          ? `${errorData.error}: ${errorData.details}`
-          : errorData.error || 'Error al crear la orden'
+        // Mostrar mensaje de error más detallado y amigable
+        let errorMessage = errorData.error || 'Error al crear la orden'
+
+        if (errorData.details && Array.isArray(errorData.details) && errorData.details.length > 0) {
+          const firstError = errorData.details[0]
+          if (firstError.path) {
+            const fieldName = firstError.path.split('.').pop() || 'campo'
+            errorMessage = `Por favor, completá correctamente el campo: ${fieldName}. ${firstError.message || ''}`
+          } else {
+            errorMessage = firstError.message || errorMessage
+          }
+        } else if (errorData.hint) {
+          errorMessage = errorData.hint
+        }
 
         throw new Error(errorMessage)
       }
