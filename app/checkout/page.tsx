@@ -16,6 +16,7 @@ interface ShippingMethod {
   demora: string
   disponible: boolean
   transportista?: string
+  tipo?: 'envio' | 'retiro_local'
 }
 
 // Schema de validación con Zod (campos de dirección opcionales si es retiro en local)

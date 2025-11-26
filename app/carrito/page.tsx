@@ -288,9 +288,7 @@ export default function CarritoPage() {
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>Envío</span>
-                  <span>
-                    {selectedShipping ? formatPrice(selectedShipping.precio) : 'Calculado arriba'}
-                  </span>
+                  <span className="text-sm text-gray-500">Se calcula en checkout</span>
                 </div>
                 <div className="mt-2 border-t border-gray-300 pt-2">
                   <div className="flex justify-between text-lg font-bold text-black">
@@ -315,9 +313,9 @@ export default function CarritoPage() {
                 )}
               </button>
 
-              {!selectedShipping && getTotalPrice() > 0 && (
+              {getTotalPrice() > 0 && (
                 <p className="mb-4 text-center text-xs text-amber-600">
-                  💡 Podés calcular el envío arriba o continuar sin envío (retiro en local)
+                  💡 El envío se calculará en checkout (también podés elegir retiro en local)
                 </p>
               )}
 
