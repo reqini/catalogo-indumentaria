@@ -304,14 +304,16 @@ Abre DevTools (F12) → Console y busca:
 
 ## 📊 RESUMEN DE RESULTADOS
 
-| Caso            | Estado       | Observaciones     |
-| --------------- | ------------ | ----------------- |
-| TC-CHECKOUT-001 | ⏳ PENDIENTE | Flujo completo    |
-| TC-CHECKOUT-002 | ⏳ PENDIENTE | Retiro en local   |
-| TC-CHECKOUT-003 | ⏳ PENDIENTE | Validaciones      |
-| TC-CHECKOUT-004 | ⏳ PENDIENTE | Loading/Estados   |
-| TC-CHECKOUT-005 | ⏳ PENDIENTE | Manejo de errores |
-| TC-CHECKOUT-006 | ⏳ PENDIENTE | Verificación BD   |
+| Caso            | Estado       | Observaciones      | Resultado Actual       |
+| --------------- | ------------ | ------------------ | ---------------------- |
+| TC-CHECKOUT-001 | ⏳ PENDIENTE | Flujo completo     | -                      |
+| TC-CHECKOUT-002 | ⏳ PENDIENTE | Retiro en local    | -                      |
+| TC-CHECKOUT-003 | ⏳ PENDIENTE | Validaciones       | -                      |
+| TC-CHECKOUT-004 | ⏳ PENDIENTE | Loading/Estados    | -                      |
+| TC-CHECKOUT-005 | ⏳ PENDIENTE | Manejo de errores  | -                      |
+| TC-CHECKOUT-006 | ⏳ PENDIENTE | Verificación BD    | -                      |
+| TC-CHECKOUT-007 | ⏳ PENDIENTE | MP no configurado  | Ver sección específica |
+| TC-CHECKOUT-008 | ⏳ PENDIENTE | EnvioPack fallback | Ver sección específica |
 
 ---
 
@@ -373,5 +375,258 @@ Antes de considerar el checkout como funcional:
 
 ---
 
+### TC-CHECKOUT-007: Mercado Pago No Configurado
+
+**Objetivo:** Verificar manejo cuando `MP_ACCESS_TOKEN` no está configurado
+
+**Precondiciones:**
+
+- `MP_ACCESS_TOKEN` NO configurado en Vercel
+- Tabla `ordenes` existe en Supabase
+- Productos disponibles
+
+**Pasos:**
+
+1. Completar checkout completo hasta "Pagar Ahora"
+2. Click en "Pagar Ahora"
+3. Observar respuesta del servidor
+
+**Resultado esperado:**
+
+- ✅ Error 503 (Service Unavailable)
+- ✅ Mensaje claro: "El servicio de pago está temporalmente deshabilitado..."
+- ✅ Instrucciones para configurar en Vercel
+- ✅ Toast visible con duración extendida (6 segundos)
+- ✅ Botón se habilita nuevamente
+- ✅ NO crashea la aplicación
+
+**Logs esperados en consola:**
+
+```
+[CHECKOUT][CLIENT] 🚀 Iniciando proceso de checkout...
+[CHECKOUT][CLIENT] 📤 Enviando orden al servidor...
+[CHECKOUT][API] 📥 Request recibido
+[CHECKOUT][API] ✅ Orden creada exitosamente: {orderId}
+[CHECKOUT][API] 📤 Creando preferencia MP...
+[MP-PAYMENT] ❌ NO se encontraron variables relacionadas con MP
+[MP-PAYMENT] ❌ Mercado Pago no configurado correctamente
+[CHECKOUT][API] ❌ Mercado Pago no configurado (503)
+[CHECKOUT][CLIENT] ❌ Error del servidor: {code: 'CHECKOUT_MP_NOT_CONFIGURED', ...}
+```
+
+**Logs esperados en Vercel:**
+
+```
+[MP-PAYMENT] 🔍 DIAGNÓSTICO COMPLETO DE VARIABLES DE ENTORNO
+[MP-PAYMENT] Variables relacionadas con MP encontradas: 0
+[MP-PAYMENT] ❌ NO se encontraron variables relacionadas con MP
+[MP-PAYMENT] ❌ SOLUCIÓN: Hacer REDEPLOY después de agregar variables
+```
+
+---
+
+### TC-CHECKOUT-008: EnvioPack No Configurado (Fallback)
+
+**Objetivo:** Verificar que EnvioPack no rompe el checkout si no está configurado
+
+**Precondiciones:**
+
+- `ENVIOPACK_API_KEY` y `ENVIOPACK_API_SECRET` NO configurados
+- Tabla `ordenes` existe
+- `MP_ACCESS_TOKEN` configurado
+
+**Pasos:**
+
+1. Ir a checkout
+2. Completar datos personales
+3. En método de envío, ingresar código postal válido (ej: "C1043AAX")
+4. Observar métodos de envío disponibles
+5. Seleccionar método
+6. Continuar y completar compra
+
+**Resultado esperado:**
+
+- ✅ Métodos de envío se muestran (simulados)
+- ✅ NO aparece error 500
+- ✅ Checkout continúa funcionando normalmente
+- ✅ Métodos simulados disponibles (OCA, Correo Argentino, Andreani)
+- ✅ Precios calculados correctamente (simulados)
+
+**Logs esperados:**
+
+```
+[ENVIOS][ENVIOPACK] ⚠️ Credenciales no configuradas, usando cálculo simulado
+[ENVIOS][ENVIOPACK] ✅ Métodos simulados generados: 5
+```
+
+**Resultado actual esperado:**
+
+- ✅ Checkout funciona completamente
+- ✅ Métodos simulados se muestran
+- ✅ No hay errores en consola relacionados con EnvioPack
+
+---
+
+### TC-CHECKOUT-009: Tabla de Órdenes No Existe (PGRST205)
+
+**Objetivo:** Verificar manejo cuando tabla `ordenes` no existe
+
+**Precondiciones:**
+
+- Tabla `ordenes` NO existe en Supabase
+- `MP_ACCESS_TOKEN` configurado (opcional para este test)
+
+**Pasos:**
+
+1. Completar checkout hasta "Pagar Ahora"
+2. Click en "Pagar Ahora"
+3. Observar respuesta del servidor
+
+**Resultado esperado:**
+
+- ✅ Error 500 con código `CHECKOUT_CREATE_ORDER_ERROR`
+- ✅ Mensaje claro indicando que falta ejecutar SQL
+- ✅ Instrucciones para ejecutar migración
+- ✅ Menciona archivo: `supabase/schemas/checkout-schema-completo.sql`
+- ✅ NO crashea la aplicación
+
+**Respuesta esperada:**
+
+```json
+{
+  "ok": false,
+  "code": "CHECKOUT_CREATE_ORDER_ERROR",
+  "message": "Error al crear la orden en la base de datos",
+  "errorCode": "PGRST205",
+  "hint": "Ejecuta el SQL en Supabase Dashboard → SQL Editor",
+  "migrationFile": "supabase/schemas/checkout-schema-completo.sql"
+}
+```
+
+**Logs esperados:**
+
+```
+[CHECKOUT][API] 📤 Creando orden en Supabase...
+[ORDENES-SIMPLE] ❌ Error creando orden en Supabase:
+[ORDENES-SIMPLE]    - Código: PGRST205
+[ORDENES-SIMPLE]    - Mensaje: Could not find the table 'public.ordenes'
+[CHECKOUT][API] ❌ Error creando orden: PGRST205
+```
+
+---
+
+### TC-CHECKOUT-010: Stock Insuficiente Durante Checkout
+
+**Objetivo:** Verificar validación de stock antes de crear orden
+
+**Precondiciones:**
+
+- Producto con stock limitado (ej: 2 unidades)
+- Usuario tiene 3 unidades en carrito (más de lo disponible)
+
+**Pasos:**
+
+1. Agregar producto con stock limitado al carrito (más unidades de las disponibles)
+2. Ir a checkout
+3. Completar datos
+4. Click en "Pagar Ahora"
+
+**Resultado esperado:**
+
+- ✅ Error 400 con código `CHECKOUT_INSUFFICIENT_STOCK`
+- ✅ Mensaje claro: "Stock insuficiente para [producto] (Talle X). Disponible: Y"
+- ✅ NO se crea orden en Supabase
+- ✅ Toast visible con mensaje de error
+
+**Logs esperados:**
+
+```
+[CHECKOUT][API] Validando stock para producto: {id}
+[CHECKOUT][API] ❌ Stock insuficiente: disponible=2, solicitado=3
+[CHECKOUT][API] Retornando error 400
+```
+
+---
+
+## 🔍 Análisis de Logs para Debugging
+
+### Logs Críticos a Buscar
+
+#### ✅ Flujo Exitoso Completo
+
+**Consola del navegador:**
+
+```
+[CHECKOUT][CLIENT] 🚀 Iniciando proceso de checkout...
+[CHECKOUT][CLIENT] 📤 Enviando orden al servidor...
+[CHECKOUT][CLIENT] ✅ Respuesta del servidor: {ok: true, ...}
+[CHECKOUT][CLIENT] 🎯 Redirigiendo a Mercado Pago...
+```
+
+**Vercel Dashboard:**
+
+```
+[CHECKOUT][API] 📥 Request recibido
+[CHECKOUT][API] ✅ Validación exitosa
+[CHECKOUT][API] 📤 Creando orden en Supabase...
+[CHECKOUT][API] ✅ Orden creada exitosamente: {orderId}
+[CHECKOUT][API] 📤 Creando preferencia MP...
+[MP-PAYMENT] ✅ Token configurado correctamente
+[MP-PAYMENT] ✅ Preferencia creada exitosamente
+[CHECKOUT][API] ✅ Checkout completado exitosamente
+```
+
+#### ❌ Error: Mercado Pago No Configurado
+
+**Vercel Dashboard:**
+
+```
+[MP-PAYMENT] 🔍 DIAGNÓSTICO COMPLETO DE VARIABLES DE ENTORNO
+[MP-PAYMENT] Variables relacionadas con MP encontradas: 0
+[MP-PAYMENT] ❌ NO se encontraron variables relacionadas con MP
+[MP-PAYMENT] ❌ SOLUCIÓN: Hacer REDEPLOY después de agregar variables
+[MP-PAYMENT] ❌ Mercado Pago no configurado correctamente
+[CHECKOUT][API] ❌ Mercado Pago no configurado (503)
+```
+
+#### ❌ Error: Tabla No Existe (PGRST205)
+
+**Vercel Dashboard:**
+
+```
+[CHECKOUT][API] 📤 Creando orden en Supabase...
+[ORDENES-SIMPLE] ❌ Error creando orden en Supabase:
+[ORDENES-SIMPLE]    - Código: PGRST205
+[ORDENES-SIMPLE]    - Mensaje: Could not find the table 'public.ordenes'
+[CHECKOUT][API] ❌ Error creando orden: PGRST205
+```
+
+---
+
+## 📝 Notas de Implementación para QA
+
+### Cómo Simular Escenarios de Error
+
+#### Simular MP No Configurado:
+
+1. Remover temporalmente `MP_ACCESS_TOKEN` de Vercel
+2. Hacer redeploy
+3. Probar checkout
+
+#### Simular Tabla No Existe:
+
+1. En Supabase Dashboard, eliminar tabla `ordenes` (temporalmente)
+2. Probar checkout
+3. Restaurar tabla después
+
+#### Simular EnvioPack No Configurado:
+
+1. Remover `ENVIOPACK_API_KEY` y `ENVIOPACK_API_SECRET` de Vercel
+2. Probar cálculo de envío
+3. Verificar que usa fallback simulado
+
+---
+
 **Última actualización:** 2024-11-26  
-**Estado:** ✅ **LISTO PARA PRUEBAS**
+**Estado:** ✅ **LISTO PARA PRUEBAS**  
+**Versión:** 2.0 (Mejorado con casos adicionales)
