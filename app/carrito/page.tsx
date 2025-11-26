@@ -93,10 +93,12 @@ export default function CarritoPage() {
 
       // Incluir costo de envío si está seleccionado
       if (selectedShipping !== null && selectedShipping.precio > 0) {
+        // TypeScript narrowing: sabemos que selectedShipping no es null aquí
+        const shipping = selectedShipping as ShippingMethod
         items.push({
-          title: `Envío - ${selectedShipping.nombre}`,
+          title: `Envío - ${shipping.nombre}`,
           quantity: 1,
-          unit_price: selectedShipping.precio,
+          unit_price: shipping.precio,
           id: 'envio', // ID especial para envío
           talle: '', // No aplica para envío
         })
