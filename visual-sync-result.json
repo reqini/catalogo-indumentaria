@@ -1,0 +1,108 @@
+{
+  "timestamp": "2025-11-26T02:32:31.194Z",
+  "productionDomain": "https://catalogo-indumentaria.vercel.app",
+  "mainDeploymentUrl": "https://catalogo-indumentaria-git-main-billeteraaps-projects.vercel.app",
+  "productionAssets": {
+    "css": ["https://catalogo-indumentaria.vercel.app/_next/static/css/9dfe7220a15b1f60.css"],
+    "js": [
+      "https://catalogo-indumentaria.vercel.app/_next/static/chunks/838cb57d-313920d5f77bc3c7.js",
+      "https://catalogo-indumentaria.vercel.app/_next/static/chunks/119-bdb7354076f9ee79.js",
+      "https://catalogo-indumentaria.vercel.app/_next/static/chunks/main-app-c825a11260b12b38.js",
+      "https://catalogo-indumentaria.vercel.app/_next/static/chunks/31-9b22548d814f6abf.js",
+      "https://catalogo-indumentaria.vercel.app/_next/static/chunks/285-7f48b629a6c814fe.js",
+      "https://catalogo-indumentaria.vercel.app/_next/static/chunks/260-e0938076c3ecfb8c.js",
+      "https://catalogo-indumentaria.vercel.app/_next/static/chunks/815-014a069eb75c4f1d.js",
+      "https://catalogo-indumentaria.vercel.app/_next/static/chunks/385-bf7b8f2cb4a482e5.js",
+      "https://catalogo-indumentaria.vercel.app/_next/static/chunks/216-53b4b40edf547ac6.js",
+      "https://catalogo-indumentaria.vercel.app/_next/static/chunks/818-79bf437dc3dac122.js",
+      "https://catalogo-indumentaria.vercel.app/_next/static/chunks/app/page-9f98a5305c7c5d9a.js",
+      "https://catalogo-indumentaria.vercel.app/_next/static/chunks/425-838c165f41290330.js",
+      "https://catalogo-indumentaria.vercel.app/_next/static/chunks/app/layout-3772e5a73e50b8fe.js",
+      "https://catalogo-indumentaria.vercel.app/_next/static/chunks/app/error-56c9bc85348c7b05.js",
+      "https://catalogo-indumentaria.vercel.app/_next/static/chunks/polyfills-78c92fac7aa8fdd8.js",
+      "https://catalogo-indumentaria.vercel.app/_next/static/chunks/webpack-49aefbc8ba4790eb.js"
+    ],
+    "images": [
+      "https://catalogo-indumentaria.vercel.app/_next/image?url=https%3A%2F%2Fimages.unsplash.com%2Fphoto-1441986300917-64674bd600d8%3Fixlib%3Drb-4.0.3%26ixid%3DM3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%253D%253D%26auto%3Dformat%26fit%3Dcrop%26w%3D2070%26q%3D80&amp;w=3840&amp;q=90",
+      "https://catalogo-indumentaria.vercel.app/_next/image?url=https%3A%2F%2Fimages.unsplash.com%2Fphoto-1542291026-7eec264c27ff%3Fixlib%3Drb-4.0.3%26auto%3Dformat%26fit%3Dcrop%26w%3D1080%26q%3D80&amp;w=3840&amp;q=85",
+      "https://catalogo-indumentaria.vercel.app/_next/image?url=https%3A%2F%2Fimages.unsplash.com%2Fphoto-1441986300917-64674bd600d8%3Fixlib%3Drb-4.0.3%26auto%3Dformat%26fit%3Dcrop%26w%3D1080%26q%3D80&amp;w=3840&amp;q=85",
+      "https://catalogo-indumentaria.vercel.app/_next/image?url=https%3A%2F%2Fimages.unsplash.com%2Fphoto-1571019613454-1cb2f99b2d8b%3Fixlib%3Drb-4.0.3%26auto%3Dformat%26fit%3Dcrop%26w%3D1080%26q%3D80&amp;w=3840&amp;q=85"
+    ]
+  },
+  "mainAssets": {
+    "css": [],
+    "js": [],
+    "images": []
+  },
+  "assetHashes": {
+    "https://catalogo-indumentaria.vercel.app/_next/static/css/9dfe7220a15b1f60.css": {
+      "url": "https://catalogo-indumentaria.vercel.app/_next/static/css/9dfe7220a15b1f60.css",
+      "hash": "88c5ff893ac2e12cfcf6984f6696333298047d85c6d957d1adac506c93d52dd7",
+      "size": 32868,
+      "status": 200
+    },
+    "https://catalogo-indumentaria.vercel.app/_next/static/chunks/838cb57d-313920d5f77bc3c7.js": {
+      "url": "https://catalogo-indumentaria.vercel.app/_next/static/chunks/838cb57d-313920d5f77bc3c7.js",
+      "hash": "b726cbaea7e77125cee119eef4c1421a869f07db8e583d5ee62fedb7b8cda22f",
+      "size": 172834,
+      "status": 200
+    },
+    "https://catalogo-indumentaria.vercel.app/_next/static/chunks/119-bdb7354076f9ee79.js": {
+      "url": "https://catalogo-indumentaria.vercel.app/_next/static/chunks/119-bdb7354076f9ee79.js",
+      "hash": "50ecd60e3227c4030b5124d1425067b4a350244832b73e55aabe509efb2d62d6",
+      "size": 123741,
+      "status": 200
+    },
+    "https://catalogo-indumentaria.vercel.app/_next/static/chunks/main-app-c825a11260b12b38.js": {
+      "url": "https://catalogo-indumentaria.vercel.app/_next/static/chunks/main-app-c825a11260b12b38.js",
+      "hash": "d4fae0eb018b79f884ec238bfa4d0ca5742c87add25d714f2bd93e8e67f782dd",
+      "size": 472,
+      "status": 200
+    },
+    "https://catalogo-indumentaria.vercel.app/_next/static/chunks/31-9b22548d814f6abf.js": {
+      "url": "https://catalogo-indumentaria.vercel.app/_next/static/chunks/31-9b22548d814f6abf.js",
+      "hash": "925f60c3d1d1e216af990f66078400dddf04da1b8f830bbc02b10a989ee521e2",
+      "size": 116531,
+      "status": 200
+    },
+    "https://catalogo-indumentaria.vercel.app/_next/static/chunks/285-7f48b629a6c814fe.js": {
+      "url": "https://catalogo-indumentaria.vercel.app/_next/static/chunks/285-7f48b629a6c814fe.js",
+      "hash": "3f5353509cb7118c5dd8e943e89edfd1abffc72740418259c1ecd7576d4f4490",
+      "size": 13981,
+      "status": 200
+    }
+  },
+  "differences": {
+    "css": [],
+    "js": [],
+    "images": [],
+    "missing": {
+      "css": ["https://catalogo-indumentaria.vercel.app/_next/static/css/9dfe7220a15b1f60.css"],
+      "js": [
+        "https://catalogo-indumentaria.vercel.app/_next/static/chunks/838cb57d-313920d5f77bc3c7.js",
+        "https://catalogo-indumentaria.vercel.app/_next/static/chunks/119-bdb7354076f9ee79.js",
+        "https://catalogo-indumentaria.vercel.app/_next/static/chunks/main-app-c825a11260b12b38.js",
+        "https://catalogo-indumentaria.vercel.app/_next/static/chunks/31-9b22548d814f6abf.js",
+        "https://catalogo-indumentaria.vercel.app/_next/static/chunks/285-7f48b629a6c814fe.js",
+        "https://catalogo-indumentaria.vercel.app/_next/static/chunks/260-e0938076c3ecfb8c.js",
+        "https://catalogo-indumentaria.vercel.app/_next/static/chunks/815-014a069eb75c4f1d.js",
+        "https://catalogo-indumentaria.vercel.app/_next/static/chunks/385-bf7b8f2cb4a482e5.js",
+        "https://catalogo-indumentaria.vercel.app/_next/static/chunks/216-53b4b40edf547ac6.js",
+        "https://catalogo-indumentaria.vercel.app/_next/static/chunks/818-79bf437dc3dac122.js",
+        "https://catalogo-indumentaria.vercel.app/_next/static/chunks/app/page-9f98a5305c7c5d9a.js",
+        "https://catalogo-indumentaria.vercel.app/_next/static/chunks/425-838c165f41290330.js",
+        "https://catalogo-indumentaria.vercel.app/_next/static/chunks/app/layout-3772e5a73e50b8fe.js",
+        "https://catalogo-indumentaria.vercel.app/_next/static/chunks/app/error-56c9bc85348c7b05.js",
+        "https://catalogo-indumentaria.vercel.app/_next/static/chunks/polyfills-78c92fac7aa8fdd8.js",
+        "https://catalogo-indumentaria.vercel.app/_next/static/chunks/webpack-49aefbc8ba4790eb.js"
+      ],
+      "images": []
+    },
+    "extra": {
+      "css": [],
+      "js": [],
+      "images": []
+    }
+  },
+  "synchronized": false
+}

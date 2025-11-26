@@ -8,7 +8,7 @@ const nextConfig = {
     NEXT_PUBLIC_VERCEL_GIT_COMMIT_REF: process.env.VERCEL_GIT_COMMIT_REF || 'main',
     NEXT_PUBLIC_VERCEL_BUILD_TIME: process.env.VERCEL_BUILD_TIME || new Date().toISOString(),
     // BUILD_ID único para identificar cada deploy
-    NEXT_PUBLIC_BUILD_ID: process.env.VERCEL_GIT_COMMIT_SHA 
+    NEXT_PUBLIC_BUILD_ID: process.env.VERCEL_GIT_COMMIT_SHA
       ? `${process.env.VERCEL_GIT_COMMIT_SHA.substring(0, 7)}-${Date.now()}`
       : `dev-${Date.now()}`,
   },
@@ -17,6 +17,13 @@ const nextConfig = {
       {
         source: '/:path*',
         headers: [
+          {
+            key: 'Cache-Control',
+            value:
+              process.env.NODE_ENV === 'production'
+                ? 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400'
+                : 'no-store, no-cache, must-revalidate',
+          },
           {
             key: 'Content-Security-Policy',
             value: [
@@ -31,7 +38,7 @@ const nextConfig = {
               "base-uri 'self'",
               "form-action 'self'",
               "frame-ancestors 'none'",
-              "upgrade-insecure-requests",
+              'upgrade-insecure-requests',
             ].join('; '),
           },
         ],

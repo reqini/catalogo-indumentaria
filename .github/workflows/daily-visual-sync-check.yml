@@ -1,0 +1,85 @@
+name: Daily Visual Sync Check
+
+on:
+  schedule:
+    # Ejecutar diariamente a las 2 AM UTC (11 PM Argentina)
+    - cron: '0 2 * * *'
+  workflow_dispatch: # Permitir ejecución manual
+
+jobs:
+  check-visual-sync:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run visual sync verification
+        run: node scripts/verify-visual-sync.mjs
+        continue-on-error: true
+        id: verify
+
+      - name: Check sync status
+        id: check
+        run: |
+          if [ -f visual-sync-result.json ]; then
+            SYNCHRONIZED=$(node -e "const r=require('./visual-sync-result.json'); console.log(r.synchronized)")
+            echo "synchronized=$SYNCHRONIZED" >> $GITHUB_OUTPUT
+            
+            if [ "$SYNCHRONIZED" != "true" ]; then
+              echo "❌ Diferencias detectadas entre dominios"
+              exit 1
+            else
+              echo "✅ Dominios sincronizados correctamente"
+            fi
+          else
+            echo "⚠️ No se pudo generar resultado de verificación"
+            exit 1
+          fi
+
+      - name: Generate alert log
+        if: failure()
+        run: |
+          echo "[$(date -u +"%Y-%m-%d %H:%M:%S UTC")] ALERTA: Diferencias detectadas entre dominios" >> VISUAL_SYNC_ALERTS.log
+          echo "Production: ${{ env.PRODUCTION_DOMAIN }}" >> VISUAL_SYNC_ALERTS.log
+          echo "Main Deployment: ${{ env.MAIN_DEPLOYMENT_URL }}" >> VISUAL_SYNC_ALERTS.log
+          echo "---" >> VISUAL_SYNC_ALERTS.log
+          cat visual-sync-result.json >> VISUAL_SYNC_ALERTS.log
+          echo "" >> VISUAL_SYNC_ALERTS.log
+
+      - name: Upload alert log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-sync-alert
+          path: |
+            VISUAL_SYNC_ALERTS.log
+            visual-sync-result.json
+
+      - name: Commit alert log
+        if: failure()
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add VISUAL_SYNC_ALERTS.log || true
+          git commit -m "chore: alerta sincronización visual - diferencias detectadas" || true
+          git push || true
+
+      - name: Update status badge
+        if: success()
+        run: |
+          echo "✅ Última verificación: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" > .visual-sync-status.txt
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .visual-sync-status.txt || true
+          git commit -m "chore: actualizar estado sincronización visual" || true
+          git push || true
+

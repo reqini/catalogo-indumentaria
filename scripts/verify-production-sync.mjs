@@ -187,7 +187,7 @@ async function main() {
 // Ejecutar si es llamado directamente
 if (import.meta.url === `file://${process.argv[1]}` || process.argv[1]?.endsWith('verify-production-sync.mjs')) {
   main()
-    .then(result => {
+    .then(async result => {
       console.log('\n📊 Resumen:')
       console.log(`   Sincronizado: ${result.synchronized ? '✅ Sí' : '❌ No'}`)
       console.log(`   Acción requerida: ${result.actionRequired ? 'Sí - Reasignar dominio' : 'No'}`)
