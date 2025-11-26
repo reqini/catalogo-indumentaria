@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getTenantFromRequest } from '@/lib/auth-helpers'
+import { getAuthToken } from '@/lib/auth-helpers'
+import jwt from 'jsonwebtoken'
+
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
 
 /**
  * API Route para generar chat/conversaciones
@@ -16,21 +20,35 @@ import { getTenantFromRequest } from '@/lib/auth-helpers'
 
 export async function POST(request: NextRequest) {
   try {
-    // 1. VALIDACIÓN CRÍTICA: Obtener usuario autenticado del token JWT
+    // 1. VALIDACIÓN CRÍTICA: Obtener token y validar autenticación
     // Esto previene suplantación de usuario (user impersonation)
-    // Soporta tanto Authorization header como cookie auth_token
-    const tenant = await getTenantFromRequest(request)
+    const tokenResult = await getAuthToken(request)
 
-    if (!tenant) {
+    if (!tokenResult) {
       return NextResponse.json({ error: 'No autenticado. Token requerido.' }, { status: 401 })
     }
 
-    // 2. Validar que el tenant esté activo
-    if (!tenant.activo) {
-      return NextResponse.json({ error: 'Cuenta inactiva' }, { status: 403 })
+    // 2. Decodificar token para obtener userId directamente
+    // El token contiene: { id, tenantId, email, plan, rol }
+    let decoded: any
+    try {
+      decoded = jwt.verify(tokenResult.token, JWT_SECRET)
+    } catch (error) {
+      return NextResponse.json({ error: 'Token inválido o expirado' }, { status: 401 })
     }
 
-    // 3. Obtener datos del request body
+    // 3. Validar que el token tenga userId
+    if (!decoded.id) {
+      return NextResponse.json({ error: 'Token inválido: falta userId' }, { status: 401 })
+    }
+
+    // 4. Validar tenant para asegurar que está activo
+    const tenant = await getTenantFromRequest(request)
+    if (!tenant || !tenant.activo) {
+      return NextResponse.json({ error: 'Cuenta inactiva o no encontrada' }, { status: 403 })
+    }
+
+    // 5. Obtener datos del request body
     const body = await request.json()
     const { message, conversationId } = body
 
@@ -39,10 +57,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Mensaje requerido' }, { status: 400 })
     }
 
-    // 4. CRÍTICO: Usar SIEMPRE el userId del token autenticado
+    // 6. CRÍTICO: Usar SIEMPRE el userId del token autenticado
     // NUNCA usar userId del body o query params (previene user impersonation)
     // El userId viene del token JWT verificado, no del cliente
-    const userId = tenant.id
+    const userId = decoded.id
 
     // 5. Si se proporciona conversationId, validar que pertenece al usuario autenticado
     if (conversationId) {
@@ -76,22 +94,35 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
-    // 1. VALIDACIÓN CRÍTICA: Obtener usuario autenticado del token
-    // Soporta tanto Authorization header como cookie auth_token
-    const tenant = await getTenantFromRequest(request)
+    // 1. VALIDACIÓN CRÍTICA: Obtener token y validar autenticación
+    const tokenResult = await getAuthToken(request)
 
-    if (!tenant) {
+    if (!tokenResult) {
       return NextResponse.json({ error: 'No autenticado. Token requerido.' }, { status: 401 })
     }
 
-    // 2. Validar que el tenant esté activo
-    if (!tenant.activo) {
-      return NextResponse.json({ error: 'Cuenta inactiva' }, { status: 403 })
+    // 2. Decodificar token para obtener userId directamente
+    let decoded: any
+    try {
+      decoded = jwt.verify(tokenResult.token, JWT_SECRET)
+    } catch (error) {
+      return NextResponse.json({ error: 'Token inválido o expirado' }, { status: 401 })
     }
 
-    // 3. CRÍTICO: Usar SIEMPRE el userId del token autenticado
+    // 3. Validar que el token tenga userId
+    if (!decoded.id) {
+      return NextResponse.json({ error: 'Token inválido: falta userId' }, { status: 401 })
+    }
+
+    // 4. Validar tenant para asegurar que está activo
+    const tenant = await getTenantFromRequest(request)
+    if (!tenant || !tenant.activo) {
+      return NextResponse.json({ error: 'Cuenta inactiva o no encontrada' }, { status: 403 })
+    }
+
+    // 5. CRÍTICO: Usar SIEMPRE el userId del token autenticado
     // NUNCA usar userId de query params (previene user impersonation)
-    const userId = tenant.id
+    const userId = decoded.id
 
     // 4. Obtener parámetros de query (opcional)
     const { searchParams } = new URL(request.url)
