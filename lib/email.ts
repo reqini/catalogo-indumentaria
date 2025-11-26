@@ -22,9 +22,11 @@ async function getTransporter(): Promise<any | null> {
   // Esto evita que webpack intente resolver el módulo en build time
   try {
     // Usar require dinámico que solo se ejecuta en runtime
-    // Esto evita que webpack lo analice en build time
+    // Construir el nombre del módulo dinámicamente para evitar análisis estático de webpack
+    // eslint-disable-next-line no-implied-eval
+    const moduleName = 'node' + 'mailer'
     const requireDynamic = new Function('moduleName', 'return require(moduleName)')
-    const nodemailer = requireDynamic('nodemailer')
+    const nodemailer = requireDynamic(moduleName)
 
     if (!nodemailer || !nodemailer.createTransport) {
       console.warn('[Email] nodemailer no disponible, usando modo simulado')
