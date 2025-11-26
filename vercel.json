@@ -11,6 +11,9 @@
     },
     "autoAlias": false
   },
+  "production": {
+    "domains": ["catalogo-indumentaria.vercel.app"]
+  },
   "github": {
     "autoDeployOnPush": true,
     "autoJobCancelation": true,

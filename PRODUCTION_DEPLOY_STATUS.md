@@ -57,15 +57,17 @@
 
 ## 📦 Commit Activo Actual
 
-**Commit SHA:** `903d85b`
+**Commit SHA:** `34d0dee`
 
-**Mensaje:** `docs(qa): QA manual extremo completo - 32 casos de prueba documentados + checklist mobile + CSV exportable`
+**Mensaje:** `config(vercel): configuración producción - solo main despliega a catalogo-indumentaria.vercel.app`
 
 **Fecha:** ${new Date().toLocaleString('es-AR')}
 
 **Branch:** `main`
 
 **Estado:** ✅ Desplegado o pendiente de deploy automático
+
+**Nota:** Se ha forzado un redeploy para asegurar que el dominio principal esté sincronizado con la versión más reciente.
 
 ---
 
