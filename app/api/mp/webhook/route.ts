@@ -362,21 +362,21 @@ export async function POST(request: Request) {
           if (orderForNotification && itemsProcesados.length > 0) {
             // Adaptar datos según tipo de orden
             const orderData = order || {
-              id: simpleOrder?.id,
-              cliente_nombre: simpleOrder?.comprador?.nombre,
-              cliente_email: simpleOrder?.comprador?.email,
-              cliente_telefono: simpleOrder?.comprador?.telefono,
-              subtotal: simpleOrder?.total - (simpleOrder?.envio?.costo || 0),
+              id: simpleOrder?.id || '',
+              cliente_nombre: simpleOrder?.comprador?.nombre || '',
+              cliente_email: simpleOrder?.comprador?.email || '',
+              cliente_telefono: simpleOrder?.comprador?.telefono || '',
+              subtotal: (simpleOrder?.total || 0) - (simpleOrder?.envio?.costo || 0),
               envio_costo_total: simpleOrder?.envio?.costo || 0,
-              total: simpleOrder?.total,
-              envio_metodo: simpleOrder?.envio?.metodo,
+              total: simpleOrder?.total || 0,
+              envio_metodo: simpleOrder?.envio?.metodo || '',
               envio_tracking: null,
-              envio_proveedor: simpleOrder?.envio?.proveedor,
-              direccion_calle: simpleOrder?.envio?.direccion?.calle,
-              direccion_numero: simpleOrder?.envio?.direccion?.numero,
-              direccion_localidad: simpleOrder?.envio?.direccion?.localidad,
-              direccion_provincia: simpleOrder?.envio?.direccion?.provincia,
-              direccion_codigo_postal: simpleOrder?.envio?.direccion?.codigoPostal,
+              envio_proveedor: simpleOrder?.envio?.proveedor || '',
+              direccion_calle: simpleOrder?.envio?.direccion?.calle || '',
+              direccion_numero: simpleOrder?.envio?.direccion?.numero || '',
+              direccion_localidad: simpleOrder?.envio?.direccion?.localidad || '',
+              direccion_provincia: simpleOrder?.envio?.direccion?.provincia || '',
+              direccion_codigo_postal: simpleOrder?.envio?.direccion?.codigoPostal || '',
             }
             const { notifyOrderConfirmed, notifyAdminNewOrder } = await import(
               '@/lib/notifications'
