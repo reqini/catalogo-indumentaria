@@ -99,22 +99,33 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </CartProvider>
           </AuthProvider>
         </AutoFixErrorBoundary>
-        {/* Service Worker deshabilitado condicionalmente para evitar cache agresivo */}
-        {process.env.NEXT_PUBLIC_ENABLE_PWA === 'true' && (
-          <script
-            dangerouslySetInnerHTML={{
-              __html: `
-                if ('serviceWorker' in navigator) {
-                  window.addEventListener('load', () => {
-                    navigator.serviceWorker.register('/sw.js')
-                      .then((reg) => console.log('[PWA] SW registered', reg))
-                      .catch((err) => console.log('[PWA] SW registration failed', err));
+        {/* Service Worker DESHABILITADO para evitar cache agresivo */}
+        {/* Si necesitas PWA en el futuro, configura NEXT_PUBLIC_ENABLE_PWA=true */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Desregistrar todos los Service Workers existentes para evitar cache
+              if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                  for(let registration of registrations) {
+                    console.log('[CACHE FIX] Desregistrando Service Worker:', registration.scope);
+                    registration.unregister();
+                  }
+                });
+                
+                // Limpiar todos los caches
+                if ('caches' in window) {
+                  caches.keys().then(function(names) {
+                    for (let name of names) {
+                      console.log('[CACHE FIX] Eliminando cache:', name);
+                      caches.delete(name);
+                    }
                   });
                 }
-              `,
-            }}
-          />
-        )}
+              }
+            `,
+          }}
+        />
       </body>
     </html>
   )
