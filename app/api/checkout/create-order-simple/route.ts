@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { createSimpleOrder, SimpleOrderData } from '@/lib/ordenes-helpers-simple'
 import { createPayment } from '@/utils/api'
 import { getProductById } from '@/lib/supabase-helpers'
-import { validateMercadoPagoConfig } from '@/lib/mercadopago/validate'
+import { validateMercadoPagoConfig, getMercadoPagoErrorMessage } from '@/lib/mercadopago/validate'
 import { z } from 'zod'
 
 // Schema de validación simplificado
@@ -49,6 +49,69 @@ const createOrderSchema = z.object({
 export async function POST(request: Request) {
   try {
     console.log('[CHECKOUT][API] 📥 Request recibido')
+
+    // CRÍTICO: Validar configuración de Mercado Pago ANTES de procesar la orden
+    // Esto evita crear órdenes cuando sabemos que fallará el pago
+    const mpConfig = validateMercadoPagoConfig()
+    const MP_ACCESS_TOKEN =
+      process.env.MP_ACCESS_TOKEN ||
+      process.env['MP_ACCESS_TOKEN'] ||
+      process.env.MERCADOPAGO_ACCESS_TOKEN ||
+      process.env['MERCADOPAGO_ACCESS_TOKEN'] ||
+      mpConfig.accessToken
+
+    if (!MP_ACCESS_TOKEN || !mpConfig.isValid) {
+      console.error(
+        '[CHECKOUT][API] ❌ [ERROR CRÍTICO] MP_ACCESS_TOKEN no configurado ANTES de procesar orden'
+      )
+      console.error('[CHECKOUT][API] Errores de validación:', mpConfig.errors)
+      const IS_VERCEL = !!process.env.VERCEL
+      const VERCEL_ENV = process.env.VERCEL_ENV || 'local'
+
+      return NextResponse.json(
+        {
+          ok: false,
+          code: 'CHECKOUT_MP_CONFIG_ERROR',
+          message: 'No se pudo generar el pago. La configuración de Mercado Pago no está completa.',
+          detail: IS_VERCEL
+            ? 'MP_ACCESS_TOKEN no está configurado en Vercel Dashboard. Configura la variable y haz REDEPLOY.'
+            : 'MP_ACCESS_TOKEN no está configurado. Configura la variable en .env.local para desarrollo local.',
+          help: {
+            message: IS_VERCEL
+              ? 'Configura MP_ACCESS_TOKEN en Vercel Dashboard → Settings → Environment Variables → Production y haz REDEPLOY'
+              : 'Configura MP_ACCESS_TOKEN en .env.local',
+            redeploy: IS_VERCEL
+              ? 'Después de agregar la variable, haz REDEPLOY en Vercel'
+              : undefined,
+            panel: 'https://www.mercadopago.com.ar/developers/panel',
+            errors: mpConfig.errors,
+            environment: VERCEL_ENV,
+            docs: '/docs/SOLUCION_MP_ACCESS_TOKEN.md',
+            steps: IS_VERCEL
+              ? [
+                  '1. Ve a https://vercel.com/dashboard',
+                  '2. Selecciona proyecto: catalogo-indumentaria',
+                  '3. Settings → Environment Variables',
+                  '4. Agrega: MP_ACCESS_TOKEN = tu-token-aqui',
+                  '5. Selecciona: Production, Preview, Development',
+                  '6. Guarda y haz REDEPLOY',
+                ]
+              : [
+                  '1. Crea archivo .env.local en la raíz del proyecto',
+                  '2. Agrega: MP_ACCESS_TOKEN=tu-token-aqui',
+                ],
+          },
+        },
+        {
+          status: 500,
+          headers: {
+            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+          },
+        }
+      )
+    }
+
+    console.log('[CHECKOUT][API] ✅ Configuración de Mercado Pago válida')
 
     const body = await request.json()
     console.log('[CHECKOUT][API] 📋 Body recibido:', {
