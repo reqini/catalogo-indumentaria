@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createOrder, OrderData } from '@/lib/ordenes-helpers'
+import { createOrder, OrderData, Order } from '@/lib/ordenes-helpers'
 import { createPayment } from '@/utils/api'
 import { getProductById } from '@/lib/supabase-helpers'
 import { validateMercadoPagoConfig } from '@/lib/mercadopago/validate'
