@@ -86,17 +86,6 @@ export default function CarritoPage() {
       console.log('[MP-PAYMENT] Frontend - Enviando back_urls:', JSON.stringify(backUrls, null, 2))
 
       // El envío se maneja en checkout, no aquí
-      // Incluir costo de envío si está seleccionado (ya no se usa aquí)
-      if (false) {
-        // Código legacy removido - el envío se maneja en checkout
-        items.push({
-          title: `Envío`,
-          quantity: 1,
-          unit_price: shipping.precio,
-          id: 'envio', // ID especial para envío
-          talle: '', // No aplica para envío
-        })
-      }
 
       const preference = await createPayment({
         items,
