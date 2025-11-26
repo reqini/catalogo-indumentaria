@@ -422,31 +422,58 @@ export async function POST(request: Request) {
         )
       }
 
-      // Otros errores de MP
+      // Otros errores de MP (400, 401, 500, etc.)
+      const mpErrorCode = errorData.code || 'CHECKOUT_MP_ERROR'
       const mpErrorMsg =
-        errorData.error || errorData.message || 'Error al crear la preferencia de pago'
-      console.error('[CHECKOUT][API] ❌ Error de Mercado Pago:', mpErrorMsg)
+        errorData.message ||
+        errorData.error ||
+        'No pudimos generar el pago con Mercado Pago. Intentalo de nuevo en unos minutos.'
+
+      console.error('[CHECKOUT][API] ❌ [ERROR] Error de Mercado Pago:', {
+        code: mpErrorCode,
+        message: mpErrorMsg,
+        status: paymentResponse.status,
+        detail: errorData.detail || errorData.details,
+      })
 
       return NextResponse.json(
         {
           ok: false,
-          code: 'CHECKOUT_MP_ERROR',
+          code: mpErrorCode,
           message: mpErrorMsg,
-          detail: errorData.details || errorData.mpError || null,
+          detail: errorData.detail || errorData.details || errorData.mpError || null,
         },
-        { status: paymentResponse.status || 500 }
+        { status: paymentResponse.status >= 400 && paymentResponse.status < 500 ? 502 : 500 } // Bad Gateway si es error 4xx, Internal Server Error si es 5xx
       )
     }
 
     const preference = await paymentResponse.json()
 
+    // Validar que la respuesta sea exitosa y tenga init_point
+    if (!preference.ok && preference.ok !== undefined) {
+      console.error('[CHECKOUT][API] ❌ [ERROR] Respuesta de MP indica error:', preference)
+      return NextResponse.json(
+        {
+          ok: false,
+          code: preference.code || 'CHECKOUT_MP_PREFERENCE_ERROR',
+          message: preference.message || 'Error al crear la preferencia de pago',
+          detail: preference.detail || null,
+        },
+        { status: 500 }
+      )
+    }
+
     if (!preference.init_point) {
-      console.error('[CHECKOUT][API] ❌ Preferencia MP sin init_point:', preference)
+      console.error('[CHECKOUT][API] ❌ [ERROR] Preferencia MP sin init_point:', {
+        hasInitPoint: !!preference.init_point,
+        hasPreferenceId: !!preference.preference_id,
+        responseKeys: Object.keys(preference),
+      })
       return NextResponse.json(
         {
           ok: false,
           code: 'CHECKOUT_MP_PREFERENCE_ERROR',
-          message: 'Error al crear la preferencia de pago',
+          message: 'No se recibió una URL válida de pago de Mercado Pago.',
           detail: 'La preferencia no contiene init_point',
         },
         { status: 500 }
