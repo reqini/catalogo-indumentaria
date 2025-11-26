@@ -171,10 +171,15 @@ export default function CheckoutPage() {
 
   // Procesar checkout completo
   const handleCheckout = async () => {
-    if (isProcessing) return
+    // Prevenir múltiples submits
+    if (isProcessing) {
+      console.warn('[CHECKOUT][CLIENT] ⚠️ Submit ya en proceso, ignorando')
+      return
+    }
 
+    // Validar formulario
     if (!validateForm()) {
-      toast.error('Por favor, completá todos los campos obligatorios')
+      toast.error('Por favor, completá todos los campos obligatorios', { duration: 4000 })
       return
     }
 
@@ -425,14 +430,27 @@ export default function CheckoutPage() {
         throw new Error('No se recibió una URL válida de Mercado Pago')
       }
 
+      // Validar que initPoint es una URL válida
+      try {
+        new URL(initPoint)
+      } catch (urlError) {
+        console.error('[CHECKOUT][CLIENT] ❌ initPoint no es una URL válida:', initPoint)
+        throw new Error('La URL de pago recibida no es válida')
+      }
+
       console.log('[CHECKOUT][CLIENT] 🎯 Redirigiendo a Mercado Pago...', {
         orderId,
         preferenceId,
         initPoint: initPoint.substring(0, 50) + '...',
       })
 
-      // Redirigir a Mercado Pago
-      window.location.href = initPoint
+      // Mostrar mensaje de éxito antes de redirigir
+      toast.success('Redirigiendo a Mercado Pago...', { duration: 2000 })
+
+      // Redirigir a Mercado Pago después de un breve delay para que el usuario vea el mensaje
+      setTimeout(() => {
+        window.location.href = initPoint
+      }, 500)
     } catch (error: any) {
       console.error('[CHECKOUT][CLIENT] ❌ Error completo:', error)
       console.error('[CHECKOUT][CLIENT] ❌ Stack:', error.stack)
