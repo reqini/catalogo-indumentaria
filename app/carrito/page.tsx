@@ -9,7 +9,6 @@ import { useCart } from '@/hooks/useCart'
 import { formatPrice, calculateDiscount } from '@/utils/formatPrice'
 import { createPayment } from '@/utils/api'
 import toast from 'react-hot-toast'
-import ShippingCalculator from '@/components/ShippingCalculator'
 
 interface ShippingMethod {
   nombre: string
@@ -22,19 +21,14 @@ export default function CarritoPage() {
   const { cart, removeFromCart, updateQuantity, getTotalPrice, clearCart } = useCart()
   const router = useRouter()
   const [isProcessing, setIsProcessing] = useState(false)
-  const [selectedShipping, setSelectedShipping] = useState<ShippingMethod | null>(null)
 
   // Calcular peso total (estimado: 0.5kg por producto)
   const totalWeight = useMemo(() => {
     return cart.reduce((total, item) => total + item.cantidad * 0.5, 0) || 1
   }, [cart])
 
-  // Calcular total con envío
-  const totalWithShipping = useMemo(() => {
-    const subtotal = getTotalPrice()
-    const shippingCost = selectedShipping?.precio || 0
-    return subtotal + shippingCost
-  }, [getTotalPrice, selectedShipping])
+  // Calcular total (sin envío, se calcula en checkout)
+  const totalWithShipping = getTotalPrice()
 
   const handleCheckout = async () => {
     if (cart.length === 0) {
@@ -91,12 +85,12 @@ export default function CarritoPage() {
 
       console.log('[MP-PAYMENT] Frontend - Enviando back_urls:', JSON.stringify(backUrls, null, 2))
 
-      // Incluir costo de envío si está seleccionado
-      if (selectedShipping !== null && selectedShipping!.precio > 0) {
-        // TypeScript narrowing: sabemos que selectedShipping no es null aquí
-        const shipping = selectedShipping!
+      // El envío se maneja en checkout, no aquí
+      // Incluir costo de envío si está seleccionado (ya no se usa aquí)
+      if (false) {
+        // Código legacy removido - el envío se maneja en checkout
         items.push({
-          title: `Envío - ${shipping.nombre}`,
+          title: `Envío`,
           quantity: 1,
           unit_price: shipping.precio,
           id: 'envio', // ID especial para envío
@@ -286,13 +280,13 @@ export default function CarritoPage() {
           </div>
 
           <div className="space-y-6 md:col-span-1">
-            {/* Calculadora de Envío */}
-            <ShippingCalculator
-              onSelectMethod={setSelectedShipping}
-              selectedMethod={selectedShipping}
-              totalPrice={getTotalPrice()}
-              totalWeight={totalWeight}
-            />
+            {/* Nota: El cálculo de envío se realiza en la página de checkout */}
+            <div className="rounded-lg border border-gray-200 bg-gray-50 p-6">
+              <h3 className="mb-2 text-lg font-semibold text-black">Envío</h3>
+              <p className="text-sm text-gray-600">
+                Calculá el costo de envío en el checkout después de ingresar tu código postal.
+              </p>
+            </div>
 
             {/* Resumen */}
             <div className="sticky top-24 rounded-lg bg-gray-50 p-6">

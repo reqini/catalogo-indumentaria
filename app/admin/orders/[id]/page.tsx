@@ -23,12 +23,12 @@ interface Order {
   cliente_nombre: string
   cliente_email: string
   cliente_telefono?: string
-  direccion_calle: string
-  direccion_numero: string
-  direccion_piso_depto?: string
-  direccion_codigo_postal: string
-  direccion_localidad: string
-  direccion_provincia: string
+  direccion_calle?: string | null
+  direccion_numero?: string | null
+  direccion_piso_depto?: string | null
+  direccion_codigo_postal?: string | null
+  direccion_localidad?: string | null
+  direccion_provincia?: string | null
   envio_tipo: string
   envio_metodo?: string
   envio_costo: number
@@ -321,23 +321,39 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
               </div>
             </div>
 
-            {/* Dirección */}
-            <div className="rounded-lg border border-gray-200 bg-white p-6">
-              <h2 className="mb-4 flex items-center gap-2 text-xl font-bold text-black">
-                <MapPin size={20} />
-                Dirección
-              </h2>
-              <div className="space-y-1 text-sm text-gray-600">
-                <p>
-                  {order.direccion_calle} {order.direccion_numero}
-                  {order.direccion_piso_depto && `, ${order.direccion_piso_depto}`}
-                </p>
-                <p>
-                  {order.direccion_codigo_postal}, {order.direccion_localidad}
-                </p>
-                <p>{order.direccion_provincia}</p>
+            {/* Dirección o Tipo de Entrega */}
+            {order.envio_tipo === 'retiro_local' ? (
+              <div className="rounded-lg border border-blue-200 bg-blue-50 p-6">
+                <h2 className="mb-4 flex items-center gap-2 text-xl font-semibold text-black">
+                  <MapPin size={20} />
+                  Tipo de Entrega
+                </h2>
+                <div className="space-y-2 text-sm text-blue-800">
+                  <p className="font-medium">Retiro en el local</p>
+                  <p className="text-blue-700">
+                    El cliente retirará el pedido por el local. Se debe contactar con la dirección y
+                    horarios de retiro.
+                  </p>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="rounded-lg border border-gray-200 bg-white p-6">
+                <h2 className="mb-4 flex items-center gap-2 text-xl font-bold text-black">
+                  <MapPin size={20} />
+                  Dirección de Envío
+                </h2>
+                <div className="space-y-1 text-sm text-gray-600">
+                  <p>
+                    {order.direccion_calle} {order.direccion_numero}
+                    {order.direccion_piso_depto && `, ${order.direccion_piso_depto}`}
+                  </p>
+                  <p>
+                    {order.direccion_codigo_postal}, {order.direccion_localidad}
+                  </p>
+                  <p>{order.direccion_provincia}</p>
+                </div>
+              </div>
+            )}
 
             {/* Pago */}
             <div className="rounded-lg border border-gray-200 bg-white p-6">

@@ -106,21 +106,24 @@ export async function createOrder(orderData: OrderData): Promise<Order | null> {
     }
 
     // Preparar datos de inserción con validaciones
+    // Si es retiro en local, los campos de dirección pueden ser NULL
+    const isRetiroLocal = orderData.envio.tipo === 'retiro_local'
+
     const insertData = {
       cliente_nombre: orderData.cliente.nombre,
       cliente_email: orderData.cliente.email,
       cliente_telefono: orderData.cliente.telefono || null,
-      direccion_calle: orderData.direccion.calle,
-      direccion_numero: orderData.direccion.numero,
-      direccion_piso_depto: orderData.direccion.pisoDepto || null,
-      direccion_codigo_postal: orderData.direccion.codigoPostal,
-      direccion_localidad: orderData.direccion.localidad,
-      direccion_provincia: orderData.direccion.provincia,
-      direccion_pais: orderData.direccion.pais || 'Argentina',
+      direccion_calle: isRetiroLocal ? null : orderData.direccion.calle,
+      direccion_numero: isRetiroLocal ? null : orderData.direccion.numero,
+      direccion_piso_depto: isRetiroLocal ? null : orderData.direccion.pisoDepto || null,
+      direccion_codigo_postal: isRetiroLocal ? null : orderData.direccion.codigoPostal,
+      direccion_localidad: isRetiroLocal ? null : orderData.direccion.localidad,
+      direccion_provincia: isRetiroLocal ? null : orderData.direccion.provincia,
+      direccion_pais: isRetiroLocal ? 'Argentina' : orderData.direccion.pais || 'Argentina',
       envio_tipo: orderData.envio.tipo,
       envio_metodo: orderData.envio.metodo || null,
       envio_costo: Number(orderData.envio.costo) || 0,
-      envio_proveedor: orderData.envio.proveedor || null,
+      envio_proveedor: isRetiroLocal ? null : orderData.envio.proveedor || null,
       items: orderData.items as any, // JSONB
       subtotal: Number(orderData.subtotal) || 0,
       descuento: Number(orderData.descuento) || 0,

@@ -13,12 +13,12 @@ const createOrderSchema = z.object({
     telefono: z.string().optional(),
   }),
   direccion: z.object({
-    calle: z.string().min(3),
-    numero: z.string().min(1),
+    calle: z.string().min(3).optional().or(z.literal('')),
+    numero: z.string().min(1).optional().or(z.literal('')),
     pisoDepto: z.string().optional(),
-    codigoPostal: z.string().min(4),
-    localidad: z.string().min(2),
-    provincia: z.string().min(2),
+    codigoPostal: z.string().min(4).optional().or(z.literal('')),
+    localidad: z.string().min(2).optional().or(z.literal('')),
+    provincia: z.string().min(2).optional().or(z.literal('')),
     pais: z.string().optional(),
   }),
   envio: z.object({
@@ -194,11 +194,14 @@ export async function POST(request: Request) {
                 number: validatedData.cliente.telefono,
               }
             : undefined,
-          address: {
-            street_name: validatedData.direccion.calle,
-            street_number: parseInt(validatedData.direccion.numero) || 0,
-            zip_code: validatedData.direccion.codigoPostal,
-          },
+          address:
+            validatedData.envio.tipo === 'retiro_local'
+              ? undefined
+              : {
+                  street_name: validatedData.direccion.calle || '',
+                  street_number: parseInt(validatedData.direccion.numero || '0') || 0,
+                  zip_code: validatedData.direccion.codigoPostal,
+                },
         },
         external_reference: order.id,
       }),

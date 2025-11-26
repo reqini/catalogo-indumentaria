@@ -18,18 +18,49 @@ interface ShippingMethod {
   transportista?: string
 }
 
-// Schema de validación con Zod
-const checkoutSchema = z.object({
-  nombre: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
-  email: z.string().email('Email inválido'),
-  telefono: z.string().min(8, 'El teléfono debe tener al menos 8 caracteres'),
-  calle: z.string().min(3, 'La calle debe tener al menos 3 caracteres'),
-  numero: z.string().min(1, 'El número es obligatorio'),
-  pisoDepto: z.string().optional(),
-  codigoPostal: z.string().min(4, 'El código postal debe tener al menos 4 caracteres'),
-  localidad: z.string().min(2, 'La localidad es obligatoria'),
-  provincia: z.string().min(2, 'La provincia es obligatoria'),
-})
+// Schema de validación con Zod (campos de dirección opcionales si es retiro en local)
+const checkoutSchema = z
+  .object({
+    nombre: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
+    email: z.string().email('Email inválido'),
+    telefono: z.string().min(8, 'El teléfono debe tener al menos 8 caracteres'),
+    calle: z
+      .string()
+      .min(3, 'La calle debe tener al menos 3 caracteres')
+      .optional()
+      .or(z.literal('')),
+    numero: z.string().min(1, 'El número es obligatorio').optional().or(z.literal('')),
+    pisoDepto: z.string().optional(),
+    codigoPostal: z
+      .string()
+      .min(4, 'El código postal debe tener al menos 4 caracteres')
+      .optional()
+      .or(z.literal('')),
+    localidad: z.string().min(2, 'La localidad es obligatoria').optional().or(z.literal('')),
+    provincia: z.string().min(2, 'La provincia es obligatoria').optional().or(z.literal('')),
+  })
+  .refine(
+    (data) => {
+      // Si hay código postal, todos los campos de dirección son obligatorios
+      if (data.codigoPostal && data.codigoPostal.length >= 4) {
+        return (
+          data.calle &&
+          data.calle.length >= 3 &&
+          data.numero &&
+          data.numero.length >= 1 &&
+          data.localidad &&
+          data.localidad.length >= 2 &&
+          data.provincia &&
+          data.provincia.length >= 2
+        )
+      }
+      return true
+    },
+    {
+      message: 'Si ingresás código postal, todos los campos de dirección son obligatorios',
+      path: ['codigoPostal'],
+    }
+  )
 
 type CheckoutFormData = z.infer<typeof checkoutSchema>
 
@@ -45,6 +76,7 @@ export default function CheckoutPage() {
     localidad: string
     provincia: string
   } | null>(null)
+  const [isRetiroLocal, setIsRetiroLocal] = useState(false)
 
   // Calcular peso total
   const totalWeight = cart.reduce((total, item) => total + item.cantidad * 0.5, 0) || 1
@@ -120,10 +152,18 @@ export default function CheckoutPage() {
 
   // Avanzar al resumen
   const handleNextToSummary = () => {
+    // Si es retiro en local, no requiere shipping seleccionado
+    if (selectedShipping?.tipo === 'retiro_local') {
+      setStep('resumen')
+      return
+    }
+
+    // Si es envío, requiere shipping seleccionado
     if (!selectedShipping && formData.codigoPostal) {
       toast.error('Por favor, calculá y seleccioná un método de envío')
       return
     }
+
     setStep('resumen')
   }
 
@@ -136,9 +176,17 @@ export default function CheckoutPage() {
       return
     }
 
-    if (!selectedShipping && formData.codigoPostal) {
+    // Validar según tipo de entrega
+    if (selectedShipping?.tipo === 'retiro_local') {
+      // Retiro en local: no requiere validación adicional
+      setIsRetiroLocal(true)
+    } else if (!selectedShipping && formData.codigoPostal) {
+      // Envío requiere método seleccionado
       toast.error('Por favor, seleccioná un método de envío')
       return
+    } else if (!selectedShipping && !formData.codigoPostal) {
+      // Si no hay CP ni shipping, puede ser retiro en local
+      setIsRetiroLocal(true)
     }
 
     setIsProcessing(true)
@@ -168,30 +216,50 @@ export default function CheckoutPage() {
           email: formData.email!,
           telefono: formData.telefono,
         },
-        direccion: {
-          calle: formData.calle!,
-          numero: formData.numero!,
-          pisoDepto: formData.pisoDepto,
-          codigoPostal: formData.codigoPostal!,
-          localidad: formData.localidad!,
-          provincia: formData.provincia!,
-          pais: 'Argentina',
-        },
-        envio: selectedShipping
-          ? {
-              tipo: selectedShipping.nombre.toLowerCase().includes('express')
-                ? 'express'
-                : 'estandar',
-              metodo: selectedShipping.nombre,
-              costo: selectedShipping.precio,
-              demora: selectedShipping.demora,
-              proveedor: selectedShipping.transportista,
-            }
-          : {
-              tipo: 'retiro_local' as const,
-              metodo: 'Retiro en local',
-              costo: 0,
-            },
+        direccion:
+          selectedShipping?.tipo === 'retiro_local'
+            ? {
+                calle: '',
+                numero: '',
+                pisoDepto: '',
+                codigoPostal: '',
+                localidad: '',
+                provincia: '',
+                pais: 'Argentina',
+              }
+            : {
+                calle: formData.calle!,
+                numero: formData.numero!,
+                pisoDepto: formData.pisoDepto,
+                codigoPostal: formData.codigoPostal!,
+                localidad: formData.localidad!,
+                provincia: formData.provincia!,
+                pais: 'Argentina',
+              },
+        envio:
+          selectedShipping?.tipo === 'retiro_local'
+            ? {
+                tipo: 'retiro_local' as const,
+                metodo: 'Retiro en el local',
+                costo: 0,
+                demora: 'Disponible de lunes a viernes de 9 a 18hs',
+                proveedor: null,
+              }
+            : selectedShipping
+              ? {
+                  tipo: selectedShipping.nombre.toLowerCase().includes('express')
+                    ? 'express'
+                    : 'estandar',
+                  metodo: selectedShipping.nombre,
+                  costo: selectedShipping.precio,
+                  demora: selectedShipping.demora,
+                  proveedor: selectedShipping.transportista,
+                }
+              : {
+                  tipo: 'retiro_local' as const,
+                  metodo: 'Retiro en el local',
+                  costo: 0,
+                },
         items: orderItems.filter((item) => item.id !== 'envio'),
         subtotal,
         descuento: 0,
@@ -526,7 +594,7 @@ export default function CheckoutPage() {
                     </button>
                     <button
                       onClick={handleNextToSummary}
-                      disabled={!selectedShipping && !!formData.codigoPostal}
+                      disabled={!selectedShipping}
                       className="flex-1 rounded-lg bg-black px-6 py-3 font-semibold text-white transition-all hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       Continuar a Resumen
@@ -556,17 +624,27 @@ export default function CheckoutPage() {
                     )}
                   </div>
 
-                  {/* Dirección */}
-                  <div className="mb-6 rounded-lg bg-gray-50 p-4">
-                    <h3 className="mb-3 font-semibold text-black">Dirección de Envío</h3>
-                    <p className="text-sm text-gray-600">
-                      {formData.calle} {formData.numero}
-                      {formData.pisoDepto && `, ${formData.pisoDepto}`}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      {formData.codigoPostal}, {formData.localidad}, {formData.provincia}
-                    </p>
-                  </div>
+                  {/* Dirección o Tipo de Entrega */}
+                  {selectedShipping?.tipo === 'retiro_local' ? (
+                    <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4">
+                      <h3 className="mb-3 font-semibold text-black">Tipo de Entrega</h3>
+                      <p className="text-sm font-medium text-blue-800">Retiro en el local</p>
+                      <p className="mt-1 text-sm text-blue-700">
+                        Te vamos a contactar con la dirección y horarios de retiro.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="mb-6 rounded-lg bg-gray-50 p-4">
+                      <h3 className="mb-3 font-semibold text-black">Dirección de Envío</h3>
+                      <p className="text-sm text-gray-600">
+                        {formData.calle} {formData.numero}
+                        {formData.pisoDepto && `, ${formData.pisoDepto}`}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        {formData.codigoPostal}, {formData.localidad}, {formData.provincia}
+                      </p>
+                    </div>
+                  )}
 
                   {/* Productos */}
                   <div className="mb-6">
@@ -592,18 +670,31 @@ export default function CheckoutPage() {
                     </div>
                   </div>
 
-                  {/* Envío */}
+                  {/* Envío o Retiro */}
                   {selectedShipping && (
                     <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4">
                       <div className="flex justify-between">
                         <span className="text-sm font-medium text-blue-800">
-                          Envío: {selectedShipping.nombre}
+                          {selectedShipping.tipo === 'retiro_local' ? 'Tipo de entrega:' : 'Envío:'}
                         </span>
                         <span className="text-sm font-semibold text-blue-900">
-                          {formatPrice(selectedShipping.precio)}
+                          {selectedShipping.nombre}
                         </span>
                       </div>
-                      <p className="mt-1 text-xs text-blue-600">{selectedShipping.demora}</p>
+                      {selectedShipping.tipo !== 'retiro_local' && (
+                        <>
+                          <div className="mt-2 flex justify-between">
+                            <span className="text-sm text-blue-700">Costo de envío:</span>
+                            <span className="text-sm font-semibold text-blue-900">
+                              {formatPrice(selectedShipping.precio)}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-xs text-blue-600">{selectedShipping.demora}</p>
+                        </>
+                      )}
+                      {selectedShipping.tipo === 'retiro_local' && (
+                        <p className="mt-2 text-sm text-blue-700">{selectedShipping.demora}</p>
+                      )}
                     </div>
                   )}
 
