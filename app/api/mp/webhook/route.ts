@@ -125,6 +125,22 @@ export async function POST(request: Request) {
       if (simpleOrder && payment.status === 'approved') {
         await updateSimpleOrderStatus(simpleOrder.id, 'pagada')
         console.log(`[MP-WEBHOOK] ✅ Orden simplificada ${simpleOrder.id} actualizada a pagada`)
+
+        // Si es retiro en local, enviar notificación
+        if (simpleOrder.envio?.tipo === 'retiro_local') {
+          try {
+            const { notifyLocalPickupReady } = await import('@/lib/notifications')
+            await notifyLocalPickupReady({
+              orderId: simpleOrder.id,
+              clienteEmail: simpleOrder.comprador.email,
+              clienteNombre: simpleOrder.comprador.nombre,
+              clienteTelefono: simpleOrder.comprador.telefono,
+            })
+            console.log(`[MP-WEBHOOK] ✅ Notificación de retiro en local enviada`)
+          } catch (notifError) {
+            console.error('[MP-WEBHOOK] ⚠️ Error enviando notificación de retiro:', notifError)
+          }
+        }
       }
 
       // Procesar según el estado del pago
@@ -297,21 +313,18 @@ export async function POST(request: Request) {
           }
         }
 
-        // Si hay orden y envío, crear solicitud de envío real
-        // Solo para estructura completa (simpleOrder no tiene campos individuales de envío)
-        if (order && order.envio_costo_total > 0 && order.envio_tipo !== 'retiro_local') {
-          try {
-            console.log(`[MP-WEBHOOK] 📦 Creando solicitud de envío para orden ${order.id}`)
-
-            const shippingRequest = {
-              codigoPostal: order.direccion_codigo_postal,
-              peso: 1, // Estimado, debería calcularse desde items
-              precio: order.subtotal,
-              provincia: order.direccion_provincia,
+        // Crear solicitud de envío real (funciona con ambas estructuras)
+        const orderForShipping = order || simpleOrder
+        const envioData = order
+          ? {
+              costo: order.envio_costo_total,
+              tipo: order.envio_tipo,
+              metodo: order.envio_metodo,
               direccion: {
                 calle: order.direccion_calle,
                 numero: order.direccion_numero,
                 pisoDepto: order.direccion_piso_depto,
+                codigoPostal: order.direccion_codigo_postal,
                 localidad: order.direccion_localidad,
                 provincia: order.direccion_provincia,
               },
@@ -320,32 +333,109 @@ export async function POST(request: Request) {
                 email: order.cliente_email,
                 telefono: order.cliente_telefono,
               },
+              productos: order.items || [],
+              subtotal: order.subtotal,
+            }
+          : simpleOrder
+            ? {
+                costo: simpleOrder.envio?.costo || 0,
+                tipo: simpleOrder.envio?.tipo,
+                metodo: simpleOrder.envio?.metodo,
+                direccion: simpleOrder.envio?.direccion,
+                cliente: simpleOrder.comprador,
+                productos: simpleOrder.productos || [],
+                subtotal: simpleOrder.total - (simpleOrder.envio?.costo || 0),
+              }
+            : null
+
+        if (
+          orderForShipping &&
+          envioData &&
+          envioData.costo > 0 &&
+          envioData.tipo !== 'retiro_local' &&
+          envioData.direccion?.codigoPostal
+        ) {
+          try {
+            console.log(
+              `[MP-WEBHOOK] 📦 Creando solicitud de envío para orden ${orderForShipping.id}`
+            )
+
+            // Calcular peso real desde productos (estimado: 0.5kg por producto)
+            const pesoEstimado = Math.max((envioData.productos?.length || 1) * 0.5, 0.5)
+
+            const shippingRequest = {
+              codigoPostal: envioData.direccion.codigoPostal,
+              peso: pesoEstimado,
+              precio: envioData.subtotal,
+              provincia: envioData.direccion.provincia,
+              direccion: {
+                calle: envioData.direccion.calle || '',
+                numero: envioData.direccion.numero || '',
+                pisoDepto: envioData.direccion.pisoDepto,
+                localidad: envioData.direccion.localidad || '',
+                provincia: envioData.direccion.provincia || '',
+              },
+              cliente: {
+                nombre: envioData.cliente.nombre,
+                email: envioData.cliente.email,
+                telefono: envioData.cliente.telefono,
+              },
             }
 
             const shippingResult = await createShippingRequest(
               shippingRequest,
-              order.envio_metodo || 'OCA Estándar'
+              envioData.metodo || 'OCA Estándar'
             )
 
             if (shippingResult.success && shippingResult.trackingNumber) {
-              await updateOrderShipping(order.id, {
-                envio_tracking: shippingResult.trackingNumber,
-                envio_proveedor: shippingResult.provider,
-                estado: 'enviada',
-              })
-
-              await createOrderLog(
-                order.id,
-                'envio_creado',
-                {},
-                {
+              // Actualizar según tipo de orden
+              if (order) {
+                await updateOrderShipping(order.id, {
                   envio_tracking: shippingResult.trackingNumber,
                   envio_proveedor: shippingResult.provider,
-                },
-                `Envío creado con tracking: ${shippingResult.trackingNumber}`
-              )
+                  estado: 'enviada',
+                })
+
+                await createOrderLog(
+                  order.id,
+                  'envio_creado',
+                  {},
+                  {
+                    envio_tracking: shippingResult.trackingNumber,
+                    envio_proveedor: shippingResult.provider,
+                  },
+                  `Envío creado con tracking: ${shippingResult.trackingNumber}`
+                )
+              } else if (simpleOrder) {
+                // Actualizar estructura simplificada
+                const { updateSimpleOrderWithTracking } = await import(
+                  '@/lib/ordenes-helpers-simple'
+                )
+                await updateSimpleOrderWithTracking(simpleOrder.id, {
+                  tracking: shippingResult.trackingNumber,
+                  provider: shippingResult.provider,
+                  status: 'en_transito',
+                })
+              }
 
               console.log(`[MP-WEBHOOK] ✅ Envío creado: ${shippingResult.trackingNumber}`)
+
+              // Enviar notificación al cliente con tracking
+              try {
+                const { notifyShippingCreated } = await import('@/lib/notifications')
+                await notifyShippingCreated({
+                  orderId: orderForShipping.id,
+                  trackingNumber: shippingResult.trackingNumber,
+                  clienteEmail: envioData.cliente.email,
+                  clienteNombre: envioData.cliente.nombre,
+                  envioMetodo: envioData.metodo || 'OCA Estándar',
+                  envioProveedor: shippingResult.provider,
+                })
+                console.log(`[MP-WEBHOOK] ✅ Notificación de envío enviada al cliente`)
+              } catch (notifError) {
+                console.error('[MP-WEBHOOK] ⚠️ Error enviando notificación de envío:', notifError)
+                // No fallar el flujo por error de notificación
+              }
             } else {
               console.error(`[MP-WEBHOOK] ❌ Error creando envío: ${shippingResult.error}`)
             }

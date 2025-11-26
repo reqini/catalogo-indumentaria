@@ -187,3 +187,91 @@ export async function updateSimpleOrderStatus(orderId: string, estado: string): 
     return false
   }
 }
+
+/**
+ * Actualizar orden con información de tracking
+ */
+export async function updateSimpleOrderWithTracking(
+  orderId: string,
+  trackingData: {
+    tracking: string
+    provider: string
+    status?: string
+  }
+): Promise<boolean> {
+  try {
+    if (!supabaseAdmin) {
+      throw new Error('Supabase no está configurado')
+    }
+
+    // Obtener orden actual
+    const { data: currentOrder, error: fetchError } = await supabaseAdmin
+      .from('ordenes')
+      .select('envio')
+      .eq('id', orderId)
+      .single()
+
+    if (fetchError || !currentOrder) {
+      console.error('[ORDENES-SIMPLE] Error obteniendo orden:', fetchError)
+      return false
+    }
+
+    // Actualizar campo envio con tracking
+    const updatedEnvio = {
+      ...(currentOrder.envio as any),
+      tracking: trackingData.tracking,
+      tracking_number: trackingData.tracking,
+      provider: trackingData.provider,
+      status: trackingData.status || 'en_transito',
+      updated_at: new Date().toISOString(),
+    }
+
+    const { error } = await supabaseAdmin
+      .from('ordenes')
+      .update({
+        envio: updatedEnvio,
+        estado: trackingData.status === 'entregado' ? 'entregada' : 'enviada',
+      })
+      .eq('id', orderId)
+
+    if (error) {
+      console.error('[ORDENES-SIMPLE] Error actualizando tracking:', error)
+      return false
+    }
+
+    console.log('[ORDENES-SIMPLE] ✅ Tracking actualizado:', trackingData.tracking)
+    return true
+  } catch (error) {
+    console.error('[ORDENES-SIMPLE] Error:', error)
+    return false
+  }
+}
+
+/**
+ * Obtener orden por tracking number
+ */
+export async function getSimpleOrderByTracking(
+  trackingNumber: string
+): Promise<SimpleOrder | null> {
+  try {
+    if (!supabaseAdmin) {
+      throw new Error('Supabase no está configurado')
+    }
+
+    // Buscar en campo envio.tracking o envio.tracking_number
+    const { data, error } = await supabaseAdmin
+      .from('ordenes')
+      .select('*')
+      .or(`envio->>tracking.eq.${trackingNumber},envio->>tracking_number.eq.${trackingNumber}`)
+      .limit(1)
+
+    if (error || !data || data.length === 0) {
+      return null
+    }
+
+    return data[0] as SimpleOrder
+  } catch (error) {
+    console.error('[ORDENES-SIMPLE] Error:', error)
+    return null
+  }
+}

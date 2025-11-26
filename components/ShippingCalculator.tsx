@@ -169,9 +169,26 @@ export default function ShippingCalculator({
         {/* Si es retiro en local, mostrar mensaje */}
         {tipoEntrega === 'retiro_local' && (
           <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-            <p className="text-sm text-blue-800">
-              <strong>Retiro en el local:</strong> Vas a retirar tu pedido por el local. Te vamos a
-              contactar con la dirección y horarios de retiro.
+            <p className="mb-2 text-sm font-semibold text-blue-800">
+              <strong>Retiro en el local:</strong>
+            </p>
+            <div className="space-y-1 text-sm text-blue-700">
+              <p>
+                <strong>Dirección:</strong>{' '}
+                {process.env.NEXT_PUBLIC_LOCAL_RETIRO_DIRECCION || 'Av. Corrientes 1234, CABA'}
+              </p>
+              <p>
+                <strong>Horarios:</strong>{' '}
+                {process.env.NEXT_PUBLIC_LOCAL_RETIRO_HORARIOS || 'Lunes a Viernes: 9:00 - 18:00'}
+              </p>
+              {process.env.NEXT_PUBLIC_LOCAL_RETIRO_TELEFONO && (
+                <p>
+                  <strong>Teléfono:</strong> {process.env.NEXT_PUBLIC_LOCAL_RETIRO_TELEFONO}
+                </p>
+              )}
+            </div>
+            <p className="mt-2 text-xs text-blue-600">
+              Te contactaremos por email con todos los detalles.
             </p>
           </div>
         )}

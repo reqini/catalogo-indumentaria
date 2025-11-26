@@ -248,6 +248,167 @@ export async function notifyOrderStatusChange(
 }
 
 /**
+ * Enviar notificación cuando envío es entregado
+ */
+export async function notifyShippingDelivered(data: {
+  orderId: string
+  trackingNumber: string
+  clienteEmail: string
+  clienteNombre: string
+}): Promise<void> {
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://catalogo-indumentaria.vercel.app'
+
+    const emailHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #000; border-bottom: 2px solid #000; padding-bottom: 10px;">✅ Tu pedido fue entregado</h2>
+        <p>¡Excelente noticia! Tu pedido ha sido entregado exitosamente.</p>
+        
+        <div style="background: #e3f2fd; padding: 15px; border-radius: 5px; margin: 20px 0;">
+          <h3 style="margin-top: 0;">📦 Información de Entrega</h3>
+          <p><strong>Número de seguimiento:</strong> ${data.trackingNumber}</p>
+          <p><strong>ID de Orden:</strong> ${data.orderId}</p>
+        </div>
+
+        <div style="background: #fff3cd; padding: 15px; border-radius: 5px; margin: 20px 0;">
+          <h3 style="margin-top: 0;">📋 Próximos Pasos</h3>
+          <p>Esperamos que disfrutes tu compra. Si tenés alguna consulta o necesitás ayuda, no dudes en contactarnos.</p>
+        </div>
+
+        <p style="margin-top: 20px;">
+          <a href="${baseUrl}/envio/${data.trackingNumber}" style="background: #000; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
+            Ver detalles del envío
+          </a>
+        </p>
+      </div>
+    `
+
+    await sendEmail({
+      to: data.clienteEmail,
+      subject: `✅ Tu pedido fue entregado - Orden #${data.orderId.substring(0, 8)}`,
+      html: emailHtml,
+      text: `Tu pedido ha sido entregado exitosamente. Tracking: ${data.trackingNumber}, Orden ID: ${data.orderId}`,
+      type: 'compra',
+    })
+
+    logger.info(`Notificación de entrega enviada`, {
+      orderId: data.orderId,
+      trackingNumber: data.trackingNumber,
+    })
+  } catch (error: any) {
+    logger.error('Error enviando notificación de entrega', error)
+  }
+}
+
+/**
+ * Enviar notificación cuando se crea envío (con tracking)
+ */
+export async function notifyShippingCreated(data: {
+  orderId: string
+  trackingNumber: string
+  clienteEmail: string
+  clienteNombre: string
+  envioMetodo: string
+  envioProveedor?: string
+}): Promise<void> {
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://catalogo-indumentaria.vercel.app'
+
+    const emailHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #000; border-bottom: 2px solid #000; padding-bottom: 10px;">📦 Tu pedido fue enviado</h2>
+        <p>Tu pedido ha sido enviado y está en camino.</p>
+        
+        <div style="background: #e3f2fd; padding: 15px; border-radius: 5px; margin: 20px 0;">
+          <h3 style="margin-top: 0;">📦 Información de Envío</h3>
+          <p><strong>Número de seguimiento:</strong> <span style="font-family: monospace; font-weight: bold;">${data.trackingNumber}</span></p>
+          <p><strong>Método:</strong> ${data.envioMetodo}</p>
+          ${data.envioProveedor ? `<p><strong>Proveedor:</strong> ${data.envioProveedor}</p>` : ''}
+          <p style="margin-top: 15px;">
+            <a href="${baseUrl}/envio/${data.trackingNumber}" style="background: #000; color: #fff; padding: 8px 16px; text-decoration: none; border-radius: 5px; display: inline-block;">
+              Rastrear mi pedido
+            </a>
+          </p>
+        </div>
+
+        <div style="background: #fff3cd; padding: 15px; border-radius: 5px; margin: 20px 0;">
+          <h3 style="margin-top: 0;">📋 Datos de tu pedido</h3>
+          <p><strong>ID de Orden:</strong> ${data.orderId}</p>
+          <p>Te notificaremos cuando el pedido sea entregado.</p>
+        </div>
+      </div>
+    `
+
+    await sendEmail({
+      to: data.clienteEmail,
+      subject: `📦 Tu pedido fue enviado - Tracking: ${data.trackingNumber}`,
+      html: emailHtml,
+      text: `Tu pedido ha sido enviado. Número de seguimiento: ${data.trackingNumber}, Método: ${data.envioMetodo}`,
+      type: 'compra',
+    })
+
+    logger.info(`Notificación de envío creado enviada`, {
+      orderId: data.orderId,
+      trackingNumber: data.trackingNumber,
+    })
+  } catch (error: any) {
+    logger.error('Error enviando notificación de envío creado', error)
+  }
+}
+
+/**
+ * Enviar notificación de retiro en local
+ */
+export async function notifyLocalPickupReady(data: {
+  orderId: string
+  clienteEmail: string
+  clienteNombre: string
+  clienteTelefono?: string
+}): Promise<void> {
+  try {
+    const localDireccion = process.env.LOCAL_RETIRO_DIRECCION || 'Av. Corrientes 1234, CABA'
+    const localHorarios = process.env.LOCAL_RETIRO_HORARIOS || 'Lunes a Viernes: 9:00 - 18:00'
+    const localTelefono = process.env.LOCAL_RETIRO_TELEFONO || '+54 11 1234-5678'
+
+    const emailHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #000; border-bottom: 2px solid #000; padding-bottom: 10px;">📍 Tu pedido está listo para retirar</h2>
+        <p>Tu pedido está listo para retirar en nuestro local.</p>
+        
+        <div style="background: #e3f2fd; padding: 15px; border-radius: 5px; margin: 20px 0;">
+          <h3 style="margin-top: 0;">📍 Información de Retiro</h3>
+          <p><strong>Dirección:</strong> ${localDireccion}</p>
+          <p><strong>Horarios:</strong> ${localHorarios}</p>
+          <p><strong>Teléfono:</strong> ${localTelefono}</p>
+        </div>
+
+        <div style="background: #fff3cd; padding: 15px; border-radius: 5px; margin: 20px 0;">
+          <h3 style="margin-top: 0;">📋 Datos de tu pedido</h3>
+          <p><strong>ID de Orden:</strong> ${data.orderId}</p>
+          <p><strong>Cliente:</strong> ${data.clienteNombre}</p>
+        </div>
+
+        <p style="margin-top: 20px;">
+          <strong>Importante:</strong> Traé tu DNI y el número de orden al retirar.
+        </p>
+      </div>
+    `
+
+    await sendEmail({
+      to: data.clienteEmail,
+      subject: `📍 Tu pedido está listo para retirar - Orden #${data.orderId.substring(0, 8)}`,
+      html: emailHtml,
+      text: `Tu pedido está listo para retirar. Dirección: ${localDireccion}, Horarios: ${localHorarios}, Teléfono: ${localTelefono}`,
+      type: 'compra',
+    })
+
+    logger.info(`Notificación de retiro en local enviada`, { orderId: data.orderId })
+  } catch (error: any) {
+    logger.error('Error enviando notificación de retiro en local', error)
+  }
+}
+
+/**
  * Enviar notificación por WhatsApp (si está configurado)
  */
 async function sendWhatsAppNotification(

@@ -14,6 +14,8 @@ import {
   Mail,
   Phone,
   CreditCard,
+  ExternalLink,
+  Download,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { Loader2 } from 'lucide-react'

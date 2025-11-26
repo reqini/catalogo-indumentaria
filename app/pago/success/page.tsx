@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { CheckCircle, Package } from 'lucide-react'
+import { CheckCircle, Package, ExternalLink } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useCart } from '@/hooks/useCart'
 
@@ -36,10 +36,43 @@ function PagoSuccessContent() {
 
   const fetchOrder = async (id: string) => {
     try {
-      const response = await fetch(`/api/orders/${id}`)
+      // Intentar primero con endpoint de admin (puede requerir auth)
+      let response = await fetch(`/api/admin/orders/${id}`)
+
+      // Si falla, intentar con endpoint público simplificado
+      if (!response.ok) {
+        response = await fetch(`/api/orders/${id}`)
+      }
+
       if (response.ok) {
         const data = await response.json()
-        setOrder(data.order)
+        const orderData = data.order || data
+
+        // Adaptar estructura simplificada a formato esperado
+        if (orderData.envio && typeof orderData.envio === 'object') {
+          setOrder({
+            ...orderData,
+            envio_tipo: orderData.envio.tipo,
+            envio_metodo: orderData.envio.metodo,
+            envio_costo: orderData.envio.costo || 0,
+            envio_tracking: orderData.envio.tracking || orderData.envio.tracking_number,
+            envio_proveedor: orderData.envio.proveedor || orderData.envio.provider,
+            direccion_calle: orderData.envio.direccion?.calle,
+            direccion_numero: orderData.envio.direccion?.numero,
+            direccion_codigo_postal: orderData.envio.direccion?.codigoPostal,
+            direccion_localidad: orderData.envio.direccion?.localidad,
+            direccion_provincia: orderData.envio.direccion?.provincia,
+            cliente_nombre: orderData.comprador?.nombre || orderData.cliente_nombre,
+            cliente_email: orderData.comprador?.email || orderData.cliente_email,
+            cliente_telefono: orderData.comprador?.telefono || orderData.cliente_telefono,
+            items: orderData.productos || orderData.items || [],
+            subtotal: orderData.total - (orderData.envio.costo || 0),
+            envio_costo_total: orderData.envio.costo || 0,
+            total: orderData.total,
+          })
+        } else {
+          setOrder(orderData)
+        }
       }
     } catch (error) {
       console.error('Error fetching order:', error)
@@ -83,15 +116,42 @@ function PagoSuccessContent() {
             <p className="font-mono text-sm text-black">{paymentId}</p>
           </div>
         )}
-        {order?.envio_tracking && (
+        {order?.envio_tipo === 'retiro_local' ? (
+          <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4">
+            <p className="mb-1 text-sm font-semibold text-blue-800">📍 Retiro en el Local</p>
+            <p className="text-sm text-blue-700">
+              Tu pedido está listo para retirar. Te contactaremos con la dirección y horarios de
+              retiro.
+            </p>
+            <p className="mt-2 text-xs text-blue-600">ID de Orden: #{orderId?.substring(0, 8)}</p>
+          </div>
+        ) : order?.envio_tracking ? (
           <div className="mb-6 rounded-lg border border-green-200 bg-green-50 p-4">
-            <p className="mb-1 text-sm text-green-800">📦 Número de seguimiento:</p>
+            <p className="mb-1 text-sm font-semibold text-green-800">📦 Número de seguimiento:</p>
             <p className="font-mono text-sm font-semibold text-green-900">{order.envio_tracking}</p>
             <p className="mt-2 text-xs text-green-700">
-              Podés rastrear tu pedido en el sitio de {order.envio_proveedor || 'envío'}
+              Podés rastrear tu pedido en:{' '}
+              <Link
+                href={`/envio/${order.envio_tracking}`}
+                className="inline-flex items-center gap-1 font-medium underline hover:text-green-900"
+              >
+                Rastrear mi pedido
+                <ExternalLink size={14} />
+              </Link>
+            </p>
+            {order.envio_proveedor && (
+              <p className="mt-1 text-xs text-green-600">Proveedor: {order.envio_proveedor}</p>
+            )}
+          </div>
+        ) : order?.envio_tipo === 'envio' || order?.envio_metodo ? (
+          <div className="mb-6 rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+            <p className="mb-1 text-sm text-yellow-800">📦 Envío en proceso</p>
+            <p className="text-sm text-yellow-700">
+              Tu pedido será enviado por {order.envio_metodo || 'método estándar'}. Recibirás el
+              número de seguimiento por email cuando el envío sea creado.
             </p>
           </div>
-        )}
+        ) : null}
         <div className="flex flex-col gap-4 sm:flex-row">
           <Link
             href="/catalogo"
