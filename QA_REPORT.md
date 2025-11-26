@@ -1,17 +1,58 @@
 # 📊 Reporte de QA E2E Completo
 
-**Fecha:** 25/11/2025, 10:07:16
-**Commit:** local
-**Ambiente:** development
+**Fecha:** 25/11/2025, 10:07:16  
+**Última actualización:** ${new Date().toLocaleString('es-AR')}  
+**Commit:** b52e62c  
+**Ambiente:** development / production
 
 ## 📈 Resumen
 
-- **Total de tests:** 38
+- **Total de tests automatizados:** 38
 - **✅ Pasados:** 34
 - **❌ Fallidos:** 0
 - **⚠️ Advertencias:** 4
 
 **Tasa de éxito:** 89.5%
+
+## 📋 QA Manual Extremo
+
+Este proyecto incluye documentación completa de QA manual con **32 casos de prueba detallados** diseñados para ejecución por testers humanos.
+
+### Documentos de QA Manual
+
+- **[QA_MANUAL_EXTREMO.md](./QA_MANUAL_EXTREMO.md)** - Documento principal con todos los casos de prueba manuales estructurados y numerados
+- **[QA_MOBILE_CHECKLIST.md](./QA_MOBILE_CHECKLIST.md)** - Casos específicos para testing mobile (responsive, interacción, teclado, etc.)
+- **[QA_CASOS_DETALLADOS.csv](./QA_CASOS_DETALLADOS.csv)** - Listado tabular exportable con todos los casos para Excel/Google Sheets
+
+### Cobertura de QA Manual
+
+- **32 casos de prueba** documentados
+- **19 casos de prioridad Alta**
+- **12 casos de prioridad Media**
+- **1 caso de prioridad Baja**
+
+### Módulos Cubiertos
+
+- Compra y Checkout (6 casos)
+- Stock y Disponibilidad (3 casos)
+- Administración (5 casos)
+- Banners (3 casos)
+- Carrito (4 casos)
+- Catálogo y Navegación (4 casos)
+- Home (3 casos)
+- Mobile (1 caso principal + checklist completo)
+- Manejo de Errores (3 casos)
+
+### Estado Actual
+
+Todos los casos están en estado **Pendiente** de ejecución manual. Los casos están diseñados basados en la funcionalidad real del sistema y listos para ser ejecutados por testers.
+
+### Próximos Pasos
+
+1. Ejecutar casos de prioridad Alta primero
+2. Documentar resultados en los documentos de QA
+3. Actualizar tabla resumen con estados finales
+4. Generar reporte de bugs encontrados
 
 ## ⚠️ Advertencias
 
