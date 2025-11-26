@@ -7,7 +7,14 @@ interface ThemeContextType {
   theme: ThemeTokens
   activePresetId: string | null
   presets: ThemePreset[]
-  updateTheme: (updates: Partial<ThemeTokens>) => void
+  updateTheme: (updates: {
+    colors?: Partial<ThemeTokens['colors']>
+    typography?: Partial<ThemeTokens['typography']>
+    spacing?: Partial<ThemeTokens['spacing']>
+    radius?: Partial<ThemeTokens['radius']>
+    shadows?: Partial<ThemeTokens['shadows']>
+    breakpoints?: Partial<ThemeTokens['breakpoints']>
+  }) => void
   setTheme: (theme: ThemeTokens) => void
   savePreset: (name: string) => void
   loadPreset: (id: string) => void
@@ -70,23 +77,44 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
   }, [theme, isHydrated])
 
-  const updateTheme = useCallback((updates: Partial<ThemeTokens>) => {
-    setThemeState((current) => ({
-      ...current,
-      ...Object.entries(updates).reduce((acc, [key, value]) => {
-        if (value && typeof value === 'object' && !Array.isArray(value)) {
-          acc[key as keyof ThemeTokens] = {
-            ...(current[key as keyof ThemeTokens] as object),
-            ...value,
-          } as ThemeTokens[keyof ThemeTokens]
-        } else {
-          acc[key as keyof ThemeTokens] = value as ThemeTokens[keyof ThemeTokens]
+  const updateTheme = useCallback(
+    (updates: {
+      colors?: Partial<ThemeTokens['colors']>
+      typography?: Partial<ThemeTokens['typography']>
+      spacing?: Partial<ThemeTokens['spacing']>
+      radius?: Partial<ThemeTokens['radius']>
+      shadows?: Partial<ThemeTokens['shadows']>
+      breakpoints?: Partial<ThemeTokens['breakpoints']>
+    }) => {
+      setThemeState((current) => {
+        const updated: ThemeTokens = { ...current }
+
+        // Handle nested objects
+        if (updates.colors) {
+          updated.colors = { ...current.colors, ...updates.colors }
         }
-        return acc
-      }, {} as Partial<ThemeTokens>),
-    }))
-    setActivePresetId(null) // Clear active preset when manually editing
-  }, [])
+        if (updates.typography) {
+          updated.typography = { ...current.typography, ...updates.typography }
+        }
+        if (updates.spacing) {
+          updated.spacing = { ...current.spacing, ...updates.spacing }
+        }
+        if (updates.radius) {
+          updated.radius = { ...current.radius, ...updates.radius }
+        }
+        if (updates.shadows) {
+          updated.shadows = { ...current.shadows, ...updates.shadows }
+        }
+        if (updates.breakpoints) {
+          updated.breakpoints = { ...current.breakpoints, ...updates.breakpoints }
+        }
+
+        return updated
+      })
+      setActivePresetId(null) // Clear active preset when manually editing
+    },
+    []
+  )
 
   const setTheme = useCallback((newTheme: ThemeTokens) => {
     setThemeState(newTheme)
