@@ -480,10 +480,10 @@ export async function POST(request: Request) {
       )
     }
 
-    console.log(
-      '[CHECKOUT][API] ✅ Preferencia MP creada:',
-      preference.preference_id || preference.id
-    )
+    const preferenceId = preference.preference_id || preference.id
+    const initPoint = preference.init_point
+
+    console.log('[CHECKOUT][API] ✅ [SUCCESS] Preferencia MP creada:', preferenceId)
 
     // Actualizar orden con preference ID
     try {
@@ -492,7 +492,7 @@ export async function POST(request: Request) {
         const { error: updateError } = await supabaseAdmin
           .from('ordenes')
           .update({
-            pago_preferencia_id: preference.preference_id || preference.id,
+            pago_preferencia_id: preferenceId,
             pago_estado: 'pendiente',
             updated_at: new Date().toISOString(),
           })
@@ -517,10 +517,13 @@ export async function POST(request: Request) {
       )
     }
 
-    console.log('[CHECKOUT][API] ✅ Checkout completado exitosamente:', {
+    console.log('[CHECKOUT][API] ✅ [SUCCESS] Checkout completado exitosamente:', {
       orderId,
-      preferenceId: preference.preference_id || preference.id,
-      initPoint: preference.init_point,
+      preferenceId,
+      initPoint: initPoint?.substring(0, 50) + '...',
+      itemsCount: validatedData.productos.length,
+      total: validatedData.total,
+      timestamp: new Date().toISOString(),
     })
 
     return NextResponse.json(
@@ -528,8 +531,18 @@ export async function POST(request: Request) {
         ok: true,
         code: 'CHECKOUT_SUCCESS',
         orderId: orderId,
-        preferenceId: preference.preference_id || preference.id,
-        initPoint: preference.init_point,
+        preferenceId: preferenceId,
+        initPoint: initPoint,
+        totals: {
+          subtotal: validatedData.productos.reduce((sum, p) => sum + p.subtotal, 0),
+          shipping: validatedData.envio.costo,
+          total: validatedData.total,
+        },
+        shipping: {
+          tipo: validatedData.envio.tipo,
+          metodo: validatedData.envio.metodo,
+          costo: validatedData.envio.costo,
+        },
       },
       {
         status: 200,
