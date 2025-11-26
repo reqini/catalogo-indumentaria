@@ -398,7 +398,7 @@ export async function POST(request: Request) {
               envioCosto: orderData.envio_costo_total,
               total: orderData.total,
               envioMetodo: orderData.envio_metodo,
-              envioTracking: orderData.envio_tracking,
+              envioTracking: orderData.envio_tracking || undefined,
               envioProveedor: orderData.envio_proveedor,
               direccion: {
                 calle: orderData.direccion_calle,
@@ -425,7 +425,7 @@ export async function POST(request: Request) {
               envioCosto: orderData.envio_costo_total,
               total: orderData.total,
               envioMetodo: orderData.envio_metodo,
-              envioTracking: orderData.envio_tracking,
+              envioTracking: orderData.envio_tracking || undefined,
               envioProveedor: orderData.envio_proveedor,
             })
 
