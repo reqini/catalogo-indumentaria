@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { X, Search, Loader2, ImageIcon } from 'lucide-react'
 import Image from 'next/image'
-import { EnhancedProduct } from '@/app/admin/productos/carga-inteligente/page'
+import { EnhancedProduct } from '@/app/(ecommerce)/admin/productos/carga-inteligente/page'
 
 interface ImageSearchProps {
   product: EnhancedProduct
@@ -63,51 +63,42 @@ export default function ImageSearch({ product, onSelect, onClose }: ImageSearchP
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
-          <h2 className="text-xl font-bold text-black">
-            Buscar Imagen para: {product.nombre}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-600 hover:text-black transition-colors"
-          >
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-lg bg-white">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4">
+          <h2 className="text-xl font-bold text-black">Buscar Imagen para: {product.nombre}</h2>
+          <button onClick={onClose} className="text-gray-600 transition-colors hover:text-black">
             <X size={24} />
           </button>
         </div>
 
         <div className="p-6">
-          <div className="flex items-center gap-4 mb-6">
+          <div className="mb-6 flex items-center gap-4">
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && searchImages()}
               placeholder="Buscar imágenes..."
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+              className="flex-1 rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-black"
             />
             <button
               onClick={searchImages}
               disabled={loading}
-              className="flex items-center gap-2 px-6 py-3 bg-black text-white font-semibold rounded-lg hover:bg-gray-800 transition-all disabled:opacity-50"
+              className="flex items-center gap-2 rounded-lg bg-black px-6 py-3 font-semibold text-white transition-all hover:bg-gray-800 disabled:opacity-50"
             >
-              {loading ? (
-                <Loader2 className="animate-spin" size={20} />
-              ) : (
-                <Search size={20} />
-              )}
+              {loading ? <Loader2 className="animate-spin" size={20} /> : <Search size={20} />}
               <span>Buscar</span>
             </button>
           </div>
 
           {loading ? (
-            <div className="text-center py-12">
-              <Loader2 className="animate-spin mx-auto text-gray-400" size={48} />
+            <div className="py-12 text-center">
+              <Loader2 className="mx-auto animate-spin text-gray-400" size={48} />
               <p className="mt-4 text-gray-600">Buscando imágenes...</p>
             </div>
           ) : images.length === 0 ? (
-            <div className="text-center py-12">
+            <div className="py-12 text-center">
               <ImageIcon className="mx-auto text-gray-400" size={48} />
               <p className="mt-4 text-gray-600">No se encontraron imágenes</p>
             </div>
@@ -117,7 +108,7 @@ export default function ImageSearch({ product, onSelect, onClose }: ImageSearchP
                 <button
                   key={index}
                   onClick={() => onSelect(imageUrl)}
-                  className="relative aspect-square rounded-lg overflow-hidden border-2 border-gray-200 hover:border-black transition-colors group"
+                  className="group relative aspect-square overflow-hidden rounded-lg border-2 border-gray-200 transition-colors hover:border-black"
                 >
                   <Image
                     src={imageUrl}
@@ -126,8 +117,8 @@ export default function ImageSearch({ product, onSelect, onClose }: ImageSearchP
                     className="object-cover"
                     sizes="(max-width: 768px) 33vw, 200px"
                   />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                    <span className="text-white opacity-0 group-hover:opacity-100 font-semibold">
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors group-hover:bg-black/20">
+                    <span className="font-semibold text-white opacity-0 group-hover:opacity-100">
                       Seleccionar
                     </span>
                   </div>
@@ -136,9 +127,10 @@ export default function ImageSearch({ product, onSelect, onClose }: ImageSearchP
             </div>
           )}
 
-          <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <div className="mt-6 rounded-lg border border-yellow-200 bg-yellow-50 p-4">
             <p className="text-sm text-yellow-800">
-              <strong>Nota:</strong> Las imágenes son sugerencias. Asegurate de tener los derechos de uso o usar imágenes libres de derechos.
+              <strong>Nota:</strong> Las imágenes son sugerencias. Asegurate de tener los derechos
+              de uso o usar imágenes libres de derechos.
             </p>
           </div>
         </div>
@@ -146,4 +138,3 @@ export default function ImageSearch({ product, onSelect, onClose }: ImageSearchP
     </div>
   )
 }
-

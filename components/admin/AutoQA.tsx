@@ -1,7 +1,7 @@
 'use client'
 
 import { AlertCircle, CheckCircle2, AlertTriangle } from 'lucide-react'
-import { EnhancedProduct } from '@/app/admin/productos/carga-inteligente/page'
+import { EnhancedProduct } from '@/app/(ecommerce)/admin/productos/carga-inteligente/page'
 
 interface AutoQAProps {
   products: EnhancedProduct[]
@@ -10,9 +10,13 @@ interface AutoQAProps {
 export default function AutoQA({ products }: AutoQAProps) {
   const qaResults = analyzeProducts(products)
 
-  if (qaResults.erroresCriticos === 0 && qaResults.advertencias === 0 && qaResults.duplicados === 0) {
+  if (
+    qaResults.erroresCriticos === 0 &&
+    qaResults.advertencias === 0 &&
+    qaResults.duplicados === 0
+  ) {
     return (
-      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+      <div className="rounded-lg border border-green-200 bg-green-50 p-4">
         <div className="flex items-center gap-2 text-green-800">
           <CheckCircle2 size={20} />
           <span className="font-semibold">Todos los productos están listos para importar</span>
@@ -24,12 +28,12 @@ export default function AutoQA({ products }: AutoQAProps) {
   return (
     <div className="space-y-3">
       {qaResults.erroresCriticos > 0 && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <div className="flex items-center gap-2 text-red-800 mb-2">
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+          <div className="mb-2 flex items-center gap-2 text-red-800">
             <AlertCircle size={20} />
             <span className="font-semibold">{qaResults.erroresCriticos} Errores Críticos</span>
           </div>
-          <ul className="text-sm text-red-700 list-disc list-inside space-y-1">
+          <ul className="list-inside list-disc space-y-1 text-sm text-red-700">
             {qaResults.erroresDetalle.map((error, idx) => (
               <li key={idx}>{error}</li>
             ))}
@@ -38,12 +42,14 @@ export default function AutoQA({ products }: AutoQAProps) {
       )}
 
       {qaResults.duplicados > 0 && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <div className="flex items-center gap-2 text-yellow-800 mb-2">
+        <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+          <div className="mb-2 flex items-center gap-2 text-yellow-800">
             <AlertTriangle size={20} />
-            <span className="font-semibold">{qaResults.duplicados} Productos Duplicados Detectados</span>
+            <span className="font-semibold">
+              {qaResults.duplicados} Productos Duplicados Detectados
+            </span>
           </div>
-          <ul className="text-sm text-yellow-700 list-disc list-inside space-y-1">
+          <ul className="list-inside list-disc space-y-1 text-sm text-yellow-700">
             {qaResults.duplicadosDetalle.map((dup, idx) => (
               <li key={idx}>{dup}</li>
             ))}
@@ -52,12 +58,12 @@ export default function AutoQA({ products }: AutoQAProps) {
       )}
 
       {qaResults.advertencias > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-center gap-2 text-blue-800 mb-2">
+        <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+          <div className="mb-2 flex items-center gap-2 text-blue-800">
             <AlertTriangle size={20} />
             <span className="font-semibold">{qaResults.advertencias} Advertencias</span>
           </div>
-          <ul className="text-sm text-blue-700 list-disc list-inside space-y-1">
+          <ul className="list-inside list-disc space-y-1 text-sm text-blue-700">
             {qaResults.advertenciasDetalle.map((adv, idx) => (
               <li key={idx}>{adv}</li>
             ))}
@@ -115,7 +121,11 @@ function analyzeProducts(products: EnhancedProduct[]) {
     if (!product.tags || product.tags.length === 0) {
       advertenciasDetalle.push(`Producto #${index + 1}: Sin tags SEO`)
     }
-    if (product.precio && product.precioSugerido && Math.abs(product.precio - product.precioSugerido) > product.precio * 0.2) {
+    if (
+      product.precio &&
+      product.precioSugerido &&
+      Math.abs(product.precio - product.precioSugerido) > product.precio * 0.2
+    ) {
       advertenciasDetalle.push(`Producto #${index + 1}: Precio muy diferente al sugerido`)
     }
   })
@@ -136,4 +146,3 @@ function analyzeProducts(products: EnhancedProduct[]) {
     advertenciasDetalle,
   }
 }
-

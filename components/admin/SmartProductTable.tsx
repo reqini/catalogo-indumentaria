@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Edit2, Trash2, ImageIcon, AlertCircle, CheckCircle2, X } from 'lucide-react'
 import Image from 'next/image'
-import { EnhancedProduct } from '@/app/admin/productos/carga-inteligente/page'
+import { EnhancedProduct } from '@/app/(ecommerce)/admin/productos/carga-inteligente/page'
 import ImageSearch from './ImageSearch'
 
 interface SmartProductTableProps {
@@ -66,47 +66,65 @@ export default function SmartProductTable({
 
   const getQualityBadge = (calidad?: number) => {
     if (!calidad) return null
-    
+
     if (calidad >= 80) {
-      return <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">Excelente</span>
+      return (
+        <span className="rounded bg-green-100 px-2 py-1 text-xs text-green-800">Excelente</span>
+      )
     }
     if (calidad >= 60) {
-      return <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded">Buena</span>
+      return <span className="rounded bg-yellow-100 px-2 py-1 text-xs text-yellow-800">Buena</span>
     }
-    return <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded">Mejorable</span>
+    return <span className="rounded bg-red-100 px-2 py-1 text-xs text-red-800">Mejorable</span>
   }
 
   return (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
+    <div className="overflow-hidden rounded-lg bg-white shadow">
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Imagen</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Categoría</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Precio</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stock</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">SKU</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Calidad</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                Imagen
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                Nombre
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                Categoría
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                Precio
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                Stock
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                SKU
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                Calidad
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                Acciones
+              </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="divide-y divide-gray-200 bg-white">
             {products.map((product, index) => (
-              <tr 
-                key={index} 
-                className={`hover:bg-gray-50 transition-colors ${
-                  (product.errores?.length || 0) > 0 
-                    ? 'bg-red-50 border-l-4 border-red-500' 
+              <tr
+                key={index}
+                className={`transition-colors hover:bg-gray-50 ${
+                  (product.errores?.length || 0) > 0
+                    ? 'border-l-4 border-red-500 bg-red-50'
                     : (product.advertencias?.length || 0) > 0
-                    ? 'bg-yellow-50 border-l-4 border-yellow-500'
-                    : 'border-l-4 border-green-500'
+                      ? 'border-l-4 border-yellow-500 bg-yellow-50'
+                      : 'border-l-4 border-green-500'
                 }`}
               >
                 {/* Imagen */}
                 <td className="px-4 py-3">
-                  <div className="relative w-16 h-16 bg-gray-100 rounded-lg overflow-hidden">
+                  <div className="relative h-16 w-16 overflow-hidden rounded-lg bg-gray-100">
                     {product.imagenPrincipal ? (
                       <Image
                         src={product.imagenPrincipal}
@@ -116,7 +134,7 @@ export default function SmartProductTable({
                         sizes="64px"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-400">
+                      <div className="flex h-full w-full items-center justify-center text-gray-400">
                         <ImageIcon size={20} />
                       </div>
                     )}
@@ -135,14 +153,16 @@ export default function SmartProductTable({
                     <input
                       type="text"
                       value={editingProduct?.nombre || ''}
-                      onChange={(e) => setEditingProduct({ ...editingProduct!, nombre: e.target.value })}
-                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                      onChange={(e) =>
+                        setEditingProduct({ ...editingProduct!, nombre: e.target.value })
+                      }
+                      className="w-full rounded border border-gray-300 px-2 py-1 text-sm"
                     />
                   ) : (
                     <div className="text-sm font-medium text-black">
                       {product.nombre}
                       {product.errores && product.errores.length > 0 && (
-                        <div className="flex items-center gap-1 mt-1">
+                        <div className="mt-1 flex items-center gap-1">
                           <AlertCircle size={14} className="text-red-500" />
                           <span className="text-xs text-red-600">{product.errores[0]}</span>
                         </div>
@@ -157,8 +177,10 @@ export default function SmartProductTable({
                     <input
                       type="text"
                       value={editingProduct?.categoria || ''}
-                      onChange={(e) => setEditingProduct({ ...editingProduct!, categoria: e.target.value })}
-                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                      onChange={(e) =>
+                        setEditingProduct({ ...editingProduct!, categoria: e.target.value })
+                      }
+                      className="w-full rounded border border-gray-300 px-2 py-1 text-sm"
                     />
                   ) : (
                     <span className="text-sm text-gray-600">{product.categoria}</span>
@@ -171,14 +193,21 @@ export default function SmartProductTable({
                     <input
                       type="number"
                       value={editingProduct?.precio || 0}
-                      onChange={(e) => setEditingProduct({ ...editingProduct!, precio: parseFloat(e.target.value) || 0 })}
-                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                      onChange={(e) =>
+                        setEditingProduct({
+                          ...editingProduct!,
+                          precio: parseFloat(e.target.value) || 0,
+                        })
+                      }
+                      className="w-full rounded border border-gray-300 px-2 py-1 text-sm"
                       min="0"
                       step="0.01"
                     />
                   ) : (
                     <div className="text-sm">
-                      <span className="font-medium text-black">${product.precio.toLocaleString('es-AR')}</span>
+                      <span className="font-medium text-black">
+                        ${product.precio.toLocaleString('es-AR')}
+                      </span>
                       {product.precioSugerido && product.precioSugerido !== product.precio && (
                         <div className="text-xs text-gray-500">
                           Sugerido: ${product.precioSugerido.toLocaleString('es-AR')}
@@ -194,8 +223,13 @@ export default function SmartProductTable({
                     <input
                       type="number"
                       value={editingProduct?.stock || 0}
-                      onChange={(e) => setEditingProduct({ ...editingProduct!, stock: parseInt(e.target.value) || 0 })}
-                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                      onChange={(e) =>
+                        setEditingProduct({
+                          ...editingProduct!,
+                          stock: parseInt(e.target.value) || 0,
+                        })
+                      }
+                      className="w-full rounded border border-gray-300 px-2 py-1 text-sm"
                       min="0"
                     />
                   ) : (
@@ -209,8 +243,10 @@ export default function SmartProductTable({
                     <input
                       type="text"
                       value={editingProduct?.sku || ''}
-                      onChange={(e) => setEditingProduct({ ...editingProduct!, sku: e.target.value })}
-                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                      onChange={(e) =>
+                        setEditingProduct({ ...editingProduct!, sku: e.target.value })
+                      }
+                      className="w-full rounded border border-gray-300 px-2 py-1 text-sm"
                       placeholder="Opcional"
                     />
                   ) : (
@@ -286,4 +322,3 @@ export default function SmartProductTable({
     </div>
   )
 }
-
