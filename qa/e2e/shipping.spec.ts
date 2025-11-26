@@ -41,7 +41,8 @@ test.describe('Sistema de Envíos', () => {
     expect(metodos).toBeGreaterThan(0)
 
     // Seleccionar un método
-    await page.click('button:has-text("OCA Estándar")').first()
+    const ocaButton = page.locator('button:has-text("OCA Estándar")').first()
+    await ocaButton.click()
 
     // Verificar que se seleccionó
     await expect(page.locator('text=Envió seleccionado')).toBeVisible()

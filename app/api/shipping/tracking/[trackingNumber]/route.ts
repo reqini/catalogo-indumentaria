@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { getSimpleOrderByTracking } from '@/lib/ordenes-helpers-simple'
-import { getOrderByTrackingNumber } from '@/lib/ordenes-helpers'
 import { getShippingStatus } from '@/core/shipping/shipping-service'
 
 /**

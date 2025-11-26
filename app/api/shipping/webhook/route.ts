@@ -112,10 +112,11 @@ export async function POST(request: Request) {
       })
     } else {
       // Estructura completa
+      const { updateOrderShipping } = await import('@/lib/ordenes-helpers')
       await updateOrderShipping(order.id, {
         envio_tracking: tracking,
         envio_proveedor: provider || 'Envíopack',
-        estado: estadoOrden,
+        estado: estadoOrden === 'entregada' ? 'entregada' : 'enviada',
       })
     }
 

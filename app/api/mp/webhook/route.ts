@@ -412,8 +412,8 @@ export async function POST(request: Request) {
                   '@/lib/ordenes-helpers-simple'
                 )
                 await updateSimpleOrderWithTracking(simpleOrder.id, {
-                  tracking: shippingResult.trackingNumber,
-                  provider: shippingResult.provider,
+                  tracking: shippingResult.trackingNumber!,
+                  provider: shippingResult.provider || 'Envíopack',
                   status: 'en_transito',
                 })
               }

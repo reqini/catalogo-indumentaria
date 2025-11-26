@@ -17,20 +17,21 @@ export async function GET(request: Request, { params }: { params: { id: string }
     }
 
     // Intentar obtener orden simplificada primero
-    let order = await getSimpleOrderById(id)
+    let simpleOrder = await getSimpleOrderById(id)
+    let fullOrder: any = null
 
     // Si no se encuentra, intentar estructura completa
-    if (!order) {
-      order = await getOrderById(id)
+    if (!simpleOrder) {
+      fullOrder = await getOrderById(id)
     }
 
-    if (!order) {
+    if (!simpleOrder && !fullOrder) {
       return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 })
     }
 
     // Retornar orden (sin datos sensibles)
     return NextResponse.json({
-      order,
+      order: simpleOrder || fullOrder,
     })
   } catch (error: any) {
     console.error('[API-ORDERS] Error:', error)

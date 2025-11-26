@@ -23,19 +23,20 @@ export async function POST(request: Request) {
     console.log('[SHIPPING-CREATE] 📦 Creando envío para orden:', orderId)
 
     // Buscar orden (estructura simplificada primero)
-    let order = await getSimpleOrderById(orderId)
+    let simpleOrder = await getSimpleOrderById(orderId)
+    let fullOrder: any = null
     let envioData: any = null
 
-    if (order) {
+    if (simpleOrder) {
       // Estructura simplificada
-      if (order.envio?.tipo === 'retiro_local') {
+      if (simpleOrder.envio?.tipo === 'retiro_local') {
         return NextResponse.json(
           { error: 'No se puede crear envío para retiro en local' },
           { status: 400 }
         )
       }
 
-      if (!order.envio?.direccion?.codigoPostal) {
+      if (!simpleOrder.envio?.direccion?.codigoPostal) {
         return NextResponse.json(
           { error: 'La orden no tiene dirección de envío completa' },
           { status: 400 }
@@ -43,41 +44,41 @@ export async function POST(request: Request) {
       }
 
       // Calcular peso estimado
-      const pesoEstimado = Math.max((order.productos?.length || 1) * 0.5, 0.5)
+      const pesoEstimado = Math.max((simpleOrder.productos?.length || 1) * 0.5, 0.5)
 
       envioData = {
-        codigoPostal: order.envio.direccion.codigoPostal,
+        codigoPostal: simpleOrder.envio.direccion.codigoPostal,
         peso: pesoEstimado,
-        precio: order.total - (order.envio?.costo || 0),
-        provincia: order.envio.direccion.provincia,
+        precio: simpleOrder.total - (simpleOrder.envio?.costo || 0),
+        provincia: simpleOrder.envio.direccion.provincia,
         direccion: {
-          calle: order.envio.direccion.calle || '',
-          numero: order.envio.direccion.numero || '',
-          pisoDepto: order.envio.direccion.pisoDepto,
-          localidad: order.envio.direccion.localidad || '',
-          provincia: order.envio.direccion.provincia || '',
+          calle: simpleOrder.envio.direccion.calle || '',
+          numero: simpleOrder.envio.direccion.numero || '',
+          pisoDepto: simpleOrder.envio.direccion.pisoDepto,
+          localidad: simpleOrder.envio.direccion.localidad || '',
+          provincia: simpleOrder.envio.direccion.provincia || '',
         },
         cliente: {
-          nombre: order.comprador.nombre,
-          email: order.comprador.email,
-          telefono: order.comprador.telefono,
+          nombre: simpleOrder.comprador.nombre,
+          email: simpleOrder.comprador.email,
+          telefono: simpleOrder.comprador.telefono,
         },
       }
     } else {
       // Buscar en estructura completa
-      order = await getOrderById(orderId)
-      if (!order) {
+      fullOrder = await getOrderById(orderId)
+      if (!fullOrder) {
         return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 })
       }
 
-      if (order.envio_tipo === 'retiro_local') {
+      if (fullOrder.envio_tipo === 'retiro_local') {
         return NextResponse.json(
           { error: 'No se puede crear envío para retiro en local' },
           { status: 400 }
         )
       }
 
-      if (!order.direccion_codigo_postal) {
+      if (!fullOrder.direccion_codigo_postal) {
         return NextResponse.json(
           { error: 'La orden no tiene dirección de envío completa' },
           { status: 400 }
@@ -85,25 +86,25 @@ export async function POST(request: Request) {
       }
 
       // Calcular peso estimado
-      const items = Array.isArray(order.items) ? order.items : []
+      const items = Array.isArray(fullOrder.items) ? fullOrder.items : []
       const pesoEstimado = Math.max(items.length * 0.5, 0.5)
 
       envioData = {
-        codigoPostal: order.direccion_codigo_postal,
+        codigoPostal: fullOrder.direccion_codigo_postal,
         peso: pesoEstimado,
-        precio: order.subtotal,
-        provincia: order.direccion_provincia,
+        precio: fullOrder.subtotal,
+        provincia: fullOrder.direccion_provincia,
         direccion: {
-          calle: order.direccion_calle || '',
-          numero: order.direccion_numero || '',
-          pisoDepto: order.direccion_piso_depto,
-          localidad: order.direccion_localidad || '',
-          provincia: order.direccion_provincia || '',
+          calle: fullOrder.direccion_calle || '',
+          numero: fullOrder.direccion_numero || '',
+          pisoDepto: fullOrder.direccion_piso_depto,
+          localidad: fullOrder.direccion_localidad || '',
+          provincia: fullOrder.direccion_provincia || '',
         },
         cliente: {
-          nombre: order.cliente_nombre,
-          email: order.cliente_email,
-          telefono: order.cliente_telefono,
+          nombre: fullOrder.cliente_nombre,
+          email: fullOrder.cliente_email,
+          telefono: fullOrder.cliente_telefono,
         },
       }
     }
@@ -130,7 +131,7 @@ export async function POST(request: Request) {
         provider: shippingResult.provider || 'Envíopack',
         status: 'en_transito',
       })
-    } else {
+    } else if (fullOrder) {
       // Estructura completa
       const { updateOrderShipping } = await import('@/lib/ordenes-helpers')
       await updateOrderShipping(orderId, {

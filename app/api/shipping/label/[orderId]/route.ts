@@ -19,24 +19,26 @@ export async function GET(request: Request, { params }: { params: { orderId: str
 
     console.log('[SHIPPING-LABEL] Generando etiqueta para orden:', orderId)
 
-    // Buscar orden
-    let order = await getSimpleOrderById(orderId)
+    // Buscar orden (estructura simplificada primero)
+    let simpleOrder = await getSimpleOrderById(orderId)
+    let fullOrder: any = null
     let trackingNumber: string | null = null
     let provider: string | null = null
 
-    if (order) {
+    if (simpleOrder) {
       trackingNumber =
-        (order.envio as any)?.tracking || (order.envio as any)?.tracking_number || null
-      provider = (order.envio as any)?.proveedor || (order.envio as any)?.provider || null
+        (simpleOrder.envio as any)?.tracking || (simpleOrder.envio as any)?.tracking_number || null
+      provider =
+        (simpleOrder.envio as any)?.proveedor || (simpleOrder.envio as any)?.provider || null
     } else {
-      order = await getOrderById(orderId)
-      if (order) {
-        trackingNumber = order.envio_tracking || null
-        provider = order.envio_proveedor || null
+      fullOrder = await getOrderById(orderId)
+      if (fullOrder) {
+        trackingNumber = fullOrder.envio_tracking || null
+        provider = fullOrder.envio_proveedor || null
       }
     }
 
-    if (!order) {
+    if (!simpleOrder && !fullOrder) {
       return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 })
     }
 
