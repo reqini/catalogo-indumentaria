@@ -1,0 +1,6 @@
+# Log de Alertas de Sincronización Visual
+
+Este archivo registra automáticamente las alertas cuando se detectan diferencias entre el dominio principal y el deployment de main.
+
+---
+
