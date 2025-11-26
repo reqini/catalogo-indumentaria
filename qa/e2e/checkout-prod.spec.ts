@@ -71,7 +71,7 @@ test.describe('Checkout en Producción', () => {
       // Intentar verificar de otra forma
       const emptyCartMessage = page.locator('text=/carrito está vacío|vacío/i')
       if ((await emptyCartMessage.count()) > 0) {
-        test.skip('El carrito está vacío - no se pudo agregar producto')
+        test.skip()
       }
     }
 
