@@ -92,7 +92,7 @@ export default function CarritoPage() {
       console.log('[MP-PAYMENT] Frontend - Enviando back_urls:', JSON.stringify(backUrls, null, 2))
 
       // Incluir costo de envío si está seleccionado
-      if (selectedShipping !== null && selectedShipping.precio > 0) {
+      if (selectedShipping !== null && selectedShipping!.precio > 0) {
         // TypeScript narrowing: sabemos que selectedShipping no es null aquí
         const shipping = selectedShipping!
         items.push({
