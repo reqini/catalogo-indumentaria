@@ -54,7 +54,7 @@ test.describe('Checkout en Producción', () => {
         await page.waitForTimeout(1000)
       }
     } else {
-      test.skip('No hay productos disponibles en el catálogo')
+      test.skip()
     }
 
     // 3. Ir al carrito
@@ -222,7 +222,7 @@ test.describe('Checkout en Producción', () => {
         await expect(metodosEnvio.first()).toBeVisible({ timeout: 5000 })
       }
     } else {
-      test.skip('No se encontró el campo de código postal')
+      test.skip()
     }
   })
 })
