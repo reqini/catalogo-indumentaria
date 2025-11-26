@@ -123,13 +123,34 @@ export async function POST(request: Request) {
       )
     }
 
+    // CRÍTICO: Verificar flag de mantenimiento manual (solo si está explícitamente activado)
+    const checkoutDisabled = process.env.NEXT_PUBLIC_CHECKOUT_DISABLED === 'true'
+    if (checkoutDisabled) {
+      console.warn(
+        '[MP-PAYMENT] ⚠️ CHECKOUT DESHABILITADO MANUALMENTE (flag NEXT_PUBLIC_CHECKOUT_DISABLED=true)'
+      )
+      return NextResponse.json(
+        {
+          ok: false,
+          code: 'CHECKOUT_DISABLED',
+          message: 'El checkout está temporalmente deshabilitado por mantenimiento.',
+          detail: 'manual-toggle',
+          help: {
+            message:
+              'Para habilitar nuevamente, configura NEXT_PUBLIC_CHECKOUT_DISABLED=false en Vercel Dashboard',
+          },
+        },
+        { status: 503 }
+      )
+    }
+
     // CRÍTICO: Validar que tenemos un token válido para usar
     // Si tenemos token directo pero la validación falla, intentar usarlo de todas formas
     if (!MP_ACCESS_TOKEN) {
       const errorMessage = getMercadoPagoErrorMessage(mpConfig)
 
       // Logs detallados del error
-      console.error('[MP-PAYMENT] ❌ Mercado Pago no configurado correctamente')
+      console.error('[MP-PAYMENT] ❌ [ERROR] MP_ACCESS_TOKEN NO CONFIGURADO')
       console.error('[MP-PAYMENT] ==========================================')
       console.error('[MP-PAYMENT] Errores detectados:', mpConfig.errors)
       console.error('[MP-PAYMENT] Access Token presente:', !!MP_ACCESS_TOKEN)
@@ -145,15 +166,14 @@ export async function POST(request: Request) {
       console.error('[MP-PAYMENT] Es Vercel:', IS_VERCEL)
       console.error('[MP-PAYMENT] ==========================================')
 
-      // CRÍTICO: Retornar 503 (Service Unavailable) en vez de 500 (Internal Server Error)
-      // Esto es más amigable y no rompe el sitio
+      // Retornar error específico de configuración (NO genérico de mantenimiento)
       return NextResponse.json(
         {
-          error: 'checkout-disabled',
-          message:
-            'El servicio de pago está temporalmente deshabilitado. Estamos actualizando la configuración.',
-          details: IS_VERCEL
-            ? 'Las variables de entorno no están disponibles en este deployment. Por favor, verifica que MP_ACCESS_TOKEN esté configurado en Vercel Dashboard y haz un redeploy.'
+          ok: false,
+          code: 'MP_ACCESS_TOKEN_MISSING',
+          message: 'No se pudo generar el pago. La configuración de Mercado Pago no está completa.',
+          detail: IS_VERCEL
+            ? 'MP_ACCESS_TOKEN no está configurado en Vercel Dashboard. Configura la variable y haz REDEPLOY.'
             : 'MP_ACCESS_TOKEN no está configurado. Configura la variable en .env.local para desarrollo local.',
           technical: {
             hasToken: !!MP_ACCESS_TOKEN,
@@ -168,13 +188,11 @@ export async function POST(request: Request) {
             production:
               'Configura MP_ACCESS_TOKEN en Vercel Dashboard → Settings → Environment Variables → Production',
             redeploy: 'Después de agregar la variable, haz REDEPLOY en Vercel',
-            docs: '/docs/configuracion-mercadopago.md',
+            docs: '/docs/mercadopago-config.md',
             panel: 'https://www.mercadopago.com.ar/developers/panel',
-            verifyEndpoint: '/api/mp/verify-config',
-            testEndpoint: '/api/mp/test-token',
           },
         },
-        { status: 503 } // Service Unavailable - más amigable que 500
+        { status: 500 } // Internal Server Error - error de configuración, no mantenimiento
       )
     }
 
@@ -482,10 +500,14 @@ export async function POST(request: Request) {
     }
 
     const data = await response.json()
-    console.log('[MP-PAYMENT] ✅ Preferencia creada exitosamente')
+    console.log('[MP-PAYMENT] ✅ [SUCCESS] Preferencia creada exitosamente')
     console.log('[MP-PAYMENT] Preference ID:', data.id)
     console.log('[MP-PAYMENT] Init Point:', data.init_point?.substring(0, 50) + '...')
     console.log('[MP-PAYMENT] Items:', items.length)
+    console.log(
+      '[MP-PAYMENT] Total amount:',
+      items.reduce((sum, i) => sum + i.unit_price * i.quantity, 0)
+    )
     console.log('[MP-PAYMENT] 🎯 QA LOG - Preferencia creada:', {
       preferenceId: data.id,
       itemsCount: items.length,
@@ -531,6 +553,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({
+      ok: true,
       init_point: data.init_point,
       preference_id: data.id,
     })

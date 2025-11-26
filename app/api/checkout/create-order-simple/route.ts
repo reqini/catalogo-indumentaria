@@ -366,26 +366,59 @@ export async function POST(request: Request) {
       console.error('[CHECKOUT][API]   - Status:', paymentResponse.status)
       console.error('[CHECKOUT][API]   - Error data:', errorData)
 
-      // Si es error 503 (Service Unavailable), probablemente MP no está configurado
+      // Manejar diferentes tipos de errores de Mercado Pago
       if (paymentResponse.status === 503) {
-        const mpErrorMessage =
-          errorData.message ||
-          'El servicio de pago está temporalmente deshabilitado. Verificá la configuración de Mercado Pago.'
+        // Si es 503, puede ser mantenimiento manual o error de configuración
+        if (errorData.code === 'CHECKOUT_DISABLED') {
+          // Mantenimiento manual activado
+          console.warn('[CHECKOUT][API] ⚠️ Checkout deshabilitado manualmente')
+          return NextResponse.json(
+            {
+              ok: false,
+              code: 'CHECKOUT_DISABLED',
+              message:
+                errorData.message ||
+                'El checkout está temporalmente deshabilitado por mantenimiento.',
+              detail: errorData.detail || 'manual-toggle',
+            },
+            { status: 503 }
+          )
+        } else {
+          // Error de configuración de MP
+          console.error('[CHECKOUT][API] ❌ Error de configuración de Mercado Pago:', errorData)
+          return NextResponse.json(
+            {
+              ok: false,
+              code: errorData.code || 'CHECKOUT_MP_CONFIG_ERROR',
+              message:
+                errorData.message ||
+                'No se pudo generar el pago. Verificá la configuración de Mercado Pago.',
+              detail: errorData.detail || errorData.details || null,
+              help: errorData.help || {
+                message:
+                  'Configura MP_ACCESS_TOKEN en Vercel Dashboard → Settings → Environment Variables',
+              },
+            },
+            { status: 500 } // Error de configuración, no mantenimiento
+          )
+        }
+      }
 
-        console.error('[CHECKOUT][API] ❌ Mercado Pago no configurado (503):', errorData)
-
+      // Si es error 500 y código específico de token faltante
+      if (paymentResponse.status === 500 && errorData.code === 'MP_ACCESS_TOKEN_MISSING') {
+        console.error('[CHECKOUT][API] ❌ [ERROR] MP_ACCESS_TOKEN no configurado:', errorData)
         return NextResponse.json(
           {
             ok: false,
-            code: 'CHECKOUT_MP_NOT_CONFIGURED',
-            message: mpErrorMessage,
-            detail: errorData.error || errorData.details || 'checkout-disabled',
+            code: 'CHECKOUT_MP_CONFIG_ERROR',
+            message:
+              'No se pudo generar el pago. La configuración de Mercado Pago no está completa.',
+            detail: errorData.detail || 'MP_ACCESS_TOKEN no configurado',
             help: errorData.help || {
-              message:
-                'Configura MP_ACCESS_TOKEN en Vercel Dashboard → Settings → Environment Variables',
+              message: 'Configura MP_ACCESS_TOKEN en Vercel Dashboard y haz REDEPLOY',
             },
           },
-          { status: 503 }
+          { status: 500 }
         )
       }
 
