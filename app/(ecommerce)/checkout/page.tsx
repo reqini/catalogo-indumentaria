@@ -905,17 +905,23 @@ export default function CheckoutPage() {
                       Volver
                     </button>
                     <button
+                      type="button"
                       onClick={handleCheckout}
                       disabled={isProcessing}
-                      className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-black px-6 py-3 font-semibold text-white transition-all hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-black px-6 py-3 font-semibold text-white transition-all hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-black"
+                      aria-busy={isProcessing}
+                      aria-label={isProcessing ? 'Procesando pago...' : 'Finalizar compra'}
                     >
                       {isProcessing ? (
                         <>
                           <Loader2 className="animate-spin" size={20} />
-                          <span>Procesando...</span>
+                          <span>Procesando pago...</span>
                         </>
                       ) : (
-                        'Pagar Ahora'
+                        <>
+                          <CheckCircle2 size={20} className="hidden md:block" />
+                          <span>Pagar Ahora</span>
+                        </>
                       )}
                     </button>
                   </div>
