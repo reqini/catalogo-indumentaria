@@ -1,0 +1,142 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { Plus, RefreshCw, Eye, EyeOff, GripVertical } from 'lucide-react'
+import { getBanners, createBanner, updateBanner, deleteBanner } from '@/utils/api'
+import AdminBannerForm from '@/components/AdminBannerForm'
+import AdminBannerTable from '@/components/AdminBannerTable'
+import toast from 'react-hot-toast'
+
+export default function AdminBannersPage() {
+  const [banners, setBanners] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [showForm, setShowForm] = useState(false)
+  const [editingBanner, setEditingBanner] = useState<any>(null)
+
+  useEffect(() => {
+    fetchBanners()
+  }, [])
+
+  const fetchBanners = async () => {
+    setLoading(true)
+    try {
+      const data = await getBanners()
+      // Ordenar por orden
+      const sorted = data.sort((a: any, b: any) => (a.orden || 0) - (b.orden || 0))
+      setBanners(sorted)
+    } catch (error) {
+      console.error('Error fetching banners:', error)
+      toast.error('Error al cargar banners')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleEdit = (banner: any) => {
+    setEditingBanner(banner)
+    setShowForm(true)
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('¿Estás seguro de eliminar este banner?')) {
+      return
+    }
+
+    try {
+      await deleteBanner(id)
+      toast.success('Banner eliminado correctamente')
+      fetchBanners()
+    } catch (error: any) {
+      console.error('Error deleting banner:', error)
+      const errorMessage =
+        error.response?.data?.error || error.message || 'Error al eliminar banner'
+      toast.error(errorMessage)
+    }
+  }
+
+  const handleToggleActive = async (banner: any) => {
+    try {
+      await updateBanner(banner.id, { activo: !banner.activo })
+      toast.success(`Banner ${!banner.activo ? 'activado' : 'desactivado'}`)
+      fetchBanners()
+    } catch (error) {
+      toast.error('Error al actualizar banner')
+    }
+  }
+
+  const handleOrderChange = async (bannerId: string, newOrder: number) => {
+    try {
+      // Asegurar que el orden sea un número válido y no negativo
+      const ordenFinal = Math.max(0, Math.floor(newOrder))
+      await updateBanner(bannerId, { orden: ordenFinal })
+      toast.success('Orden actualizado')
+      fetchBanners()
+    } catch (error: any) {
+      console.error('Error updating order:', error)
+      const errorMessage =
+        error.response?.data?.error || error.message || 'Error al actualizar orden'
+      toast.error(errorMessage)
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="border-b border-gray-200 bg-white">
+        <div className="flex items-center justify-between px-8 py-4">
+          <h1 className="text-2xl font-bold text-black">Gestión de Banners</h1>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={fetchBanners}
+              className="flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 font-semibold text-gray-700 transition-all hover:bg-gray-50"
+            >
+              <RefreshCw size={18} />
+              Refrescar
+            </button>
+            <button
+              onClick={() => {
+                setEditingBanner(null)
+                setShowForm(true)
+              }}
+              className="flex items-center gap-2 rounded-lg bg-black px-4 py-2 font-semibold text-white transition-all hover:bg-gray-800"
+            >
+              <Plus size={20} />
+              Nuevo Banner
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="px-8 py-8">
+        {loading ? (
+          <div className="py-12 text-center">
+            <div className="inline-block h-8 w-8 animate-spin rounded-full border-b-2 border-black"></div>
+            <p className="mt-4 text-gray-600">Cargando banners...</p>
+          </div>
+        ) : (
+          <AdminBannerTable
+            banners={banners}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onToggleActive={handleToggleActive}
+            onOrderChange={handleOrderChange}
+          />
+        )}
+      </div>
+
+      {showForm && (
+        <AdminBannerForm
+          banner={editingBanner}
+          onClose={() => {
+            setShowForm(false)
+            setEditingBanner(null)
+          }}
+          onSuccess={() => {
+            setShowForm(false)
+            setEditingBanner(null)
+            fetchBanners()
+          }}
+        />
+      )}
+    </div>
+  )
+}

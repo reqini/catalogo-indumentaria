@@ -3,6 +3,7 @@ import './globals.css'
 import { Toaster } from 'react-hot-toast'
 import { CartProvider } from '@/context/CartContext'
 import { AuthProvider } from '@/context/AuthContext'
+import { ThemeProvider } from '@/lib/theme-context'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import { AutoFixErrorBoundary } from '@/autofix'
@@ -12,7 +13,8 @@ import Script from 'next/script'
 
 export const metadata: Metadata = {
   title: 'Catálogo de Indumentaria - Premium Fashion',
-  description: 'Catálogo premium de indumentaria con las mejores prendas. Running, Training, Lifestyle y más.',
+  description:
+    'Catálogo premium de indumentaria con las mejores prendas. Running, Training, Lifestyle y más.',
   keywords: 'indumentaria, ropa, running, training, lifestyle, moda, deporte',
   manifest: '/manifest.json',
   icons: {
@@ -39,14 +41,16 @@ export const viewport: Viewport = {
   themeColor: '#000000',
 }
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es">
       <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Roboto:wght@300;400;500;700&family=Poppins:wght@300;400;500;600;700;800&family=Montserrat:wght@300;400;500;600;700;800&family=Open+Sans:wght@300;400;500;600;700;800&family=Lato:wght@300;400;700;900&family=Raleway:wght@300;400;500;600;700;800&family=Nunito:wght@300;400;500;600;700;800&family=Source+Sans+Pro:wght@300;400;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -79,29 +83,29 @@ export default function RootLayout({
       <body>
         <AutoFixErrorBoundary>
           <AutoFixInit />
-          <AuthProvider>
-            <CartProvider>
-              <div className="flex flex-col min-h-screen">
-                <Navbar />
-                <main className="flex-1">
-                  {children}
-                </main>
-                <Footer />
-              </div>
-              <ScrollToTop />
-              <Toaster 
-                position="top-center"
-                toastOptions={{
-                  duration: 3000,
-                  style: {
-                    background: '#000',
-                    color: '#fff',
-                    borderRadius: '8px',
-                  },
-                }}
-              />
-            </CartProvider>
-          </AuthProvider>
+          <ThemeProvider>
+            <AuthProvider>
+              <CartProvider>
+                <div className="flex min-h-screen flex-col">
+                  <Navbar />
+                  <main className="flex-1">{children}</main>
+                  <Footer />
+                </div>
+                <ScrollToTop />
+                <Toaster
+                  position="top-center"
+                  toastOptions={{
+                    duration: 3000,
+                    style: {
+                      background: '#000',
+                      color: '#fff',
+                      borderRadius: '8px',
+                    },
+                  }}
+                />
+              </CartProvider>
+            </AuthProvider>
+          </ThemeProvider>
         </AutoFixErrorBoundary>
         <script
           dangerouslySetInnerHTML={{
