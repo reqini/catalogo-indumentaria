@@ -8,7 +8,8 @@
   "git": {
     "deploymentEnabled": {
       "main": true
-    }
+    },
+    "autoAlias": false
   },
   "github": {
     "autoDeployOnPush": true,
