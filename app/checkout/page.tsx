@@ -165,7 +165,9 @@ export default function CheckoutPage() {
           nombre: `Envío - ${selectedShipping.nombre}`,
           precio: selectedShipping.precio,
           cantidad: 1,
+          talle: '',
           subtotal: selectedShipping.precio,
+          imagenPrincipal: '',
         })
       }
 

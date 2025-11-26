@@ -55,7 +55,7 @@ export default function CarritoPage() {
     // Validar stock antes de checkout
     for (const item of cart) {
       if (item.stock && item.talle) {
-        const stockDisponible = item.stock[item.talle] || 0
+        const stockDisponible = (item.stock ?? {})[item.talle] || 0
         if (stockDisponible < item.cantidad) {
           toast.error(
             `Stock insuficiente para ${item.nombre} (Talle ${item.talle}). Disponible: ${stockDisponible}, Solicitado: ${item.cantidad}`
@@ -92,7 +92,7 @@ export default function CarritoPage() {
       console.log('[MP-PAYMENT] Frontend - Enviando back_urls:', JSON.stringify(backUrls, null, 2))
 
       // Incluir costo de envío si está seleccionado
-      if (selectedShipping && selectedShipping.precio > 0) {
+      if (selectedShipping !== null && selectedShipping.precio > 0) {
         items.push({
           title: `Envío - ${selectedShipping.nombre}`,
           quantity: 1,
