@@ -1,0 +1,272 @@
+{
+  "timestamp": "2025-11-26T01:07:16.401Z",
+  "commit": "local",
+  "environment": "development",
+  "tests": [
+    {
+      "name": "Scripts de build",
+      "status": "PASS",
+      "details": {},
+      "timestamp": "2025-11-26T01:07:16.403Z"
+    },
+    {
+      "name": "Dependencias críticas",
+      "status": "PASS",
+      "details": {},
+      "timestamp": "2025-11-26T01:07:16.403Z"
+    },
+    {
+      "name": "Auto-deploy en Vercel",
+      "status": "PASS",
+      "details": {},
+      "timestamp": "2025-11-26T01:07:16.403Z"
+    },
+    {
+      "name": "Deployment de main",
+      "status": "PASS",
+      "details": {},
+      "timestamp": "2025-11-26T01:07:16.403Z"
+    },
+    {
+      "name": "Archivo crítico: next.config.js",
+      "status": "PASS",
+      "details": {},
+      "timestamp": "2025-11-26T01:07:16.404Z"
+    },
+    {
+      "name": "Archivo crítico: package.json",
+      "status": "PASS",
+      "details": {},
+      "timestamp": "2025-11-26T01:07:16.404Z"
+    },
+    {
+      "name": "Archivo crítico: vercel.json",
+      "status": "PASS",
+      "details": {},
+      "timestamp": "2025-11-26T01:07:16.404Z"
+    },
+    {
+      "name": "Archivo crítico: app/page.tsx",
+      "status": "PASS",
+      "details": {},
+      "timestamp": "2025-11-26T01:07:16.404Z"
+    },
+    {
+      "name": "Archivo crítico: app/carrito/page.tsx",
+      "status": "PASS",
+      "details": {},
+      "timestamp": "2025-11-26T01:07:16.405Z"
+    },
+    {
+      "name": "Archivo crítico: app/api/pago/route.ts",
+      "status": "PASS",
+      "details": {},
+      "timestamp": "2025-11-26T01:07:16.405Z"
+    },
+    {
+      "name": "Archivo crítico: app/api/productos/route.ts",
+      "status": "PASS",
+      "details": {},
+      "timestamp": "2025-11-26T01:07:16.405Z"
+    },
+    {
+      "name": "Archivo crítico: app/api/envios/calcular/route.ts",
+      "status": "PASS",
+      "details": {},
+      "timestamp": "2025-11-26T01:07:16.405Z"
+    },
+    {
+      "name": "Archivo crítico: components/ProductCard.tsx",
+      "status": "PASS",
+      "details": {},
+      "timestamp": "2025-11-26T01:07:16.406Z"
+    },
+    {
+      "name": "Archivo crítico: components/ShippingCalculator.tsx",
+      "status": "PASS",
+      "details": {},
+      "timestamp": "2025-11-26T01:07:16.406Z"
+    },
+    {
+      "name": "Archivo crítico: lib/mercadopago/validate.ts",
+      "status": "PASS",
+      "details": {},
+      "timestamp": "2025-11-26T01:07:16.406Z"
+    },
+    {
+      "name": "Estructura de archivos completa",
+      "status": "PASS",
+      "details": {},
+      "timestamp": "2025-11-26T01:07:16.406Z"
+    },
+    {
+      "name": "Función de validación MP",
+      "status": "PASS",
+      "details": {},
+      "timestamp": "2025-11-26T01:07:16.406Z"
+    },
+    {
+      "name": "Manejo de errores MP",
+      "status": "PASS",
+      "details": {},
+      "timestamp": "2025-11-26T01:07:16.406Z"
+    },
+    {
+      "name": "Lectura de token MP",
+      "status": "PASS",
+      "details": {},
+      "timestamp": "2025-11-26T01:07:16.406Z"
+    },
+    {
+      "name": "Función de cálculo de envío",
+      "status": "PASS",
+      "details": {},
+      "timestamp": "2025-11-26T01:07:16.406Z"
+    },
+    {
+      "name": "Validación de código postal",
+      "status": "PASS",
+      "details": {},
+      "timestamp": "2025-11-26T01:07:16.406Z"
+    },
+    {
+      "name": "Transportistas disponibles (4)",
+      "status": "PASS",
+      "details": {
+        "details": ["OCA", "Correo Argentino", "Andreani", "Mercado Envíos"]
+      },
+      "timestamp": "2025-11-26T01:07:16.406Z"
+    },
+    {
+      "name": "Función de checkout",
+      "status": "PASS",
+      "details": {},
+      "timestamp": "2025-11-26T01:07:16.406Z"
+    },
+    {
+      "name": "Validación de stock",
+      "status": "PASS",
+      "details": {},
+      "timestamp": "2025-11-26T01:07:16.406Z"
+    },
+    {
+      "name": "Integración con calculadora de envío",
+      "status": "PASS",
+      "details": {},
+      "timestamp": "2025-11-26T01:07:16.406Z"
+    },
+    {
+      "name": "Inclusión de envío en pago",
+      "status": "PASS",
+      "details": {},
+      "timestamp": "2025-11-26T01:07:16.406Z"
+    },
+    {
+      "name": "Archivo admin: app/admin/productos/page.tsx",
+      "status": "PASS",
+      "details": {},
+      "timestamp": "2025-11-26T01:07:16.407Z"
+    },
+    {
+      "name": "Archivo admin: app/admin/banners/page.tsx",
+      "status": "PASS",
+      "details": {},
+      "timestamp": "2025-11-26T01:07:16.407Z"
+    },
+    {
+      "name": "Archivo admin: components/AdminProductForm.tsx",
+      "status": "PASS",
+      "details": {},
+      "timestamp": "2025-11-26T01:07:16.408Z"
+    },
+    {
+      "name": "Archivo admin: components/AdminBannerForm.tsx",
+      "status": "PASS",
+      "details": {},
+      "timestamp": "2025-11-26T01:07:16.408Z"
+    },
+    {
+      "name": "Estructura de admin completa",
+      "status": "PASS",
+      "details": {},
+      "timestamp": "2025-11-26T01:07:16.408Z"
+    },
+    {
+      "name": "Carga de productos en home",
+      "status": "PASS",
+      "details": {},
+      "timestamp": "2025-11-26T01:07:16.408Z"
+    },
+    {
+      "name": "Carga de banners en home",
+      "status": "PASS",
+      "details": {},
+      "timestamp": "2025-11-26T01:07:16.408Z"
+    },
+    {
+      "name": "Secciones de productos (3)",
+      "status": "PASS",
+      "details": {
+        "details": ["Destacados", "Nuevos ingresos", "Ofertas"]
+      },
+      "timestamp": "2025-11-26T01:07:16.408Z"
+    },
+    {
+      "name": "Variable de entorno: MP_ACCESS_TOKEN",
+      "status": "WARN",
+      "details": {
+        "message": "No se pudo verificar (archivos .env no accesibles)"
+      },
+      "timestamp": "2025-11-26T01:07:16.408Z"
+    },
+    {
+      "name": "Variable de entorno: NEXT_PUBLIC_MP_PUBLIC_KEY",
+      "status": "WARN",
+      "details": {
+        "message": "No se pudo verificar (archivos .env no accesibles)"
+      },
+      "timestamp": "2025-11-26T01:07:16.408Z"
+    },
+    {
+      "name": "Variable de entorno: SUPABASE_URL",
+      "status": "WARN",
+      "details": {
+        "message": "No se pudo verificar (archivos .env no accesibles)"
+      },
+      "timestamp": "2025-11-26T01:07:16.408Z"
+    },
+    {
+      "name": "Variable de entorno: SUPABASE_ANON_KEY",
+      "status": "WARN",
+      "details": {
+        "message": "No se pudo verificar (archivos .env no accesibles)"
+      },
+      "timestamp": "2025-11-26T01:07:16.408Z"
+    }
+  ],
+  "errors": [],
+  "warnings": [
+    {
+      "test": "Variable de entorno: MP_ACCESS_TOKEN",
+      "message": "No se pudo verificar (archivos .env no accesibles)"
+    },
+    {
+      "test": "Variable de entorno: NEXT_PUBLIC_MP_PUBLIC_KEY",
+      "message": "No se pudo verificar (archivos .env no accesibles)"
+    },
+    {
+      "test": "Variable de entorno: SUPABASE_URL",
+      "message": "No se pudo verificar (archivos .env no accesibles)"
+    },
+    {
+      "test": "Variable de entorno: SUPABASE_ANON_KEY",
+      "message": "No se pudo verificar (archivos .env no accesibles)"
+    }
+  ],
+  "summary": {
+    "total": 38,
+    "passed": 34,
+    "failed": 0,
+    "warnings": 4
+  }
+}
