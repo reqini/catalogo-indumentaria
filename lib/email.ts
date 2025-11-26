@@ -22,6 +22,7 @@ async function getTransporter(): Promise<any | null> {
   // Se tipa como any para evitar depender de los tipos de nodemailer en build.
   try {
     // Usar import dinámico que no falla en build time si el módulo no existe
+    // @ts-ignore - nodemailer es opcional, puede no estar instalado
     const nodemailerModule = await import('nodemailer').catch(() => null)
 
     if (!nodemailerModule || !nodemailerModule.default) {

@@ -116,15 +116,15 @@ export async function POST(request: Request) {
 
     // Crear orden en BD
     let orderId: string | null = null
-    try {
-      const simpleOrderData: SimpleOrderData = {
-        productos: validatedData.productos,
-        comprador: validatedData.comprador,
-        envio: validatedData.envio,
-        total: validatedData.total,
-        estado: 'pendiente',
-      }
+    const simpleOrderData: SimpleOrderData = {
+      productos: validatedData.productos,
+      comprador: validatedData.comprador,
+      envio: validatedData.envio,
+      total: validatedData.total,
+      estado: 'pendiente',
+    }
 
+    try {
       console.log('[CHECKOUT-SIMPLE] 📤 Creando orden...')
       const order = await createSimpleOrder(simpleOrderData)
 
