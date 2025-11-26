@@ -162,7 +162,32 @@ export async function POST(request: Request) {
     } catch (orderError: any) {
       console.error('[CHECKOUT] ❌ Error detallado al crear orden:', orderError)
       console.error('[CHECKOUT]   - Mensaje:', orderError.message)
+      console.error('[CHECKOUT]   - Código:', orderError.code)
+      console.error('[CHECKOUT]   - Hint:', orderError.hint)
       console.error('[CHECKOUT]   - Stack:', orderError.stack)
+
+      // Si es error de tabla no encontrada, dar instrucciones claras
+      if (
+        orderError.code === 'PGRST205' ||
+        orderError.message.includes('PGRST205') ||
+        orderError.message.includes('schema cache')
+      ) {
+        return NextResponse.json(
+          {
+            error: 'Error al crear la orden en la base de datos',
+            details:
+              orderError.message ||
+              "Could not find the table 'public.ordenes' in the schema cache (PGRST205)",
+            code: 'PGRST205',
+            hint:
+              orderError.hint ||
+              'La tabla ordenes no existe en Supabase. Ejecuta la migración SQL en Supabase Dashboard: supabase/migrations/005_create_ordenes_table.sql',
+            migrationFile: 'supabase/migrations/005_create_ordenes_table.sql',
+            actionRequired: 'Ejecutar migración SQL en Supabase Dashboard → SQL Editor',
+          },
+          { status: 500 }
+        )
+      }
 
       return NextResponse.json(
         {
