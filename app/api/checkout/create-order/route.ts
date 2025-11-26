@@ -5,57 +5,91 @@ import { getProductById } from '@/lib/supabase-helpers'
 import { validateMercadoPagoConfig } from '@/lib/mercadopago/validate'
 import { z } from 'zod'
 
-// Schema de validación
-const createOrderSchema = z.object({
-  cliente: z.object({
-    nombre: z.string().min(2),
-    email: z.string().email(),
-    telefono: z.string().optional(),
-  }),
-  direccion: z.object({
-    calle: z.string().min(3).optional().or(z.literal('')),
-    numero: z.string().min(1).optional().or(z.literal('')),
-    pisoDepto: z.string().optional(),
-    codigoPostal: z.string().min(4).optional().or(z.literal('')),
-    localidad: z.string().min(2).optional().or(z.literal('')),
-    provincia: z.string().min(2).optional().or(z.literal('')),
-    pais: z.string().optional(),
-  }),
-  envio: z.object({
-    tipo: z.enum(['estandar', 'express', 'retiro_local']),
-    metodo: z.string(),
-    costo: z.number().min(0),
-    demora: z.string().optional(),
-    proveedor: z.string().optional(),
-  }),
-  items: z.array(
-    z.object({
-      id: z.string(),
-      nombre: z.string(),
-      precio: z.number(),
-      cantidad: z.number().min(1),
-      talle: z.string().optional(),
-      subtotal: z.number(),
-      imagenPrincipal: z.string().optional(),
-    })
-  ),
-  subtotal: z.number().min(0),
-  descuento: z.number().min(0).optional(),
-  envioCosto: z.number().min(0),
-  total: z.number().min(0),
-  notas: z.string().optional(),
-})
+// Schema de validación con validación condicional para retiro en local
+const createOrderSchema = z
+  .object({
+    cliente: z.object({
+      nombre: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
+      email: z.string().email('Email inválido'),
+      telefono: z.string().optional(),
+    }),
+    direccion: z.object({
+      calle: z.string(),
+      numero: z.string(),
+      pisoDepto: z.string().optional(),
+      codigoPostal: z.string(),
+      localidad: z.string(),
+      provincia: z.string(),
+      pais: z.string().optional(),
+    }),
+    envio: z.object({
+      tipo: z.enum(['estandar', 'express', 'retiro_local']),
+      metodo: z.string().min(1, 'El método de envío es requerido'),
+      costo: z.number().min(0),
+      demora: z.string().optional(),
+      proveedor: z.string().nullable().optional(),
+    }),
+    items: z
+      .array(
+        z.object({
+          id: z.string().min(1, 'El ID del producto es requerido'),
+          nombre: z.string().min(1, 'El nombre del producto es requerido'),
+          precio: z.number().min(0, 'El precio debe ser mayor o igual a 0'),
+          cantidad: z.number().min(1, 'La cantidad debe ser al menos 1'),
+          talle: z.string().optional(),
+          subtotal: z.number().min(0),
+          imagenPrincipal: z.string().optional(),
+        })
+      )
+      .min(1, 'Debe haber al menos un producto en la orden'),
+    subtotal: z.number().min(0),
+    descuento: z.number().min(0).optional(),
+    envioCosto: z.number().min(0),
+    total: z.number().min(0),
+    notas: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      // Si es retiro_local, no validar dirección
+      if (data.envio.tipo === 'retiro_local') {
+        return true
+      }
+      // Si es envío, validar que todos los campos de dirección estén completos
+      return (
+        data.direccion.calle &&
+        data.direccion.calle.length >= 3 &&
+        data.direccion.numero &&
+        data.direccion.numero.length >= 1 &&
+        data.direccion.codigoPostal &&
+        data.direccion.codigoPostal.length >= 4 &&
+        data.direccion.localidad &&
+        data.direccion.localidad.length >= 2 &&
+        data.direccion.provincia &&
+        data.direccion.provincia.length >= 2
+      )
+    },
+    {
+      message:
+        'Si elegiste envío a domicilio, completá todos los campos de dirección (calle, número, código postal, localidad y provincia)',
+      path: ['direccion'],
+    }
+  )
 
 export async function POST(request: Request) {
   try {
     console.log('[CHECKOUT] 📥 Request recibido en /api/checkout/create-order')
 
     const body = await request.json()
-    console.log('[CHECKOUT] 📋 Body recibido:', {
+    console.log('[CHECKOUT] 📋 Body recibido completo:', JSON.stringify(body, null, 2))
+    console.log('[CHECKOUT] 📋 Resumen:', {
       cliente: body.cliente?.nombre,
+      email: body.cliente?.email,
       itemsCount: body.items?.length,
+      envioTipo: body.envio?.tipo,
+      envioMetodo: body.envio?.metodo,
       envioCosto: body.envioCosto,
       total: body.total,
+      direccionCompleta: body.direccion?.calle ? 'Sí' : 'No',
     })
 
     // Validar datos
@@ -64,12 +98,20 @@ export async function POST(request: Request) {
       validatedData = createOrderSchema.parse(body)
       console.log('[CHECKOUT] ✅ Validación de datos exitosa')
     } catch (validationError: any) {
-      console.error('[CHECKOUT] ❌ Error de validación:', validationError)
+      console.error('[CHECKOUT] ❌ Error de validación completo:', validationError)
       if (validationError instanceof z.ZodError) {
+        console.error('[CHECKOUT] ❌ Errores de validación detallados:')
+        validationError.errors.forEach((err) => {
+          console.error(`  - ${err.path.join('.')}: ${err.message}`)
+        })
         return NextResponse.json(
           {
             error: 'Datos inválidos',
-            details: validationError.errors,
+            details: validationError.errors.map((err) => ({
+              path: err.path.join('.'),
+              message: err.message,
+            })),
+            hint: 'Verifica que todos los campos requeridos estén completos',
           },
           { status: 400 }
         )

@@ -1,257 +1,225 @@
-# 🧪 QA Extremo - Checkout Fix
+# QA: Corrección de Errores de Checkout y PWA
 
-**Fecha:** 26/11/2025  
-**Versión:** 1.0  
-**Estado:** ✅ **LISTO PARA EJECUTAR**
+## 🎯 Objetivo
 
----
+Validar que los errores reportados están completamente resueltos:
+
+- ✅ Error de iconos PWA en manifest
+- ✅ Error 400 "Datos inválidos" en `/api/checkout/create-order`
+- ✅ Circuito completo de compra funcional
 
 ## 📋 Casos de Prueba
 
-### TC-ORD-001: Compra Completa (Happy Path)
+### TC-CHECKOUT-ENVIO-001 – Compra con envío a domicilio
 
-**Prioridad:** 🔴 **ALTA**  
-**Tipo:** E2E  
 **Precondiciones:**
 
-- Productos disponibles en catálogo
-- Stock suficiente
-- Mercado Pago configurado
-- Tabla `ordenes` existe en Supabase
+- Usuario con carrito con al menos 1 producto
+- Productos con stock disponible
 
 **Pasos:**
 
-1. Navegar a `/catalogo`
-2. Agregar producto al carrito
-3. Ir a `/carrito`
-4. Calcular envío con código postal válido
-5. Seleccionar método de envío
-6. Ir a `/checkout`
-7. Completar formulario de datos personales
-8. Completar formulario de dirección
-9. Verificar resumen de orden
-10. Hacer clic en "Finalizar Compra"
-11. Completar pago en Mercado Pago (sandbox)
-12. Verificar redirección a `/pago/success`
-13. Verificar que la orden se creó en Supabase
-14. Verificar que el stock se actualizó
-15. Verificar que se recibió webhook de MP
+1. Ir a `/carrito`
+2. Verificar productos en carrito
+3. Click en "Finalizar Compra"
+4. Completar datos personales:
+   - Nombre: "Juan Pérez"
+   - Email: "juan@example.com"
+   - Teléfono: "+54 11 1234-5678"
+5. Completar dirección completa:
+   - Calle: "Av. Corrientes"
+   - Número: "1234"
+   - Piso/Depto: "2° A" (opcional)
+   - Código Postal: "C1000"
+   - Localidad: "CABA"
+   - Provincia: "Buenos Aires"
+6. Seleccionar "Envío a domicilio"
+7. Ingresar código postal y calcular envío
+8. Seleccionar método de envío disponible
+9. Verificar resumen con total + envío
+10. Click en "Finalizar Compra"
 
 **Resultado Esperado:**
 
-- ✅ Orden creada con estado "pendiente"
-- ✅ Preferencia de MP creada correctamente
-- ✅ Redirección a MP exitosa
-- ✅ Pago completado exitosamente
-- ✅ Orden actualizada a "pagada"
-- ✅ Stock actualizado correctamente
-- ✅ Notificaciones enviadas
+- ✅ No aparece error 400
+- ✅ Endpoint `/api/checkout/create-order` responde 200
+- ✅ Orden creada en BD con estado `pendiente`
+- ✅ Redirección correcta a Mercado Pago
+- ✅ Preferencia MP generada con items correctos
+- ✅ Total en MP coincide con checkout (productos + envío)
 
-**Resultado Observado:** _Pendiente_  
-**Estado:** ⏳ **PENDIENTE**
+**Resultado Real:**
+
+- [ ] OK / [ ] Falla
+
+**Observaciones:**
+
+- [ ] Screenshot: `qa/screenshots/checkout/TC-CHECKOUT-ENVIO-001-orden-creada.png`
+- [ ] Logs del servidor: [adjuntar]
 
 ---
 
-### TC-ORD-002: Error Controlado con Stock Mínimo
+### TC-CHECKOUT-RETIRO-002 – Compra con retiro en el local
 
-**Prioridad:** 🟡 **MEDIA**  
-**Tipo:** Validación  
 **Precondiciones:**
 
-- Producto con stock = 1
-- Usuario intenta comprar cantidad > stock disponible
+- Usuario con carrito con al menos 1 producto
+- Productos con stock disponible
 
 **Pasos:**
 
-1. Agregar producto con stock limitado al carrito
-2. Intentar agregar más cantidad de la disponible
-3. Ir a checkout
-4. Intentar finalizar compra
+1. Ir a `/carrito`
+2. Verificar productos en carrito
+3. Click en "Finalizar Compra"
+4. Completar datos personales:
+   - Nombre: "María González"
+   - Email: "maria@example.com"
+   - Teléfono: "+54 11 9876-5432"
+5. Seleccionar "Retiro en el local"
+6. Verificar que NO se requiere código postal ni dirección
+7. Verificar resumen con total (sin costo de envío)
+8. Click en "Finalizar Compra"
 
 **Resultado Esperado:**
 
-- ✅ Error claro: "Stock insuficiente"
-- ✅ Mensaje muestra cantidad disponible
-- ✅ No se crea orden
-- ✅ No se redirige a MP
+- ✅ No aparece error 400
+- ✅ Endpoint `/api/checkout/create-order` responde 200
+- ✅ Orden creada en BD con `envio_tipo = 'retiro_local'`
+- ✅ Campos de dirección en BD son NULL o valores placeholder
+- ✅ Redirección correcta a Mercado Pago
+- ✅ Preferencia MP generada sin `address` en payer
+- ✅ Total en MP coincide con checkout (solo productos)
 
-**Resultado Observado:** _Pendiente_  
-**Estado:** ⏳ **PENDIENTE**
+**Resultado Real:**
+
+- [ ] OK / [ ] Falla
+
+**Observaciones:**
+
+- [ ] Screenshot: `qa/screenshots/checkout/TC-CHECKOUT-RETIRO-002-orden-creada.png`
+- [ ] Logs del servidor: [adjuntar]
 
 ---
 
-### TC-ORD-003: Rechazo de MP
+### TC-CHECKOUT-VALIDACION-003 – Envío con datos incompletos
 
-**Prioridad:** 🟡 **MEDIA**  
-**Tipo:** E2E  
 **Precondiciones:**
 
-- Orden creada
-- Preferencia de MP creada
+- Usuario con carrito con productos
 
 **Pasos:**
 
-1. Completar checkout hasta redirección a MP
-2. En MP, rechazar el pago (usar tarjeta de prueba rechazada)
-3. Verificar redirección a `/pago/failure`
-4. Verificar estado de orden en BD
+1. Ir a `/checkout`
+2. Completar datos personales
+3. Seleccionar "Envío a domicilio"
+4. Ingresar código postal pero NO completar calle o número
+5. Intentar avanzar al resumen
 
 **Resultado Esperado:**
 
-- ✅ Redirección a `/pago/failure`
-- ✅ Mensaje de error claro
-- ✅ Orden permanece en estado "pendiente"
-- ✅ Stock NO se actualiza
-- ✅ Webhook actualiza orden a "rechazado"
+- ✅ Validación frontend previene avanzar sin datos completos
+- ✅ Mensaje claro: "Por favor, completá todos los campos obligatorios"
+- ✅ Si se fuerza el envío, backend responde 400 con mensaje claro
+- ✅ Mensaje de error muestra qué campo falta
 
-**Resultado Observado:** _Pendiente_  
-**Estado:** ⏳ **PENDIENTE**
+**Resultado Real:**
+
+- [ ] OK / [ ] Falla
+
+**Observaciones:**
+
+- [ ] Screenshot: `qa/screenshots/checkout/TC-CHECKOUT-VALIDACION-003-error.png`
 
 ---
 
-### TC-ORD-004: Pendiente de MP
+### TC-CHECKOUT-ICONS-004 – Verificación de manifest e iconos PWA
 
-**Prioridad:** 🟡 **MEDIA**  
-**Tipo:** E2E  
 **Precondiciones:**
 
-- Orden creada
-- Preferencia de MP creada
+- Navegador en modo incógnito
+- DevTools abierto (Console)
 
 **Pasos:**
 
-1. Completar checkout hasta redirección a MP
-2. En MP, iniciar pago pendiente (ej: transferencia bancaria)
-3. Verificar redirección a `/pago/pending`
-4. Verificar estado de orden en BD
-5. Simular aprobación del pago pendiente
-6. Verificar actualización de orden
+1. Abrir `/` (Home)
+2. Verificar consola (no debe haber errores de iconos)
+3. Abrir `/catalogo`
+4. Verificar consola
+5. Abrir `/carrito`
+6. Verificar consola
+7. Abrir `/checkout`
+8. Verificar consola
+9. Verificar que los iconos existen:
+   - `/icon-192x192.png` (192x192px)
+   - `/icon-512x512.png` (512x512px)
 
 **Resultado Esperado:**
 
-- ✅ Redirección a `/pago/pending`
-- ✅ Mensaje informativo
-- ✅ Orden en estado "pendiente"
-- ✅ Webhook actualiza orden cuando se aprueba
+- ✅ No aparece error: "Resource size is not correct - typo in the Manifest?"
+- ✅ No aparece error: "Error while trying to use the following icon from the Manifest"
+- ✅ Iconos existen y tienen tamaños correctos
+- ✅ Manifest.json referencia iconos correctamente
 
-**Resultado Observado:** _Pendiente_  
-**Estado:** ⏳ **PENDIENTE**
+**Resultado Real:**
+
+- [ ] OK / [ ] Falla
+
+**Observaciones:**
+
+- [ ] Screenshot de consola limpia: `qa/screenshots/checkout/TC-CHECKOUT-ICONS-004-console.png`
+- [ ] Verificación de tamaños: [adjuntar]
 
 ---
 
-### TC-ORD-005: Cambio CP Recalcula Envío
+### TC-CHECKOUT-400-FIXED-005 – No debe aparecer más el log de error
 
-**Prioridad:** 🟢 **BAJA**  
-**Tipo:** Funcionalidad  
 **Precondiciones:**
 
-- Usuario en checkout
-- Método de envío seleccionado
+- Navegador con DevTools abierto
 
 **Pasos:**
 
-1. Completar datos personales
-2. Ingresar código postal inicial
-3. Seleccionar método de envío
-4. Cambiar código postal
-5. Verificar que se recalculan costos de envío
-6. Verificar que el total se actualiza
+1. Completar checkout completo con datos válidos
+2. Verificar consola del navegador
+3. Verificar logs del servidor (si están disponibles)
 
 **Resultado Esperado:**
 
-- ✅ Costos de envío se recalculan automáticamente
-- ✅ Total se actualiza correctamente
-- ✅ Métodos de envío disponibles se actualizan
+- ✅ No aparece: `Error: Datos inválidos: [object Object]`
+- ✅ No aparece: `[CHECKOUT] ❌ Error del servidor: {error: 'Datos inválidos', details: Array(1)}`
+- ✅ Logs muestran validación exitosa
+- ✅ Mensajes de error (si los hay) son claros y específicos
 
-**Resultado Observado:** _Pendiente_  
-**Estado:** ⏳ **PENDIENTE**
+**Resultado Real:**
 
----
+- [ ] OK / [ ] Falla
 
-### TC-ORD-006: Entrada sin Datos Válidos
+**Observaciones:**
 
-**Prioridad:** 🔴 **ALTA**  
-**Tipo:** Validación  
-**Precondiciones:**
-
-- Usuario en checkout
-
-**Pasos:**
-
-1. Intentar enviar formulario vacío
-2. Intentar enviar con email inválido
-3. Intentar enviar con código postal inválido
-4. Intentar enviar sin método de envío seleccionado
-
-**Resultado Esperado:**
-
-- ✅ Validación en frontend muestra errores
-- ✅ No se envía request al backend
-- ✅ Mensajes de error claros por campo
-
-**Resultado Observado:** _Pendiente_  
-**Estado:** ⏳ **PENDIENTE**
+- [ ] Screenshot de consola: `qa/screenshots/checkout/TC-CHECKOUT-400-FIXED-005-console.png`
 
 ---
 
-### TC-ORD-007: Carrito Persistente y Luego Checkout
+## 📊 Resumen de Resultados
 
-**Prioridad:** 🟡 **MEDIA**  
-**Tipo:** Persistencia  
-**Precondiciones:**
+| Caso                       | Estado       | Observaciones |
+| -------------------------- | ------------ | ------------- |
+| TC-CHECKOUT-ENVIO-001      | ⏳ Pendiente |               |
+| TC-CHECKOUT-RETIRO-002     | ⏳ Pendiente |               |
+| TC-CHECKOUT-VALIDACION-003 | ⏳ Pendiente |               |
+| TC-CHECKOUT-ICONS-004      | ⏳ Pendiente |               |
+| TC-CHECKOUT-400-FIXED-005  | ⏳ Pendiente |               |
 
-- Productos en carrito
+## 🔍 Verificaciones Adicionales
 
-**Pasos:**
+- [ ] Verificar que la tabla `ordenes` existe en Supabase
+- [ ] Verificar que el webhook de MP funciona correctamente
+- [ ] Verificar que las órdenes aparecen en `/admin/orders`
+- [ ] Verificar que el total en MP coincide con el checkout
+- [ ] Verificar que no hay errores en producción
 
-1. Agregar productos al carrito
-2. Cerrar navegador
-3. Abrir navegador nuevamente
-4. Verificar que el carrito persiste
-5. Ir a checkout
-6. Verificar que los productos están presentes
+## 📝 Notas
 
-**Resultado Esperado:**
-
-- ✅ Carrito persiste en localStorage
-- ✅ Productos presentes en checkout
-- ✅ Totales correctos
-
-**Resultado Observado:** _Pendiente_  
-**Estado:** ⏳ **PENDIENTE**
-
----
-
-## 📊 Resumen de Casos
-
-| ID         | Caso                | Prioridad | Estado       |
-| ---------- | ------------------- | --------- | ------------ |
-| TC-ORD-001 | Compra Completa     | 🔴 Alta   | ⏳ Pendiente |
-| TC-ORD-002 | Error Stock Mínimo  | 🟡 Media  | ⏳ Pendiente |
-| TC-ORD-003 | Rechazo MP          | 🟡 Media  | ⏳ Pendiente |
-| TC-ORD-004 | Pendiente MP        | 🟡 Media  | ⏳ Pendiente |
-| TC-ORD-005 | Cambio CP           | 🟢 Baja   | ⏳ Pendiente |
-| TC-ORD-006 | Datos Inválidos     | 🔴 Alta   | ⏳ Pendiente |
-| TC-ORD-007 | Carrito Persistente | 🟡 Media  | ⏳ Pendiente |
-
-**Total:** 7 casos  
-**Pendientes:** 7  
-**Completados:** 0
-
----
-
-## 📸 Capturas Requeridas
-
-Crear carpeta `qa/screenshots/checkout/` y capturar:
-
-- [ ] Formulario de checkout completo
-- [ ] Resumen de orden antes de pagar
-- [ ] Redirección a Mercado Pago
-- [ ] Página de éxito después del pago
-- [ ] Página de error si falla
-- [ ] Orden en admin dashboard
-- [ ] Logs de Vercel con errores detallados (si aplica)
-
----
-
-**Última actualización:** 26/11/2025
+- Todos los casos deben ejecutarse en producción: `https://catalogo-indumentaria.vercel.app`
+- Capturas de pantalla deben guardarse en `qa/screenshots/checkout/`
+- Logs del servidor deben documentarse si están disponibles

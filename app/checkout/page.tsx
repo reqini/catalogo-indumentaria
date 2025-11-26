@@ -220,21 +220,21 @@ export default function CheckoutPage() {
         direccion:
           selectedShipping?.tipo === 'retiro_local'
             ? {
-                calle: '',
-                numero: '',
+                calle: 'Retiro en local',
+                numero: '0',
                 pisoDepto: '',
-                codigoPostal: '',
-                localidad: '',
-                provincia: '',
+                codigoPostal: '0000',
+                localidad: 'Retiro en local',
+                provincia: 'Buenos Aires',
                 pais: 'Argentina',
               }
             : {
-                calle: formData.calle!,
-                numero: formData.numero!,
-                pisoDepto: formData.pisoDepto,
-                codigoPostal: formData.codigoPostal!,
-                localidad: formData.localidad!,
-                provincia: formData.provincia!,
+                calle: formData.calle || '',
+                numero: formData.numero || '',
+                pisoDepto: formData.pisoDepto || '',
+                codigoPostal: formData.codigoPostal || '',
+                localidad: formData.localidad || '',
+                provincia: formData.provincia || '',
                 pais: 'Argentina',
               },
         envio:
