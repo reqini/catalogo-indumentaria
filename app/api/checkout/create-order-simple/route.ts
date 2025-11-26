@@ -136,31 +136,111 @@ export async function POST(request: Request) {
       console.log('[CHECKOUT-SIMPLE] ✅ Orden creada:', orderId)
     } catch (orderError: any) {
       console.error('[CHECKOUT-SIMPLE] ❌ Error creando orden:', orderError)
+      console.error('[CHECKOUT-SIMPLE]   - Código:', orderError.code)
+      console.error('[CHECKOUT-SIMPLE]   - Mensaje:', orderError.message)
+      console.error('[CHECKOUT-SIMPLE]   - Stack:', orderError.stack)
 
+      // Si es PGRST205, intentar crear tabla automáticamente
       if (
         orderError.code === 'PGRST205' ||
         orderError.message.includes('PGRST205') ||
         orderError.message.includes('schema cache')
       ) {
+        console.log('[CHECKOUT-SIMPLE] 🔧 Intentando crear tabla automáticamente...')
+
+        try {
+          // Intentar crear tabla usando endpoint interno
+          const baseUrl =
+            process.env.NEXT_PUBLIC_BASE_URL ||
+            request.headers.get('origin') ||
+            'https://catalogo-indumentaria.vercel.app'
+          const createTableResponse = await fetch(
+            `${baseUrl}/api/admin/crear-tabla-ordenes-urgente`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            }
+          )
+
+          if (createTableResponse.ok) {
+            const createResult = await createTableResponse.json()
+            if (createResult.success) {
+              console.log('[CHECKOUT-SIMPLE] ✅ Tabla creada, reintentando creación de orden...')
+
+              // Esperar un momento para que se actualice el cache
+              await new Promise((resolve) => setTimeout(resolve, 2000))
+
+              // Reintentar crear orden
+              const retryOrder = await createSimpleOrder(simpleOrderData)
+              if (retryOrder && retryOrder.id) {
+                orderId = retryOrder.id
+                console.log('[CHECKOUT-SIMPLE] ✅ Orden creada después de crear tabla:', orderId)
+              } else {
+                throw new Error('No se pudo crear orden después de crear tabla')
+              }
+            } else {
+              // Si no se pudo crear automáticamente, dar instrucciones
+              return NextResponse.json(
+                {
+                  error: 'Error al crear la orden en la base de datos',
+                  details: 'La tabla ordenes no existe y no se pudo crear automáticamente',
+                  code: 'PGRST205',
+                  hint: 'Ejecuta el SQL manualmente en Supabase Dashboard → SQL Editor',
+                  sql: createResult.sql || 'Ver: supabase/migrations/006_create_ordenes_simple.sql',
+                  instructions: createResult.instructions || [
+                    '1. Ve a https://supabase.com/dashboard',
+                    '2. SQL Editor → New query',
+                    '3. Ejecuta: supabase/migrations/006_create_ordenes_simple.sql',
+                  ],
+                },
+                { status: 500 }
+              )
+            }
+          } else {
+            // Fallback a mensaje con SQL
+            return NextResponse.json(
+              {
+                error: 'Error al crear la orden en la base de datos',
+                details: orderError.message || "Could not find the table 'public.ordenes'",
+                code: 'PGRST205',
+                hint: 'Ejecuta el SQL en Supabase Dashboard → SQL Editor',
+                migrationFile: 'supabase/migrations/006_create_ordenes_simple.sql',
+                urgent: true,
+              },
+              { status: 500 }
+            )
+          }
+        } catch (autoCreateError: any) {
+          console.error(
+            '[CHECKOUT-SIMPLE] ❌ Error al crear tabla automáticamente:',
+            autoCreateError
+          )
+
+          return NextResponse.json(
+            {
+              error: 'Error al crear la orden en la base de datos',
+              details: orderError.message || "Could not find the table 'public.ordenes'",
+              code: 'PGRST205',
+              hint: 'Ejecuta el SQL manualmente en Supabase Dashboard → SQL Editor',
+              migrationFile: 'supabase/migrations/006_create_ordenes_simple.sql',
+              urgent: true,
+            },
+            { status: 500 }
+          )
+        }
+      } else {
+        // Otro error
         return NextResponse.json(
           {
-            error: 'Error al crear la orden en la base de datos',
-            details: orderError.message || "Could not find the table 'public.ordenes'",
-            code: 'PGRST205',
-            hint: 'Ejecuta la migración SQL en Supabase Dashboard: supabase/migrations/006_create_ordenes_simple.sql',
-            migrationFile: 'supabase/migrations/006_create_ordenes_simple.sql',
+            error: 'Error al crear la orden',
+            details: orderError.message || 'Error desconocido',
+            code: orderError.code,
           },
           { status: 500 }
         )
       }
-
-      return NextResponse.json(
-        {
-          error: 'Error al crear la orden',
-          details: orderError.message || 'Error desconocido',
-        },
-        { status: 500 }
-      )
     }
 
     // Crear preferencia de Mercado Pago

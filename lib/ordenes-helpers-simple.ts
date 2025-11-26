@@ -80,13 +80,36 @@ export async function createSimpleOrder(orderData: SimpleOrderData): Promise<Sim
       productosCount: insertData.productos.length,
       total: insertData.total,
       estado: insertData.estado,
+      compradorEmail: insertData.comprador.email,
     })
 
-    const { data, error } = await supabaseAdmin
-      .from('ordenes')
-      .insert(insertData)
-      .select('*')
-      .single()
+    // Intentar insertar con retry si falla por PGRST205
+    let data, error
+    let retries = 0
+    const maxRetries = 2
+
+    while (retries <= maxRetries) {
+      const result = await supabaseAdmin.from('ordenes').insert(insertData).select('*').single()
+
+      data = result.data
+      error = result.error
+
+      // Si no hay error o no es PGRST205, salir del loop
+      if (!error || (error.code !== 'PGRST205' && !error.message.includes('PGRST205'))) {
+        break
+      }
+
+      // Si es PGRST205 y aún tenemos reintentos, esperar y reintentar
+      if (retries < maxRetries) {
+        console.log(
+          `[ORDENES-SIMPLE] ⚠️ PGRST205 detectado, reintentando (${retries + 1}/${maxRetries})...`
+        )
+        await new Promise((resolve) => setTimeout(resolve, 2000 * (retries + 1))) // Backoff exponencial
+        retries++
+      } else {
+        break
+      }
+    }
 
     if (error) {
       console.error('[ORDENES-SIMPLE] ❌ Error creando orden en Supabase:')
