@@ -11,17 +11,10 @@
     },
     "autoAlias": false
   },
-  "production": {
-    "domains": ["catalogo-indumentaria.vercel.app"]
-  },
   "github": {
     "autoDeployOnPush": true,
     "autoJobCancelation": true,
     "silent": false
-  },
-  "env": {
-    "NODE_ENV": "production",
-    "VERCEL_ALLOW_RUN_SCRIPTS": "core-js esbuild unrs-resolver"
   },
   "headers": [
     {
