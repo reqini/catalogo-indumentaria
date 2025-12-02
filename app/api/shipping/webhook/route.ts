@@ -72,7 +72,8 @@ export async function POST(request: Request) {
     let order = await getSimpleOrderByTracking(tracking)
 
     // Si no se encuentra en estructura simplificada, buscar en completa
-    if (!order && supabaseAdmin) {
+    if (!order && isSupabaseEnabled) {
+      const { supabaseAdmin } = requireSupabase()
       const { data: orders } = await supabaseAdmin
         .from('ordenes')
         .select('*')

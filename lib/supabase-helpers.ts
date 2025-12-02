@@ -103,7 +103,7 @@ export async function checkPlanLimits(
 
   // Contar recursos actuales
   const tableName = resource === 'productos' ? 'productos' : 'banners'
-  const { count } = await supabaseAdmin
+  const { count } = await getSupabaseAdmin()
     .from(tableName)
     .select('*', { count: 'exact', head: true })
     .eq('tenant_id', tenantId)
@@ -158,7 +158,11 @@ export async function getProductos(filters?: {
 }
 
 export async function getProductoById(id: string) {
-  const { data, error } = await supabaseAdmin.from('productos').select('*').eq('id', id).single()
+  const { data, error } = await getSupabaseAdmin()
+    .from('productos')
+    .select('*')
+    .eq('id', id)
+    .single()
 
   if (error) {
     return null
@@ -173,7 +177,11 @@ export async function getProductById(id: string) {
 }
 
 export async function createProducto(producto: any) {
-  const { data, error } = await supabaseAdmin.from('productos').insert([producto]).select().single()
+  const { data, error } = await getSupabaseAdmin()
+    .from('productos')
+    .insert([producto])
+    .select()
+    .single()
 
   if (error) {
     throw error
@@ -227,7 +235,7 @@ export async function getBanners(filters?: { tenantId?: string; activo?: boolean
 }
 
 export async function getBannerById(id: string) {
-  const { data, error } = await supabaseAdmin.from('banners').select('*').eq('id', id).single()
+  const { data, error } = await getSupabaseAdmin().from('banners').select('*').eq('id', id).single()
 
   if (error) {
     return null
@@ -237,7 +245,11 @@ export async function getBannerById(id: string) {
 }
 
 export async function createBanner(banner: any) {
-  const { data, error } = await supabaseAdmin.from('banners').insert([banner]).select().single()
+  const { data, error } = await getSupabaseAdmin()
+    .from('banners')
+    .insert([banner])
+    .select()
+    .single()
 
   if (error) {
     throw error
@@ -290,7 +302,11 @@ export async function getPlanes(activo: boolean = true) {
 // ==================== COMPRA LOGS ====================
 
 export async function createCompraLog(log: any) {
-  const { data, error } = await supabaseAdmin.from('compra_logs').insert([log]).select().single()
+  const { data, error } = await getSupabaseAdmin()
+    .from('compra_logs')
+    .insert([log])
+    .select()
+    .single()
 
   if (error) {
     throw error
@@ -348,7 +364,11 @@ export async function getCategorias(filters?: { activa?: boolean; tenantId?: str
 }
 
 export async function getCategoriaById(id: string) {
-  const { data, error } = await supabaseAdmin.from('categorias').select('*').eq('id', id).single()
+  const { data, error } = await getSupabaseAdmin()
+    .from('categorias')
+    .select('*')
+    .eq('id', id)
+    .single()
 
   if (error) {
     return null
@@ -400,7 +420,11 @@ export async function deleteCategoria(id: string) {
 // ==================== STOCK LOGS ====================
 
 export async function createStockLog(log: any) {
-  const { data, error } = await supabaseAdmin.from('stock_logs').insert([log]).select().single()
+  const { data, error } = await getSupabaseAdmin()
+    .from('stock_logs')
+    .insert([log])
+    .select()
+    .single()
 
   if (error) {
     throw error
@@ -412,7 +436,11 @@ export async function createStockLog(log: any) {
 // ==================== TENANTS (funciones adicionales) ====================
 
 export async function createTenant(tenant: any) {
-  const { data, error } = await supabaseAdmin.from('tenants').insert([tenant]).select().single()
+  const { data, error } = await getSupabaseAdmin()
+    .from('tenants')
+    .insert([tenant])
+    .select()
+    .single()
 
   if (error) {
     throw error
