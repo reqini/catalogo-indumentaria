@@ -64,7 +64,7 @@ export async function getTenantFromToken(token: string): Promise<TenantContext |
 }
 
 export async function getTenantById(tenantId: string) {
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await getSupabaseAdmin()
     .from('tenants')
     .select('*')
     .eq('tenant_id', tenantId)
@@ -88,7 +88,7 @@ export async function checkPlanLimits(
     return { allowed: false, current: 0, limit: 0 }
   }
 
-  const { data: plan } = await supabaseAdmin
+  const { data: plan } = await getSupabaseAdmin()
     .from('planes')
     .select('limite_productos, limite_banners')
     .eq('nombre', tenant.plan)
@@ -191,7 +191,7 @@ export async function createProducto(producto: any) {
 }
 
 export async function updateProducto(id: string, updates: any) {
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await getSupabaseAdmin()
     .from('productos')
     .update(updates)
     .eq('id', id)
@@ -259,7 +259,7 @@ export async function createBanner(banner: any) {
 }
 
 export async function updateBanner(id: string, updates: any) {
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await getSupabaseAdmin()
     .from('banners')
     .update(updates)
     .eq('id', id)
@@ -378,7 +378,7 @@ export async function getCategoriaById(id: string) {
 }
 
 export async function createCategoria(categoria: any) {
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await getSupabaseAdmin()
     .from('categorias')
     .insert([categoria])
     .select()
@@ -395,7 +395,7 @@ export async function updateCategoria(id: string, updates: any) {
   // Asegurar que tenant_id esté presente si viene en updates
   const updateData = { ...updates }
 
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await getSupabaseAdmin()
     .from('categorias')
     .update(updateData)
     .eq('id', id)
@@ -450,7 +450,7 @@ export async function createTenant(tenant: any) {
 }
 
 export async function getTenantByEmail(email: string) {
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await getSupabaseAdmin()
     .from('tenants')
     .select('*')
     .eq('email', email.toLowerCase())
@@ -464,7 +464,7 @@ export async function getTenantByEmail(email: string) {
 }
 
 export async function updateTenant(tenantId: string, updates: any) {
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await getSupabaseAdmin()
     .from('tenants')
     .update(updates)
     .eq('tenant_id', tenantId)
