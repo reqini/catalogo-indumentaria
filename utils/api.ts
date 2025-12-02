@@ -15,22 +15,52 @@ const api = axios.create({
 api.interceptors.request.use((config) => {
   // Buscar token en localStorage (clave 'token')
   let token = localStorage.getItem('token')
-  
+
   // Si no está en localStorage, intentar obtener de cookies (solo en cliente)
   if (!token && typeof window !== 'undefined') {
     const cookies = document.cookie.split(';')
-    const authCookie = cookies.find(cookie => cookie.trim().startsWith('auth_token='))
+    const authCookie = cookies.find((cookie) => cookie.trim().startsWith('auth_token='))
     if (authCookie) {
       token = authCookie.split('=')[1]
     }
   }
-  
+
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
+    console.log('[API-CLIENT] ✅ Token agregado al header Authorization')
+  } else {
+    console.warn('[API-CLIENT] ⚠️ No se encontró token en localStorage ni cookies')
   }
-  
+
   return config
 })
+
+// Interceptor para manejar errores de respuesta
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.error('[API-CLIENT] ❌ Error en respuesta:', {
+      url: error.config?.url,
+      status: error.response?.status,
+      message: error.response?.data?.error || error.message,
+    })
+
+    // Si es error 401, limpiar token y redirigir a login
+    if (error.response?.status === 401) {
+      console.warn('[API-CLIENT] ⚠️ Token inválido o expirado, limpiando...')
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('token')
+        localStorage.removeItem('tenant')
+        // Redirigir a login solo si estamos en una página de admin
+        if (window.location.pathname.startsWith('/admin')) {
+          window.location.href = '/admin/login'
+        }
+      }
+    }
+
+    return Promise.reject(error)
+  }
+)
 
 // Categorías
 export async function getCategorias(filters?: { activa?: boolean }): Promise<any[]> {
@@ -49,7 +79,10 @@ export async function getCategorias(filters?: { activa?: boolean }): Promise<any
 }
 
 // Bulk Import APIs
-export async function parseBulkProducts(text: string, source: 'text' | 'csv' | 'ocr' | 'voice' = 'text'): Promise<any> {
+export async function parseBulkProducts(
+  text: string,
+  source: 'text' | 'csv' | 'ocr' | 'voice' = 'text'
+): Promise<any> {
   const response = await api.post('/api/admin/ia-bulk-parse-v2', {
     text,
     source,
@@ -86,23 +119,33 @@ export async function getProducts(filters?: {
   destacado?: boolean
 }): Promise<any[]> {
   try {
+    console.log('[API-CLIENT] 📤 Obteniendo productos con filtros:', filters)
+
     const params = new URLSearchParams()
     if (filters?.categoria) params.append('categoria', filters.categoria)
     if (filters?.color) params.append('color', filters.color)
     if (filters?.destacado !== undefined) params.append('destacado', String(filters.destacado))
-    
-    const response = await api.get(`/api/productos?${params.toString()}`)
-    
+
+    const url = `/api/productos${params.toString() ? `?${params.toString()}` : ''}`
+    console.log('[API-CLIENT] 📤 URL:', url)
+
+    const response = await api.get(url)
+
+    console.log('[API-CLIENT] ✅ Respuesta recibida:', {
+      status: response.status,
+      productosCount: Array.isArray(response.data) ? response.data.length : 0,
+    })
+
     // Asegurar que siempre devolvamos un array
     if (Array.isArray(response.data)) {
       return response.data
     }
-    
+
     // Si la respuesta no es un array, intentar extraer datos
     if (response.data && Array.isArray(response.data.data)) {
       return response.data.data
     }
-    
+
     console.warn('API devolvió formato inesperado:', response.data)
     return []
   } catch (error: any) {
@@ -136,7 +179,11 @@ export async function deleteProduct(id: string): Promise<void> {
   await api.delete(`/api/productos/${id}`)
 }
 
-export async function updateStock(productId: string, talle: string, cantidad: number): Promise<any> {
+export async function updateStock(
+  productId: string,
+  talle: string,
+  cantidad: number
+): Promise<any> {
   const response = await api.put(`/api/productos/${productId}/stock`, { talle, cantidad })
   return response.data
 }
@@ -194,8 +241,22 @@ export async function deletePromocion(id: string): Promise<void> {
 
 // Login
 export async function login(email: string, password: string): Promise<any> {
-  const response = await api.post('/api/login', { email, password })
-  return response.data
+  console.log('[API-CLIENT] 📤 Iniciando login para:', email)
+  try {
+    const response = await api.post('/api/login', { email, password })
+    console.log('[API-CLIENT] ✅ Login exitoso:', {
+      hasToken: !!response.data?.token,
+      hasTenant: !!response.data?.tenant,
+      tenantId: response.data?.tenant?.tenantId,
+    })
+    return response.data
+  } catch (error: any) {
+    console.error('[API-CLIENT] ❌ Error en login:', {
+      message: error.response?.data?.error || error.message,
+      status: error.response?.status,
+    })
+    throw error
+  }
 }
 
 // Logout
@@ -272,4 +333,3 @@ function getMockProducts(): any[] {
     },
   ]
 }
-

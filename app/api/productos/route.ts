@@ -1,16 +1,14 @@
 import { NextResponse } from 'next/server'
 import { productoSchema } from '@/utils/validations'
 import { checkPlanLimits } from '@/lib/supabase-helpers'
-import {
-  getProductos,
-  createProducto,
-  getProductoById,
-} from '@/lib/supabase-helpers'
+import { getProductos, createProducto, getProductoById } from '@/lib/supabase-helpers'
 import { registrarHistorial } from '@/lib/historial-helpers'
 import { getAuthToken, getTenantFromRequest } from '@/lib/auth-helpers'
 
 export async function GET(request: Request) {
   try {
+    console.log('[API-PRODUCTOS] 📥 GET request recibido')
+
     const { searchParams } = new URL(request.url)
     const categoria = searchParams.get('categoria')
     const color = searchParams.get('color')
@@ -24,13 +22,22 @@ export async function GET(request: Request) {
     if (tenantId) {
       filters.tenantId = tenantId
       filters.activo = true
+      console.log('[API-PRODUCTOS] 🔍 Filtrando por tenantId de query:', tenantId)
     } else {
       // Si no, intentar obtener del token (admin) - desde header o cookie
-      const tenant = await getTenantFromRequest(request)
-      if (tenant) {
-        filters.tenantId = tenant.tenantId
-      } else {
-        // Si no hay token ni tenantId, mostrar todos los productos activos (catálogo público)
+      try {
+        const tenant = await getTenantFromRequest(request)
+        if (tenant) {
+          filters.tenantId = tenant.tenantId
+          console.log('[API-PRODUCTOS] ✅ Tenant obtenido del token:', tenant.tenantId)
+        } else {
+          // Si no hay token ni tenantId, mostrar todos los productos activos (catálogo público)
+          filters.activo = activo !== false
+          console.log('[API-PRODUCTOS] ⚠️ No hay token, mostrando productos públicos activos')
+        }
+      } catch (tenantError: any) {
+        console.error('[API-PRODUCTOS] ⚠️ Error obteniendo tenant:', tenantError)
+        // Continuar sin filtro de tenant si hay error
         filters.activo = activo !== false
       }
     }
@@ -39,7 +46,11 @@ export async function GET(request: Request) {
     if (color) filters.color = color
     if (destacado === 'true') filters.destacado = true
 
+    console.log('[API-PRODUCTOS] 🔍 Filtros aplicados:', filters)
+
     const productos = await getProductos(filters)
+
+    console.log(`[API-PRODUCTOS] ✅ Obtenidos ${productos.length} productos`)
 
     // Formatear productos para el frontend
     const productosFormateados = productos.map((p: any) => ({
@@ -55,9 +66,18 @@ export async function GET(request: Request) {
 
     return NextResponse.json(productosFormateados)
   } catch (error: any) {
-    console.error('[API Productos] Error fetching productos:', error)
+    console.error('[API-PRODUCTOS] ❌ Error fetching productos:', error)
+    console.error('[API-PRODUCTOS] Error message:', error.message)
+    console.error('[API-PRODUCTOS] Error stack:', error.stack)
+
     const errorMessage = error.message || 'Error al obtener productos'
     const errorDetails = process.env.NODE_ENV === 'development' ? error.stack : undefined
+
+    // Si es error de Supabase no configurado, retornar array vacío con mensaje claro
+    if (errorMessage.includes('no está configurado') || errorMessage.includes('Supabase')) {
+      console.warn('[API-PRODUCTOS] ⚠️ Supabase no configurado, retornando array vacío')
+      return NextResponse.json([])
+    }
 
     return NextResponse.json(
       {
@@ -117,29 +137,39 @@ export async function POST(request: Request) {
     // Verificar ambos campos posibles (imagenPrincipal e imagen_principal)
     const imagenPrincipalRaw = validatedData.imagenPrincipal || validatedData.imagen_principal || ''
     const imagenPrincipalTrimmed = imagenPrincipalRaw?.trim() || ''
-    
+
     console.log('🔍 [API Productos POST] Procesando imagen:')
-    console.log('  - validatedData.imagenPrincipal:', validatedData.imagenPrincipal?.substring(0, 150) || '(vacío)')
-    console.log('  - validatedData.imagen_principal:', validatedData.imagen_principal?.substring(0, 150) || '(vacío)')
+    console.log(
+      '  - validatedData.imagenPrincipal:',
+      validatedData.imagenPrincipal?.substring(0, 150) || '(vacío)'
+    )
+    console.log(
+      '  - validatedData.imagen_principal:',
+      validatedData.imagen_principal?.substring(0, 150) || '(vacío)'
+    )
     console.log('  - imagenPrincipalRaw:', imagenPrincipalRaw?.substring(0, 150) || '(vacío)')
-    console.log('  - imagenPrincipalTrimmed:', imagenPrincipalTrimmed?.substring(0, 150) || '(vacío)')
+    console.log(
+      '  - imagenPrincipalTrimmed:',
+      imagenPrincipalTrimmed?.substring(0, 150) || '(vacío)'
+    )
     console.log('  - Tipo:', typeof imagenPrincipalTrimmed)
     console.log('  - Longitud:', imagenPrincipalTrimmed?.length || 0)
-    
+
     // Verificar si es una URL válida (http/https) o ruta válida (/images/)
     // IMPORTANTE: Las URLs de Supabase Storage empiezan con https://
     // También aceptar URLs que contengan 'supabase.co' en el dominio
     // CRÍTICO: NO aceptar base64 (data:) como imagen válida final
-    const tieneImagenValida = imagenPrincipalTrimmed && 
-                              imagenPrincipalTrimmed !== '' &&
-                              imagenPrincipalTrimmed.trim() !== '' &&
-                              !imagenPrincipalTrimmed.startsWith('data:') && // NO base64
-                              imagenPrincipalTrimmed !== '/images/default-product.svg' && // No es placeholder
-                              (imagenPrincipalTrimmed.startsWith('http://') || 
-                               imagenPrincipalTrimmed.startsWith('https://') ||
-                               imagenPrincipalTrimmed.startsWith('/images/') ||
-                               imagenPrincipalTrimmed.includes('supabase.co')) // URLs de Supabase
-    
+    const tieneImagenValida =
+      imagenPrincipalTrimmed &&
+      imagenPrincipalTrimmed !== '' &&
+      imagenPrincipalTrimmed.trim() !== '' &&
+      !imagenPrincipalTrimmed.startsWith('data:') && // NO base64
+      imagenPrincipalTrimmed !== '/images/default-product.svg' && // No es placeholder
+      (imagenPrincipalTrimmed.startsWith('http://') ||
+        imagenPrincipalTrimmed.startsWith('https://') ||
+        imagenPrincipalTrimmed.startsWith('/images/') ||
+        imagenPrincipalTrimmed.includes('supabase.co')) // URLs de Supabase
+
     console.log('🔍 [API Productos POST] Validación de imagen:')
     console.log('  - tieneImagenValida:', tieneImagenValida)
     console.log('  - Empieza con http://:', imagenPrincipalTrimmed?.startsWith('http://'))
@@ -147,17 +177,23 @@ export async function POST(request: Request) {
     console.log('  - Empieza con /images/:', imagenPrincipalTrimmed?.startsWith('/images/'))
     console.log('  - Contiene supabase.co:', imagenPrincipalTrimmed?.includes('supabase.co'))
     console.log('  - Es placeholder:', imagenPrincipalTrimmed === '/images/default-product.svg')
-    
+
     // Solo usar placeholder si NO hay imagen válida
-    const imagenPrincipal = tieneImagenValida 
-      ? imagenPrincipalTrimmed 
+    const imagenPrincipal = tieneImagenValida
+      ? imagenPrincipalTrimmed
       : '/images/default-product.svg'
-    
-    console.log('✅ [API Productos POST] Imagen final a guardar:', imagenPrincipal.substring(0, 150))
+
+    console.log(
+      '✅ [API Productos POST] Imagen final a guardar:',
+      imagenPrincipal.substring(0, 150)
+    )
     console.log('  - Es placeholder:', imagenPrincipal === '/images/default-product.svg')
-    console.log('  - Es URL real:', imagenPrincipal.startsWith('http://') || imagenPrincipal.startsWith('https://'))
+    console.log(
+      '  - Es URL real:',
+      imagenPrincipal.startsWith('http://') || imagenPrincipal.startsWith('https://')
+    )
     console.log('  - URL completa (primeros 200 chars):', imagenPrincipal.substring(0, 200))
-    
+
     const productoData = {
       tenant_id: tenant.tenantId,
       nombre: validatedData.nombre,
@@ -171,7 +207,9 @@ export async function POST(request: Request) {
       imagen_principal: imagenPrincipal, // Usar imagen real o placeholder según corresponda
       imagenes_sec: validatedData.imagenesSec || validatedData.imagenes || [],
       id_mercado_pago: validatedData.idMercadoPago || validatedData.id_mercado_pago,
-      tags: Array.isArray(validatedData.tags) ? validatedData.tags.filter(tag => tag && tag.trim() !== '') : [],
+      tags: Array.isArray(validatedData.tags)
+        ? validatedData.tags.filter((tag) => tag && tag.trim() !== '')
+        : [],
       destacado: validatedData.destacado || false,
       activo: validatedData.activo !== false,
     }
@@ -227,9 +265,6 @@ export async function POST(request: Request) {
     }
 
     console.error('Error creating producto:', error)
-    return NextResponse.json(
-      { error: error.message || 'Error al crear producto' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: error.message || 'Error al crear producto' }, { status: 500 })
   }
 }

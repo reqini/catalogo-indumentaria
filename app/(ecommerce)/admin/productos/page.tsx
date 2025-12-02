@@ -38,11 +38,33 @@ export default function AdminProductosPage() {
   const fetchProducts = async () => {
     setLoading(true)
     try {
+      console.log('[ADMIN-PRODUCTOS] 📤 Iniciando carga de productos...')
       const data = await getProducts()
+      console.log('[ADMIN-PRODUCTOS] ✅ Productos cargados:', data.length)
+
+      if (data.length === 0) {
+        console.warn('[ADMIN-PRODUCTOS] ⚠️ No se encontraron productos')
+        toast.error(
+          'No se encontraron productos. Verifica que Supabase esté configurado y que tengas productos creados.',
+          {
+            duration: 5000,
+          }
+        )
+      }
+
       setProducts(data)
-    } catch (error) {
-      console.error('Error fetching products:', error)
-      toast.error('Error al cargar productos')
+    } catch (error: any) {
+      console.error('[ADMIN-PRODUCTOS] ❌ Error fetching products:', error)
+      const errorMessage =
+        error?.response?.data?.error || error?.message || 'Error al cargar productos'
+      console.error('[ADMIN-PRODUCTOS] Detalles del error:', {
+        message: errorMessage,
+        status: error?.response?.status,
+        data: error?.response?.data,
+      })
+      toast.error(`Error al cargar productos: ${errorMessage}`, {
+        duration: 5000,
+      })
     } finally {
       setLoading(false)
     }

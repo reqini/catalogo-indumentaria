@@ -21,33 +21,51 @@ export default function AdminLoginPage() {
     setLoading(true)
 
     try {
+      console.log('[ADMIN-LOGIN] 📤 Iniciando login...')
       const response = await login(email, password)
 
       if (response.token && response.tenant) {
+        console.log('[ADMIN-LOGIN] ✅ Login exitoso, guardando token...')
+
         // 1. Guardar token en cookie httpOnly vía API (para middleware y SSR)
         try {
-          await fetch('/api/auth/set-token', {
+          const cookieResponse = await fetch('/api/auth/set-token', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ token: response.token }),
           })
+
+          if (cookieResponse.ok) {
+            console.log('[ADMIN-LOGIN] ✅ Token guardado en cookie')
+          } else {
+            console.warn('[ADMIN-LOGIN] ⚠️ Error guardando token en cookie:', cookieResponse.status)
+          }
         } catch (cookieError) {
-          console.warn('Error guardando token en cookie:', cookieError)
+          console.warn('[ADMIN-LOGIN] ⚠️ Error guardando token en cookie:', cookieError)
           // Continuar aunque falle, el token se guardará en localStorage
         }
 
         // 2. Actualizar AuthContext y localStorage (para cliente)
         loginContext(response.token, response.tenant)
+        console.log('[ADMIN-LOGIN] ✅ Token guardado en localStorage y contexto')
 
         toast.success('Inicio de sesión exitoso')
         router.push('/admin/dashboard')
         router.refresh()
       } else {
+        console.error('[ADMIN-LOGIN] ❌ Respuesta inválida:', response)
         toast.error('Credenciales inválidas')
       }
     } catch (error: any) {
-      console.error('Login error:', error)
-      toast.error(error.response?.data?.error || 'Error al iniciar sesión')
+      console.error('[ADMIN-LOGIN] ❌ Error completo:', error)
+      console.error('[ADMIN-LOGIN] Detalles:', {
+        message: error.response?.data?.error || error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+      })
+      toast.error(error.response?.data?.error || 'Error al iniciar sesión', {
+        duration: 5000,
+      })
     } finally {
       setLoading(false)
     }

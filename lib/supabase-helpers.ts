@@ -36,10 +36,21 @@ export interface TenantContext {
 
 export async function getTenantFromToken(token: string): Promise<TenantContext | null> {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as any
-    if (!decoded.tenantId) {
+    // Verificar que Supabase esté configurado
+    if (!isSupabaseEnabled) {
+      console.error(
+        '[SUPABASE-HELPERS] ❌ Supabase no está configurado. No se puede obtener tenant desde token.'
+      )
       return null
     }
+
+    const decoded = jwt.verify(token, JWT_SECRET) as any
+    if (!decoded.tenantId) {
+      console.warn('[SUPABASE-HELPERS] ⚠️ Token no contiene tenantId')
+      return null
+    }
+
+    console.log('[SUPABASE-HELPERS] 🔍 Buscando tenant:', decoded.tenantId)
 
     const { data: tenant, error } = await getSupabaseAdmin()
       .from('tenants')
@@ -48,9 +59,17 @@ export async function getTenantFromToken(token: string): Promise<TenantContext |
       .eq('activo', true)
       .single()
 
-    if (error || !tenant) {
+    if (error) {
+      console.error('[SUPABASE-HELPERS] ❌ Error obteniendo tenant:', error)
       return null
     }
+
+    if (!tenant) {
+      console.warn('[SUPABASE-HELPERS] ⚠️ Tenant no encontrado o inactivo:', decoded.tenantId)
+      return null
+    }
+
+    console.log('[SUPABASE-HELPERS] ✅ Tenant encontrado:', tenant.tenant_id)
 
     return {
       tenantId: tenant.tenant_id,
@@ -58,7 +77,8 @@ export async function getTenantFromToken(token: string): Promise<TenantContext |
       activo: tenant.activo,
       branding: tenant.branding as any,
     }
-  } catch (error) {
+  } catch (error: any) {
+    console.error('[SUPABASE-HELPERS] ❌ Error en getTenantFromToken:', error.message)
     return null
   }
 }
@@ -127,34 +147,56 @@ export async function getProductos(filters?: {
   activo?: boolean
   nombre?: string
 }) {
-  let query = getSupabaseAdmin().from('productos').select('*')
-
-  if (filters?.tenantId) {
-    query = query.eq('tenant_id', filters.tenantId)
-  }
-  if (filters?.categoria) {
-    query = query.eq('categoria', filters.categoria)
-  }
-  if (filters?.color) {
-    query = query.eq('color', filters.color)
-  }
-  if (filters?.destacado !== undefined) {
-    query = query.eq('destacado', filters.destacado)
-  }
-  if (filters?.activo !== undefined) {
-    query = query.eq('activo', filters.activo)
-  }
-  if (filters?.nombre) {
-    query = query.ilike('nombre', `%${filters.nombre}%`)
+  // CRÍTICO: Verificar que Supabase esté configurado antes de intentar usar
+  if (!isSupabaseEnabled) {
+    console.error(
+      '[SUPABASE-HELPERS] ❌ Supabase no está configurado. No se pueden obtener productos.'
+    )
+    console.error(
+      '[SUPABASE-HELPERS] Configura NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY'
+    )
+    return [] // Retornar array vacío en lugar de lanzar error
   }
 
-  const { data, error } = await query.order('created_at', { ascending: false })
+  try {
+    let query = getSupabaseAdmin().from('productos').select('*')
 
-  if (error) {
+    if (filters?.tenantId) {
+      query = query.eq('tenant_id', filters.tenantId)
+    }
+    if (filters?.categoria) {
+      query = query.eq('categoria', filters.categoria)
+    }
+    if (filters?.color) {
+      query = query.eq('color', filters.color)
+    }
+    if (filters?.destacado !== undefined) {
+      query = query.eq('destacado', filters.destacado)
+    }
+    if (filters?.activo !== undefined) {
+      query = query.eq('activo', filters.activo)
+    }
+    if (filters?.nombre) {
+      query = query.ilike('nombre', `%${filters.nombre}%`)
+    }
+
+    const { data, error } = await query.order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('[SUPABASE-HELPERS] ❌ Error obteniendo productos:', error)
+      throw error
+    }
+
+    console.log(`[SUPABASE-HELPERS] ✅ Obtenidos ${data?.length || 0} productos`)
+    return data || []
+  } catch (error: any) {
+    console.error('[SUPABASE-HELPERS] ❌ Error en getProductos:', error)
+    // Si es error de configuración, retornar array vacío
+    if (error.message?.includes('no está configurado')) {
+      return []
+    }
     throw error
   }
-
-  return data || []
 }
 
 export async function getProductoById(id: string) {
@@ -450,17 +492,44 @@ export async function createTenant(tenant: any) {
 }
 
 export async function getTenantByEmail(email: string) {
-  const { data, error } = await getSupabaseAdmin()
-    .from('tenants')
-    .select('*')
-    .eq('email', email.toLowerCase())
-    .single()
-
-  if (error) {
-    return null
+  // Verificar que Supabase esté configurado
+  if (!isSupabaseEnabled) {
+    console.error(
+      '[SUPABASE-HELPERS] ❌ Supabase no está configurado. No se puede obtener tenant por email.'
+    )
+    throw new Error(
+      'Supabase no está configurado. Por favor, configura NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY en las variables de entorno.'
+    )
   }
 
-  return data
+  try {
+    console.log('[SUPABASE-HELPERS] 🔍 Buscando tenant por email:', email.toLowerCase())
+
+    const { data, error } = await getSupabaseAdmin()
+      .from('tenants')
+      .select('*')
+      .eq('email', email.toLowerCase())
+      .single()
+
+    if (error) {
+      // Si es error de "no encontrado", retornar null (no es crítico)
+      if (error.code === 'PGRST116') {
+        console.log('[SUPABASE-HELPERS] ⚠️ Tenant no encontrado para email:', email.toLowerCase())
+        return null
+      }
+      console.error('[SUPABASE-HELPERS] ❌ Error obteniendo tenant por email:', error)
+      throw error
+    }
+
+    if (data) {
+      console.log('[SUPABASE-HELPERS] ✅ Tenant encontrado:', data.tenant_id)
+    }
+
+    return data
+  } catch (error: any) {
+    console.error('[SUPABASE-HELPERS] ❌ Error en getTenantByEmail:', error.message)
+    throw error
+  }
 }
 
 export async function updateTenant(tenantId: string, updates: any) {
