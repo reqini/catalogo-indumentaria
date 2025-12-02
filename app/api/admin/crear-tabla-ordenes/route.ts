@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/lib/supabase'
+import { requireSupabase, isSupabaseEnabled } from '@/lib/supabase'
 import { readFileSync } from 'fs'
 import { join } from 'path'
 
@@ -22,12 +22,14 @@ export async function POST(request: Request) {
       )
     }
 
-    if (!supabaseAdmin) {
+    if (!isSupabaseEnabled) {
       return NextResponse.json(
         { error: 'Supabase no está configurado correctamente' },
         { status: 500 }
       )
     }
+
+    const { supabaseAdmin } = requireSupabase()
 
     console.log('[CREAR-TABLA-ORDENES] 🔍 Verificando si tabla existe...')
 

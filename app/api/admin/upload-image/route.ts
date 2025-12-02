@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getTenantFromRequest } from '@/lib/auth-helpers'
-import { supabaseAdmin } from '@/lib/supabase'
+import { requireSupabase, isSupabaseEnabled } from '@/lib/supabase'
 
 const BUCKET_NAME = 'productos'
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
@@ -15,16 +15,15 @@ function generateFileName(tenantId: string, originalName: string): string {
   // tenantId se recibe pero NO se usa en el path (compatibilidad con código existente)
   const timestamp = Date.now()
   const random = Math.random().toString(36).substring(2, 9)
-  
+
   // Extraer extensión correctamente (última parte después del último punto)
   const lastDotIndex = originalName.lastIndexOf('.')
-  const extension = lastDotIndex > 0 ? originalName.substring(lastDotIndex + 1).toLowerCase() : 'jpg'
-  
+  const extension =
+    lastDotIndex > 0 ? originalName.substring(lastDotIndex + 1).toLowerCase() : 'jpg'
+
   // Obtener nombre sin extensión (todo antes del último punto)
-  const nameWithoutExt = lastDotIndex > 0 
-    ? originalName.substring(0, lastDotIndex)
-    : originalName
-  
+  const nameWithoutExt = lastDotIndex > 0 ? originalName.substring(0, lastDotIndex) : originalName
+
   // Sanitizar nombre: remover espacios, acentos, caracteres especiales
   const sanitizedName = nameWithoutExt
     .normalize('NFD') // Normalizar caracteres Unicode
@@ -33,13 +32,13 @@ function generateFileName(tenantId: string, originalName: string): string {
     .replace(/_+/g, '_') // Reemplazar múltiples guiones bajos con uno solo
     .replace(/^_|_$/g, '') // Remover guiones bajos al inicio y final
     .substring(0, 50) // Limitar longitud
-  
+
   // Construir nombre final: timestamp-random-sanitizedName.extension
   // CRÍTICO: NO incluir tenantId ni carpeta default/ - subir directamente al bucket productos
   // El path es directamente el nombre del archivo en el bucket productos
   const finalName = sanitizedName || 'image' // Fallback si el nombre queda vacío
   const fileName = `${timestamp}-${random}-${finalName}.${extension}`
-  
+
   // Validar que no haya doble extensión
   const doubleExtPattern = /\.(jpg|png|webp|jpeg|gif)\.(jpg|png|webp|jpeg|gif)$/i
   if (doubleExtPattern.test(fileName)) {
@@ -48,7 +47,7 @@ function generateFileName(tenantId: string, originalName: string): string {
     console.log('[UPLOAD-IMAGE] ✅ Corregido a:', correctedFileName)
     return correctedFileName
   }
-  
+
   console.log('[UPLOAD-IMAGE] 📝 Generando nombre de archivo:', {
     originalName,
     nameWithoutExt,
@@ -56,7 +55,7 @@ function generateFileName(tenantId: string, originalName: string): string {
     extension,
     fileName,
   })
-  
+
   return fileName
 }
 
@@ -64,7 +63,7 @@ export async function POST(request: Request) {
   try {
     // 1. Validar autenticación
     console.log('[UPLOAD-IMAGE] Iniciando upload de imagen')
-    
+
     // Intentar obtener tenant de múltiples formas
     let tenant = null
     try {
@@ -72,7 +71,7 @@ export async function POST(request: Request) {
     } catch (error) {
       console.error('[UPLOAD-IMAGE] Error obteniendo tenant:', error)
     }
-    
+
     if (!tenant) {
       console.error('[UPLOAD-IMAGE] ❌ No se encontró tenant - Token inválido o no proporcionado')
       // Log adicional para debugging
@@ -84,16 +83,16 @@ export async function POST(request: Request) {
         authHeaderPrefix: authHeader?.substring(0, 30),
         cookiePrefix: cookieHeader?.substring(0, 50),
       })
-      
+
       return NextResponse.json(
-        { 
+        {
           error: 'No autorizado. Por favor, recarga la página e inicia sesión nuevamente.',
-          details: 'Token no encontrado o inválido'
+          details: 'Token no encontrado o inválido',
         },
         { status: 401 }
       )
     }
-    
+
     console.log('[UPLOAD-IMAGE] ✅ Tenant autenticado:', tenant.tenantId)
 
     // 2. Obtener el archivo del FormData
@@ -101,10 +100,7 @@ export async function POST(request: Request) {
     const file = formData.get('file') as File
 
     if (!file) {
-      return NextResponse.json(
-        { error: 'No se proporcionó ningún archivo' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'No se proporcionó ningún archivo' }, { status: 400 })
     }
 
     // 3. Validar tipo de archivo
@@ -136,6 +132,15 @@ export async function POST(request: Request) {
     const arrayBuffer = await file.arrayBuffer()
     const uint8Array = new Uint8Array(arrayBuffer)
 
+    if (!isSupabaseEnabled) {
+      return NextResponse.json(
+        { error: 'Supabase no está configurado. No se puede subir imágenes.' },
+        { status: 500 }
+      )
+    }
+
+    const { supabaseAdmin } = requireSupabase()
+
     // 8. Subir archivo a Supabase Storage
     console.log('[UPLOAD-IMAGE] 📤 Iniciando upload a Supabase Storage:', {
       bucket: BUCKET_NAME,
@@ -144,7 +149,7 @@ export async function POST(request: Request) {
       fileType: file.type,
       fileName: file.name,
     })
-    
+
     const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
       .from(BUCKET_NAME)
       .upload(filePath, uint8Array, {
@@ -160,18 +165,22 @@ export async function POST(request: Request) {
         bucket: BUCKET_NAME,
         filePath,
       })
-      
+
       // Mensajes de error más descriptivos y específicos
       let errorMessage = 'Error al subir la imagen'
       let statusCode = 500
-      
+
       const errorMsg = uploadError.message || String(uploadError)
-      
+
       if (errorMsg.includes('Bucket not found') || errorMsg.includes('404')) {
         errorMessage = `Bucket "${BUCKET_NAME}" no existe. Debe crearse manualmente en Supabase Dashboard. Ver: docs/SETUP_SUPABASE_STORAGE.md`
         statusCode = 500
-      } else if (errorMsg.includes('new row violates row-level security') || errorMsg.includes('RLS')) {
-        errorMessage = 'Error de permisos. Verifica las políticas RLS del bucket en Supabase. El bucket debe permitir INSERT para usuarios autenticados.'
+      } else if (
+        errorMsg.includes('new row violates row-level security') ||
+        errorMsg.includes('RLS')
+      ) {
+        errorMessage =
+          'Error de permisos. Verifica las políticas RLS del bucket en Supabase. El bucket debe permitir INSERT para usuarios autenticados.'
         statusCode = 403
       } else if (errorMsg.includes('File size exceeds') || errorMsg.includes('too large')) {
         errorMessage = `El archivo es muy grande. Máximo ${MAX_FILE_SIZE / 1024 / 1024}MB`
@@ -180,29 +189,30 @@ export async function POST(request: Request) {
         errorMessage = 'Formato no válido. Solo se permiten JPG, PNG y WebP'
         statusCode = 400
       } else if (errorMsg.includes('Failed to fetch') || errorMsg.includes('NetworkError')) {
-        errorMessage = 'Error de conexión con Supabase Storage. Verifica tu conexión a internet y las políticas CSP.'
+        errorMessage =
+          'Error de conexión con Supabase Storage. Verifica tu conexión a internet y las políticas CSP.'
         statusCode = 503
       } else {
         errorMessage = errorMsg || 'Error al subir la imagen'
         statusCode = 500
       }
-      
+
       console.error('[UPLOAD-IMAGE] ❌ Error detallado:', {
         errorMessage,
         statusCode,
         originalError: uploadError,
         errorString: String(uploadError),
       })
-      
+
       return NextResponse.json(
-        { 
+        {
           error: errorMessage,
           details: errorMsg,
         },
         { status: statusCode }
       )
     }
-    
+
     console.log('[UPLOAD-IMAGE] ✅ Archivo subido exitosamente:', {
       path: uploadData?.path,
       id: uploadData?.id,
@@ -248,4 +258,3 @@ export async function POST(request: Request) {
     )
   }
 }
-

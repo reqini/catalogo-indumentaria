@@ -20,11 +20,12 @@ El logo "ASÍ SOMOS" está construido con:
 
 ```css
 /* Colores primarios del branding */
---brand-primary: #7452A8;    /* Violeta pastel intenso */
---brand-secondary: #F7E8B5;  /* Crema / amarillo pastel claro */
+--brand-primary: #7452a8; /* Violeta pastel intenso */
+--brand-secondary: #f7e8b5; /* Crema / amarillo pastel claro */
 ```
 
 **Uso:**
+
 - Versión principal: Texto + franja en `#7452A8` sobre fondo `#F7E8B5`
 - Versión inversa: Texto + franja en `#F7E8B5` sobre fondo `#7452A8` (para fondos oscuros)
 
@@ -38,6 +39,7 @@ El logo "ASÍ SOMOS" está construido con:
 - **`logo-main.png`**: Versión rasterizada con fondo transparente (400x200px)
 
 **Uso recomendado:**
+
 - Portadas
 - Material institucional
 - Aplicaciones móviles
@@ -49,6 +51,7 @@ El logo "ASÍ SOMOS" está construido con:
 - **`logo-horizontal.png`**: Versión rasterizada con fondo transparente (600x120px)
 
 **Uso recomendado:**
+
 - Header web
 - Navbar
 - Banners horizontales
@@ -65,14 +68,11 @@ El logo "ASÍ SOMOS" está construido con:
 ```tsx
 import LogoAsiSomosMain from '@/components/branding/LogoAsiSomosMain'
 
-<LogoAsiSomosMain 
-  width={200} 
-  height={100} 
-  className="custom-class" 
-/>
+;<LogoAsiSomosMain width={200} height={100} className="custom-class" />
 ```
 
 **Props:**
+
 - `width?: number` - Ancho del logo (default: 200)
 - `height?: number` - Alto del logo (default: 100)
 - `className?: string` - Clases CSS adicionales
@@ -83,14 +83,11 @@ import LogoAsiSomosMain from '@/components/branding/LogoAsiSomosMain'
 ```tsx
 import LogoAsiSomosHorizontal from '@/components/branding/LogoAsiSomosHorizontal'
 
-<LogoAsiSomosHorizontal 
-  width={300} 
-  height={60} 
-  className="custom-class" 
-/>
+;<LogoAsiSomosHorizontal width={300} height={60} className="custom-class" />
 ```
 
 **Props:**
+
 - `width?: number` - Ancho del logo (default: 300)
 - `height?: number` - Alto del logo (default: 60)
 - `className?: string` - Clases CSS adicionales
@@ -173,12 +170,14 @@ export const BRAND_COLORS = {
 ### Dimensiones
 
 **Logo Principal:**
+
 - ViewBox: `0 0 400 200`
 - Proporción: 2:1 (ancho:alto)
 - Tamaño mínimo recomendado: 200x100px
 - Tamaño máximo recomendado: 800x400px
 
 **Logo Horizontal:**
+
 - ViewBox: `0 0 600 120`
 - Proporción: 5:1 (ancho:alto)
 - Tamaño mínimo recomendado: 300x60px
@@ -215,4 +214,3 @@ Para consultas sobre el uso del logo o solicitudes de modificaciones, contactar 
 
 **Última actualización:** 2025-02-27  
 **Mantenido por:** Equipo de Branding y Diseño
-

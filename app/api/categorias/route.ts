@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getCategorias } from '@/lib/supabase-helpers'
-import { supabaseAdmin } from '@/lib/supabase'
+import { requireSupabase, isSupabaseEnabled } from '@/lib/supabase'
 import { getTenantFromRequest } from '@/lib/auth-helpers'
 
 export async function GET(request: Request) {
@@ -13,24 +13,25 @@ export async function GET(request: Request) {
       // Si no hay token, obtener todas las categorías públicas (activas)
       console.log('[API-CATEGORIAS] GET - Sin autenticación, obteniendo categorías activas')
     }
-    
+
     // Si hay tenant, filtrar por tenant_id, si no, solo activas
-    const filters = tenant 
-      ? { activa: true, tenantId: tenant.tenantId }
-      : { activa: true }
-    
+    const filters = tenant ? { activa: true, tenantId: tenant.tenantId } : { activa: true }
+
     const categorias = await getCategorias(filters)
     return NextResponse.json(categorias)
   } catch (error: any) {
     console.error('[API-CATEGORIAS] GET - Error:', error)
-    return NextResponse.json({ error: error.message || 'Error al obtener categorías' }, { status: 500 })
+    return NextResponse.json(
+      { error: error.message || 'Error al obtener categorías' },
+      { status: 500 }
+    )
   }
 }
 
 export async function POST(request: Request) {
   try {
     console.log('[API-CATEGORIAS] POST - Crear categoría')
-    
+
     // Obtener tenant del token (desde header o cookie)
     const tenant = await getTenantFromRequest(request)
     if (!tenant) {
@@ -48,6 +49,12 @@ export async function POST(request: Request) {
     if (!nombre || !slug) {
       return NextResponse.json({ error: 'Nombre y slug son requeridos' }, { status: 400 })
     }
+
+    if (!isSupabaseEnabled) {
+      return NextResponse.json({ error: 'Supabase no está configurado' }, { status: 500 })
+    }
+
+    const { supabaseAdmin } = requireSupabase()
 
     // Verificar si ya existe una categoría con el mismo slug
     const { data: existing } = await supabaseAdmin
@@ -89,9 +96,9 @@ export async function POST(request: Request) {
   } catch (error: any) {
     console.error('[API-CATEGORIAS] ❌ Error creating categoria:', error)
     return NextResponse.json(
-      { 
+      {
         error: error.message || 'Error al crear categoría',
-        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
       },
       { status: 500 }
     )

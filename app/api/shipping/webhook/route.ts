@@ -3,7 +3,7 @@ import crypto from 'crypto'
 import { updateSimpleOrderWithTracking } from '@/lib/ordenes-helpers-simple'
 import { updateOrderShipping } from '@/lib/ordenes-helpers'
 import { getSimpleOrderByTracking } from '@/lib/ordenes-helpers-simple'
-import { supabaseAdmin } from '@/lib/supabase'
+import { requireSupabase, isSupabaseEnabled } from '@/lib/supabase'
 
 /**
  * Webhook para recibir actualizaciones de estado de envíos desde proveedores

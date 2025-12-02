@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/lib/supabase'
+import { requireSupabase, isSupabaseEnabled } from '@/lib/supabase'
 
 /**
  * ENDPOINT DE EMERGENCIA: Crear tabla ordenes automáticamente
@@ -12,7 +12,7 @@ export async function POST(request: Request) {
   try {
     console.log('[EMERGENCIA-ORDENES] 🚨 Iniciando creación automática de tabla ordenes...')
 
-    if (!supabaseAdmin) {
+    if (!isSupabaseEnabled) {
       return NextResponse.json(
         {
           success: false,
@@ -22,6 +22,8 @@ export async function POST(request: Request) {
         { status: 500 }
       )
     }
+
+    const { supabaseAdmin } = requireSupabase()
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!

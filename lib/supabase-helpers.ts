@@ -3,10 +3,21 @@
  * Reemplaza las funciones de MongoDB/Mongoose
  */
 
-import { supabaseAdmin } from './supabase'
+import { requireSupabase, isSupabaseEnabled } from './supabase'
 import jwt from 'jsonwebtoken'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
+
+// Helper para obtener supabaseAdmin de forma segura
+function getSupabaseAdmin(): SupabaseClient {
+  if (!isSupabaseEnabled) {
+    throw new Error(
+      'Supabase no está configurado. Por favor, configura NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY en las variables de entorno.'
+    )
+  }
+  return requireSupabase().supabaseAdmin
+}
 
 // ==================== TENANTS ====================
 
@@ -30,7 +41,7 @@ export async function getTenantFromToken(token: string): Promise<TenantContext |
       return null
     }
 
-    const { data: tenant, error } = await supabaseAdmin
+    const { data: tenant, error } = await getSupabaseAdmin()
       .from('tenants')
       .select('tenant_id, plan, activo, branding')
       .eq('tenant_id', decoded.tenantId)
@@ -116,7 +127,7 @@ export async function getProductos(filters?: {
   activo?: boolean
   nombre?: string
 }) {
-  let query = supabaseAdmin.from('productos').select('*')
+  let query = getSupabaseAdmin().from('productos').select('*')
 
   if (filters?.tenantId) {
     query = query.eq('tenant_id', filters.tenantId)
@@ -147,11 +158,7 @@ export async function getProductos(filters?: {
 }
 
 export async function getProductoById(id: string) {
-  const { data, error } = await supabaseAdmin
-    .from('productos')
-    .select('*')
-    .eq('id', id)
-    .single()
+  const { data, error } = await supabaseAdmin.from('productos').select('*').eq('id', id).single()
 
   if (error) {
     return null
@@ -166,11 +173,7 @@ export async function getProductById(id: string) {
 }
 
 export async function createProducto(producto: any) {
-  const { data, error } = await supabaseAdmin
-    .from('productos')
-    .insert([producto])
-    .select()
-    .single()
+  const { data, error } = await supabaseAdmin.from('productos').insert([producto]).select().single()
 
   if (error) {
     throw error
@@ -195,7 +198,7 @@ export async function updateProducto(id: string, updates: any) {
 }
 
 export async function deleteProducto(id: string) {
-  const { error } = await supabaseAdmin.from('productos').delete().eq('id', id)
+  const { error } = await getSupabaseAdmin().from('productos').delete().eq('id', id)
 
   if (error) {
     throw error
@@ -205,7 +208,7 @@ export async function deleteProducto(id: string) {
 // ==================== BANNERS ====================
 
 export async function getBanners(filters?: { tenantId?: string; activo?: boolean }) {
-  let query = supabaseAdmin.from('banners').select('*')
+  let query = getSupabaseAdmin().from('banners').select('*')
 
   if (filters?.tenantId) {
     query = query.eq('tenant_id', filters.tenantId)
@@ -224,11 +227,7 @@ export async function getBanners(filters?: { tenantId?: string; activo?: boolean
 }
 
 export async function getBannerById(id: string) {
-  const { data, error } = await supabaseAdmin
-    .from('banners')
-    .select('*')
-    .eq('id', id)
-    .single()
+  const { data, error } = await supabaseAdmin.from('banners').select('*').eq('id', id).single()
 
   if (error) {
     return null
@@ -238,11 +237,7 @@ export async function getBannerById(id: string) {
 }
 
 export async function createBanner(banner: any) {
-  const { data, error } = await supabaseAdmin
-    .from('banners')
-    .insert([banner])
-    .select()
-    .single()
+  const { data, error } = await supabaseAdmin.from('banners').insert([banner]).select().single()
 
   if (error) {
     throw error
@@ -267,7 +262,7 @@ export async function updateBanner(id: string, updates: any) {
 }
 
 export async function deleteBanner(id: string) {
-  const { error } = await supabaseAdmin.from('banners').delete().eq('id', id)
+  const { error } = await getSupabaseAdmin().from('banners').delete().eq('id', id)
 
   if (error) {
     throw error
@@ -277,7 +272,7 @@ export async function deleteBanner(id: string) {
 // ==================== PLANES ====================
 
 export async function getPlanes(activo: boolean = true) {
-  let query = supabaseAdmin.from('planes').select('*')
+  let query = getSupabaseAdmin().from('planes').select('*')
 
   if (activo) {
     query = query.eq('activo', true)
@@ -295,11 +290,7 @@ export async function getPlanes(activo: boolean = true) {
 // ==================== COMPRA LOGS ====================
 
 export async function createCompraLog(log: any) {
-  const { data, error } = await supabaseAdmin
-    .from('compra_logs')
-    .insert([log])
-    .select()
-    .single()
+  const { data, error } = await supabaseAdmin.from('compra_logs').insert([log]).select().single()
 
   if (error) {
     throw error
@@ -309,7 +300,7 @@ export async function createCompraLog(log: any) {
 }
 
 export async function getCompraLogs(filters?: { estado?: string; productoId?: string }) {
-  let query = supabaseAdmin.from('compra_logs').select('*')
+  let query = getSupabaseAdmin().from('compra_logs').select('*')
 
   if (filters?.estado) {
     query = query.eq('estado', filters.estado)
@@ -330,7 +321,7 @@ export async function getCompraLogs(filters?: { estado?: string; productoId?: st
 // ==================== CATEGORIAS ====================
 
 export async function getCategorias(filters?: { activa?: boolean; tenantId?: string }) {
-  let query = supabaseAdmin.from('categorias').select('*')
+  let query = getSupabaseAdmin().from('categorias').select('*')
 
   // Si activa es explícitamente false, obtener todas (activas e inactivas)
   // Si activa es true o undefined, solo activas
@@ -357,11 +348,7 @@ export async function getCategorias(filters?: { activa?: boolean; tenantId?: str
 }
 
 export async function getCategoriaById(id: string) {
-  const { data, error } = await supabaseAdmin
-    .from('categorias')
-    .select('*')
-    .eq('id', id)
-    .single()
+  const { data, error } = await supabaseAdmin.from('categorias').select('*').eq('id', id).single()
 
   if (error) {
     return null
@@ -387,7 +374,7 @@ export async function createCategoria(categoria: any) {
 export async function updateCategoria(id: string, updates: any) {
   // Asegurar que tenant_id esté presente si viene en updates
   const updateData = { ...updates }
-  
+
   const { data, error } = await supabaseAdmin
     .from('categorias')
     .update(updateData)
@@ -403,7 +390,7 @@ export async function updateCategoria(id: string, updates: any) {
 }
 
 export async function deleteCategoria(id: string) {
-  const { error } = await supabaseAdmin.from('categorias').delete().eq('id', id)
+  const { error } = await getSupabaseAdmin().from('categorias').delete().eq('id', id)
 
   if (error) {
     throw error
@@ -413,11 +400,7 @@ export async function deleteCategoria(id: string) {
 // ==================== STOCK LOGS ====================
 
 export async function createStockLog(log: any) {
-  const { data, error } = await supabaseAdmin
-    .from('stock_logs')
-    .insert([log])
-    .select()
-    .single()
+  const { data, error } = await supabaseAdmin.from('stock_logs').insert([log]).select().single()
 
   if (error) {
     throw error
@@ -429,11 +412,7 @@ export async function createStockLog(log: any) {
 // ==================== TENANTS (funciones adicionales) ====================
 
 export async function createTenant(tenant: any) {
-  const { data, error } = await supabaseAdmin
-    .from('tenants')
-    .insert([tenant])
-    .select()
-    .single()
+  const { data, error } = await supabaseAdmin.from('tenants').insert([tenant]).select().single()
 
   if (error) {
     throw error
@@ -470,4 +449,3 @@ export async function updateTenant(tenantId: string, updates: any) {
 
   return data
 }
-

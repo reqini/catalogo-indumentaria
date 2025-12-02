@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { supabaseAdmin } from '@/lib/supabase'
+import { requireSupabase, isSupabaseEnabled } from '@/lib/supabase'
 
 const newsletterSchema = z.object({
   email: z.string().email('Email inválido'),
@@ -8,6 +8,14 @@ const newsletterSchema = z.object({
 
 export async function POST(request: Request) {
   try {
+    if (!isSupabaseEnabled) {
+      return NextResponse.json(
+        { error: 'Newsletter no disponible. Supabase no está configurado.' },
+        { status: 503 }
+      )
+    }
+
+    const { supabaseAdmin } = requireSupabase()
     const body = await request.json()
     const { email } = newsletterSchema.parse(body)
 
@@ -51,23 +59,13 @@ export async function POST(request: Request) {
       throw error
     }
 
-    return NextResponse.json(
-      { message: 'Suscripción exitosa', data },
-      { status: 201 }
-    )
+    return NextResponse.json({ message: 'Suscripción exitosa', data }, { status: 201 })
   } catch (error: any) {
     if (error.name === 'ZodError') {
-      return NextResponse.json(
-        { error: 'Email inválido', details: error.errors },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Email inválido', details: error.errors }, { status: 400 })
     }
 
     console.error('Error en newsletter:', error)
-    return NextResponse.json(
-      { error: error.message || 'Error al suscribirse' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: error.message || 'Error al suscribirse' }, { status: 500 })
   }
 }
-

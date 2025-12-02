@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/lib/supabase'
+import { requireSupabase, isSupabaseEnabled } from '@/lib/supabase'
 
 /**
  * Endpoint para verificar y crear tabla ordenes si no existe
@@ -9,15 +9,17 @@ import { supabaseAdmin } from '@/lib/supabase'
  */
 export async function GET(request: Request) {
   try {
-    if (!supabaseAdmin) {
+    if (!isSupabaseEnabled) {
       return NextResponse.json(
         {
           error: 'Supabase no está configurado',
-          hint: 'Configura NEXT_PUBLIC_SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY',
+          hint: 'Configura NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY',
         },
         { status: 500 }
       )
     }
+
+    const { supabaseAdmin } = requireSupabase()
 
     console.log('[VERIFICAR-ORDENES] 🔍 Verificando existencia de tabla ordenes...')
 

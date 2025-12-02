@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/lib/supabase'
+import { requireSupabase, isSupabaseEnabled } from '@/lib/supabase'
 
 /**
  * Endpoint para verificar si la tabla ordenes existe en Supabase
@@ -7,16 +7,18 @@ import { supabaseAdmin } from '@/lib/supabase'
  */
 export async function GET() {
   try {
-    if (!supabaseAdmin) {
+    if (!isSupabaseEnabled) {
       return NextResponse.json(
         {
           exists: false,
           error: 'Supabase no está configurado',
-          hint: 'Verifica las variables de entorno SUPABASE_SERVICE_ROLE_KEY',
+          hint: 'Verifica las variables de entorno NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY',
         },
         { status: 500 }
       )
     }
+
+    const { supabaseAdmin } = requireSupabase()
 
     // Intentar hacer una query simple para verificar si la tabla existe
     const { data, error } = await supabaseAdmin.from('ordenes').select('id').limit(1)
