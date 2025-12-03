@@ -99,7 +99,8 @@ export default function CatalogoClient() {
       fetchProducts()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    // debouncedFetch es estable y no necesita estar en dependencias
+    // debouncedFetch es estable (useMemo sin deps) y filters completo no es necesario
+    // Solo necesitamos filters.categoria y filters.color que ya están en el array
   }, [filters.categoria, filters.color])
 
   return (
