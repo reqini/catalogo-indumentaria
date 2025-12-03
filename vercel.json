@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "buildCommand": "pnpm prebuild:vercel && NEXT_IGNORE_CACHE=true pnpm build",
-  "ignoreCommand": "",
+  "buildCommand": "node scripts/prebuild-check-robust.mjs && pnpm prebuild:vercel && NEXT_IGNORE_CACHE=true pnpm build",
+  "ignoreCommand": "echo 'Ignoring Vercel cache - forcing clean build'",
   "devCommand": "pnpm dev",
   "installCommand": "pnpm install --frozen-lockfile",
   "framework": "nextjs",

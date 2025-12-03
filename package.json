@@ -2,6 +2,7 @@
   "name": "catalogo-indumentaria",
   "version": "1.0.0",
   "private": true,
+  "packageManager": "pnpm@9.1.4",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -41,8 +42,8 @@
     "test:all": "node scripts/test-all.mjs",
     "prepush": "node scripts/pre-push-validation.mjs",
     "qa": "pnpm lint && pnpm typecheck && pnpm test",
-    "prebuild": "node scripts/pre-build-check.mjs && pnpm lint || echo '⚠️ Lint completed with warnings' && pnpm typecheck || echo '⚠️ Typecheck completed with errors'",
-    "prebuild:vercel": "node scripts/pre-build-check.mjs && pnpm lint || echo '⚠️ Lint completed with warnings' && pnpm typecheck || echo '⚠️ Typecheck completed with errors'",
+    "prebuild": "node scripts/prebuild-check-robust.mjs && pnpm lint || echo '⚠️ Lint completed with warnings' && pnpm typecheck || echo '⚠️ Typecheck completed with errors'",
+    "prebuild:vercel": "node scripts/prebuild-check-robust.mjs && pnpm lint || echo '⚠️ Lint completed with warnings' && pnpm typecheck || echo '⚠️ Typecheck completed with errors'",
     "verify-mp": "node scripts/verify-mp-config.mjs",
     "verify-mp-prod": "node scripts/verificar-credenciales-mp-produccion.mjs",
     "diagnose-mp-env": "node scripts/diagnostico-mp-env.mjs",

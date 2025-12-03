@@ -110,11 +110,11 @@ const nextConfig = {
   },
   // Configuración de build más estricta
   eslint: {
-    // Ignorar durante builds para evitar fallos por warnings
-    ignoreDuringBuilds: false, // Mantener false para detectar errores reales
+    // NO ignorar durante builds - detectar errores reales
+    ignoreDuringBuilds: false,
   },
   typescript: {
-    // No ignorar errores de TypeScript durante build
+    // NO ignorar errores de TypeScript durante build
     ignoreBuildErrors: false,
   },
   // Removida configuración de webpack para CSS
