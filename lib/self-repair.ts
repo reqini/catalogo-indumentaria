@@ -134,7 +134,7 @@ class SelfRepair {
         message: repaired ? 'Problema reparado exitosamente' : 'No se pudo reparar automáticamente',
         changes,
         backupCreated: !!backupPath,
-        backupPath,
+        backupPath: backupPath || undefined,
       }
     } catch (error: any) {
       // Restaurar desde backup si falla
@@ -148,7 +148,7 @@ class SelfRepair {
         message: `Error en reparación: ${error.message}`,
         changes: [],
         backupCreated: !!backupPath,
-        backupPath,
+        backupPath: backupPath || undefined,
       }
     }
   }

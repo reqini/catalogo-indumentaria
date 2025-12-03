@@ -131,7 +131,7 @@ export async function getProducts(filters?: {
     if (typeof window !== 'undefined') {
       const { productCache } = await import('@/lib/cache-manager')
       const cached = productCache.get(cacheKey)
-      if (cached) {
+      if (cached && Array.isArray(cached)) {
         if (process.env.NODE_ENV === 'development') {
           console.log('[API-CLIENT] ✅ Cache hit para productos')
         }
