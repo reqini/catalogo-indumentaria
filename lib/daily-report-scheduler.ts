@@ -296,11 +296,9 @@ class DailyReportScheduler {
       autoFixes: [],
       recommendations: [],
       performance: {
-        averageLatency: 0,
-        checkoutFailures: 0,
-        imageLoadFailures: 0,
-        mpFailures: 0,
-        productsWithErrors: 0,
+        avgLoadTime: 0,
+        apiResponseTime: 0,
+        imageLoadTime: 0,
       },
       comparison: {
         newErrors: 0,
