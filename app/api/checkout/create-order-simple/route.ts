@@ -3,6 +3,8 @@ import { createSimpleOrder, SimpleOrderData } from '@/lib/ordenes-helpers-simple
 import { createPayment } from '@/utils/api'
 import { getProductById } from '@/lib/supabase-helpers'
 import { validateMercadoPagoConfig, getMercadoPagoErrorMessage } from '@/lib/mercadopago/validate'
+import { getCheckoutMonitor } from '@/lib/checkout-monitor'
+import { getSystemGuardian } from '@/lib/system-guardian'
 import { z } from 'zod'
 
 // Schema de validación simplificado
@@ -47,9 +49,40 @@ const createOrderSchema = z.object({
 })
 
 export async function POST(request: Request) {
+  const monitor = getCheckoutMonitor()
+  const guardian = getSystemGuardian()
+
   try {
     console.log('[CHECKOUT][API] 📥 Request recibido')
 
+    // Monitorear checkout con wrapper
+    const body = await request.json()
+    const { result, monitorResult } = await monitor.monitorCheckoutRequest(body, async () => {
+      return await processCheckout(request, body)
+    })
+
+    // Si hay errores en el monitoreo, registrar pero continuar
+    if (!monitorResult.success && monitorResult.errors.length > 0) {
+      monitorResult.errors.forEach((error) => {
+        guardian.detectError('critical', 'checkout', error.message, {
+          details: error.details,
+          file: error.file,
+          line: error.line,
+          solution: error.solution,
+        })
+      })
+    }
+
+    return result
+  } catch (error: any) {
+    // El error ya fue manejado por el monitor
+    guardian.detectCheckoutFailure(error)
+    throw error
+  }
+}
+
+async function processCheckout(request: Request, body: any) {
+  try {
     // CRÍTICO: Validar configuración de Mercado Pago ANTES de procesar la orden
     // Esto evita crear órdenes cuando sabemos que fallará el pago
     const mpConfig = validateMercadoPagoConfig()
@@ -113,7 +146,6 @@ export async function POST(request: Request) {
 
     console.log('[CHECKOUT][API] ✅ Configuración de Mercado Pago válida')
 
-    const body = await request.json()
     console.log('[CHECKOUT][API] 📋 Body recibido:', {
       comprador: body.comprador?.nombre,
       productosCount: body.productos?.length,

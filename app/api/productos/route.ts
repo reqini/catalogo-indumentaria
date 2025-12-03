@@ -76,7 +76,13 @@ export async function GET(request: Request) {
     // Si es error de Supabase no configurado, retornar array vacío con mensaje claro
     if (errorMessage.includes('no está configurado') || errorMessage.includes('Supabase')) {
       console.warn('[API-PRODUCTOS] ⚠️ Supabase no configurado, retornando array vacío')
-      return NextResponse.json([])
+      return NextResponse.json([], {
+        status: 200,
+        headers: {
+          'X-Supabase-Status': 'not-configured',
+          'X-Diagnostic-Endpoint': '/api/diagnostico-supabase',
+        },
+      })
     }
 
     return NextResponse.json(

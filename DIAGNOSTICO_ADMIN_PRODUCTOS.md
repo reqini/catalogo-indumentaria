@@ -78,7 +78,7 @@ Se mejoró el manejo de errores y se agregaron logs detallados para identificar 
 
 **Solución:**
 
-1. Configurar variables de entorno en Netlify/Vercel:
+1. Configurar variables de entorno en Vercel:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
    - `SUPABASE_SERVICE_ROLE_KEY` (opcional pero recomendado)
@@ -127,7 +127,7 @@ Se mejoró el manejo de errores y se agregaron logs detallados para identificar 
 
 ## 📋 Checklist de Verificación
 
-- [ ] Variables de Supabase configuradas en Netlify/Vercel
+- [ ] Variables de Supabase configuradas en Vercel
 - [ ] REDEPLOY realizado después de agregar variables
 - [ ] Login funciona y retorna token
 - [ ] Token se guarda en localStorage
@@ -159,7 +159,7 @@ Se mejoró el manejo de errores y se agregaron logs detallados para identificar 
 - `[ADMIN-LOGIN]` - Proceso de login
 - `[ADMIN-PRODUCTOS]` - Carga de productos
 
-### En el Servidor (Vercel/Netlify Logs):
+### En el Servidor (Vercel Logs):
 
 - `[API-LOGIN]` - Login en servidor
 - `[API-PRODUCTOS]` - Obtención de productos

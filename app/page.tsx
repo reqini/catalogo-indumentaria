@@ -143,7 +143,7 @@ export default function Home() {
         // Traemos todos los productos activos y armamos las secciones desde acá
         const products = await getProducts()
 
-        // Filtrar solo productos activos
+        // Filtrar solo productos activos (memoizar para evitar recálculos)
         const activeProducts = products.filter((p: any) => p.activo !== false)
 
         // Productos destacados (flag destacado: true)

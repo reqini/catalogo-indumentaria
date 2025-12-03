@@ -13,6 +13,9 @@ interface EnhancedProductInput {
   precio: number
   precioSugerido?: number
   stock: number
+  stockPorTalle?: Record<string, number>
+  talles?: string[]
+  colores?: string[]
   sku?: string
   tags?: string[]
   imagenes?: string[]
@@ -31,10 +34,7 @@ export async function POST(request: Request) {
     const { products } = body
 
     if (!products || !Array.isArray(products) || products.length === 0) {
-      return NextResponse.json(
-        { error: 'Se requiere un array de productos' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Se requiere un array de productos' }, { status: 400 })
     }
 
     console.log('[BULK-CREATE-V2] Iniciando creación de', products.length, 'productos')
@@ -107,29 +107,53 @@ export async function POST(request: Request) {
             categoriasMap.set(categoriaLower, categoriaFinal)
             console.log(`[BULK-CREATE-V2] Categoría creada: ${categoriaFinal}`)
           } catch (catError: any) {
-            console.error(`[BULK-CREATE-V2] Error creando categoría ${categoriaNormalizada}:`, catError)
+            console.error(
+              `[BULK-CREATE-V2] Error creando categoría ${categoriaNormalizada}:`,
+              catError
+            )
             errors.push({ index: i, reason: `Error al crear categoría: ${categoriaNormalizada}` })
             continue
           }
         }
 
-        // Preparar datos del producto
-        const stockData: Record<string, number> = {
-          M: productInput.stock || 0,
+        // Preparar datos del producto con talles y stock por talle
+        let stockData: Record<string, number> = {}
+        let talles: string[] = ['M'] // Default
+
+        // Si hay stock por talle, usarlo
+        if (productInput.stockPorTalle && Object.keys(productInput.stockPorTalle).length > 0) {
+          stockData = productInput.stockPorTalle
+          talles = Object.keys(productInput.stockPorTalle)
+        } else if (productInput.talles && productInput.talles.length > 0) {
+          // Si hay talles pero no stock por talle, distribuir stock total
+          talles = productInput.talles
+          const stockTotal = productInput.stock || 0
+          const stockPorTalleCalculado = Math.floor(stockTotal / talles.length)
+          const resto = stockTotal % talles.length
+
+          talles.forEach((talle, index) => {
+            stockData[talle] = stockPorTalleCalculado + (index < resto ? 1 : 0)
+          })
+        } else {
+          // Default: stock en talle M
+          stockData = {
+            M: productInput.stock || 0,
+          }
         }
 
         // Usar imagen principal si existe, sino placeholder
-        const imagenPrincipal = productInput.imagenPrincipal && 
-                                productInput.imagenPrincipal !== DEFAULT_PRODUCT_IMAGE_URL &&
-                                (productInput.imagenPrincipal.startsWith('http://') || 
-                                 productInput.imagenPrincipal.startsWith('https://') ||
-                                 productInput.imagenPrincipal.startsWith('/images/'))
-          ? productInput.imagenPrincipal
-          : DEFAULT_PRODUCT_IMAGE_URL
+        const imagenPrincipal =
+          productInput.imagenPrincipal &&
+          productInput.imagenPrincipal !== DEFAULT_PRODUCT_IMAGE_URL &&
+          (productInput.imagenPrincipal.startsWith('http://') ||
+            productInput.imagenPrincipal.startsWith('https://') ||
+            productInput.imagenPrincipal.startsWith('/images/'))
+            ? productInput.imagenPrincipal
+            : DEFAULT_PRODUCT_IMAGE_URL
 
         // Procesar imágenes secundarias
         const imagenesSec = (productInput.imagenes || [])
-          .filter(img => img && img !== imagenPrincipal)
+          .filter((img) => img && img !== imagenPrincipal)
           .slice(0, 5) // Máximo 5 imágenes secundarias
 
         const productoData = {
@@ -138,7 +162,7 @@ export async function POST(request: Request) {
           categoria: categoriaFinal,
           precio: productInput.precio,
           stock: stockData,
-          talles: ['M'],
+          talles: talles,
           imagen_principal: imagenPrincipal,
           imagenes_sec: imagenesSec,
           activo: productInput.activo !== false,
@@ -147,6 +171,10 @@ export async function POST(request: Request) {
           tags: productInput.tags || [],
           tenant_id: tenant.tenantId,
           sku: productInput.sku?.trim() || null,
+          color:
+            productInput.colores && productInput.colores.length > 0
+              ? productInput.colores[0]
+              : null,
         }
 
         // Crear producto
@@ -185,4 +213,3 @@ export async function POST(request: Request) {
     )
   }
 }
-

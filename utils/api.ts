@@ -112,14 +112,32 @@ export async function deleteCategoria(id: string): Promise<void> {
   await api.delete(`/api/categorias/${id}`)
 }
 
-// Productos
+// Productos con cacheo inteligente
 export async function getProducts(filters?: {
   categoria?: string
   color?: string
   destacado?: boolean
 }): Promise<any[]> {
   try {
-    console.log('[API-CLIENT] 📤 Obteniendo productos con filtros:', filters)
+    // Solo loggear en desarrollo
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[API-CLIENT] 📤 Obteniendo productos con filtros:', filters)
+    }
+
+    // Generar clave de cache
+    const cacheKey = `products:${JSON.stringify(filters || {})}`
+
+    // Intentar obtener del cache (solo en cliente)
+    if (typeof window !== 'undefined') {
+      const { productCache } = await import('@/lib/cache-manager')
+      const cached = productCache.get(cacheKey)
+      if (cached) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[API-CLIENT] ✅ Cache hit para productos')
+        }
+        return cached
+      }
+    }
 
     const params = new URLSearchParams()
     if (filters?.categoria) params.append('categoria', filters.categoria)
@@ -127,27 +145,24 @@ export async function getProducts(filters?: {
     if (filters?.destacado !== undefined) params.append('destacado', String(filters.destacado))
 
     const url = `/api/productos${params.toString() ? `?${params.toString()}` : ''}`
-    console.log('[API-CLIENT] 📤 URL:', url)
 
     const response = await api.get(url)
 
-    console.log('[API-CLIENT] ✅ Respuesta recibida:', {
-      status: response.status,
-      productosCount: Array.isArray(response.data) ? response.data.length : 0,
-    })
-
     // Asegurar que siempre devolvamos un array
+    let products: any[] = []
     if (Array.isArray(response.data)) {
-      return response.data
+      products = response.data
+    } else if (response.data && Array.isArray(response.data.data)) {
+      products = response.data.data
     }
 
-    // Si la respuesta no es un array, intentar extraer datos
-    if (response.data && Array.isArray(response.data.data)) {
-      return response.data.data
+    // Guardar en cache (solo en cliente)
+    if (typeof window !== 'undefined' && products.length > 0) {
+      const { productCache } = await import('@/lib/cache-manager')
+      productCache.set(cacheKey, products)
     }
 
-    console.warn('API devolvió formato inesperado:', response.data)
-    return []
+    return products
   } catch (error: any) {
     console.error('Error fetching products:', error)
     // En caso de error, devolver array vacío para no romper el render
@@ -157,8 +172,26 @@ export async function getProducts(filters?: {
 
 export async function getProductById(id: string): Promise<any> {
   try {
+    // Intentar obtener del cache (solo en cliente)
+    if (typeof window !== 'undefined') {
+      const { productCache } = await import('@/lib/cache-manager')
+      const cacheKey = `product:${id}`
+      const cached = productCache.get(cacheKey)
+      if (cached) {
+        return cached
+      }
+    }
+
     const response = await api.get(`/api/productos/${id}`)
-    return response.data
+    const product = response.data
+
+    // Guardar en cache (solo en cliente)
+    if (typeof window !== 'undefined' && product) {
+      const { productCache } = await import('@/lib/cache-manager')
+      productCache.set(`product:${id}`, product)
+    }
+
+    return product
   } catch (error) {
     console.error('Error fetching product:', error)
     throw error

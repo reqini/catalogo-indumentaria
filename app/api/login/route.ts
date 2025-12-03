@@ -27,12 +27,26 @@ export async function POST(request: Request) {
       tenant = await getTenantByEmail(email.toLowerCase())
     } catch (error: any) {
       console.error('[API-LOGIN] ❌ Error obteniendo tenant:', error)
-      // Si es error de Supabase no configurado, retornar error claro
+      // Si es error de Supabase no configurado, retornar error claro con instrucciones
       if (error.message?.includes('no está configurado')) {
         return NextResponse.json(
           {
             error: 'Sistema no configurado. Por favor, contacta al administrador.',
             details: 'Supabase no está configurado',
+            diagnostic: {
+              message: 'Las variables de entorno de Supabase no están configuradas',
+              required: ['NEXT_PUBLIC_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_ANON_KEY'],
+              checkEndpoint: '/api/diagnostico-supabase',
+              instructions: [
+                '1. Ve a tu proyecto en Supabase (https://supabase.com/dashboard)',
+                '2. Ve a Settings > API',
+                '3. Copia la "Project URL" y la "anon public" key',
+                '4. En Vercel, agrega estas variables de entorno:',
+                '   - NEXT_PUBLIC_SUPABASE_URL',
+                '   - NEXT_PUBLIC_SUPABASE_ANON_KEY',
+                '5. Redeploya la aplicación',
+              ],
+            },
           },
           { status: 503 }
         )

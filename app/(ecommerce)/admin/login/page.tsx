@@ -63,9 +63,39 @@ export default function AdminLoginPage() {
         status: error.response?.status,
         data: error.response?.data,
       })
-      toast.error(error.response?.data?.error || 'Error al iniciar sesión', {
-        duration: 5000,
-      })
+
+      const errorData = error.response?.data
+      const errorMessage = errorData?.error || 'Error al iniciar sesión'
+
+      // Si es error de configuración, mostrar mensaje más detallado
+      if (
+        errorData?.details === 'Supabase no está configurado' ||
+        errorMessage.includes('no configurado')
+      ) {
+        const diagnosticUrl = `${window.location.origin}/api/diagnostico-supabase`
+        toast.error(
+          'Sistema no configurado: Falta configurar Supabase. Abre la consola para ver instrucciones.',
+          {
+            duration: 10000,
+          }
+        )
+        console.error('='.repeat(60))
+        console.error('🔴 ERROR: SUPABASE NO CONFIGURADO')
+        console.error('='.repeat(60))
+        console.error('📋 Diagnóstico completo:', diagnosticUrl)
+        console.error('📖 Guía de solución: /SOLUCION_ERROR_SISTEMA_NO_CONFIGURADO.md')
+        if (errorData?.diagnostic?.instructions) {
+          console.error('\n📝 Instrucciones paso a paso:')
+          errorData.diagnostic.instructions.forEach((step: string) => {
+            console.error(`   ${step}`)
+          })
+        }
+        console.error('='.repeat(60))
+      } else {
+        toast.error(errorMessage, {
+          duration: 5000,
+        })
+      }
     } finally {
       setLoading(false)
     }

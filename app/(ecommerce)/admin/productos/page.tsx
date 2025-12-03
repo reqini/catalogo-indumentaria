@@ -44,12 +44,41 @@ export default function AdminProductosPage() {
 
       if (data.length === 0) {
         console.warn('[ADMIN-PRODUCTOS] ⚠️ No se encontraron productos')
-        toast.error(
-          'No se encontraron productos. Verifica que Supabase esté configurado y que tengas productos creados.',
-          {
-            duration: 5000,
+        // Verificar si es problema de configuración
+        const diagnosticUrl = `${window.location.origin}/api/diagnostico-supabase`
+
+        // Verificar estado de Supabase
+        try {
+          const diagnosticResponse = await fetch(diagnosticUrl)
+          const diagnostic = await diagnosticResponse.json()
+
+          if (diagnostic.status === 'not-configured') {
+            toast.error('Supabase no está configurado. Abre la consola para ver instrucciones.', {
+              duration: 10000,
+            })
+            console.error('='.repeat(60))
+            console.error('🔴 ERROR: SUPABASE NO CONFIGURADO')
+            console.error('='.repeat(60))
+            console.error('📋 Diagnóstico completo:', diagnosticUrl)
+            console.error('📖 Guía de solución: /SOLUCION_ERROR_SISTEMA_NO_CONFIGURADO.md')
+            if (diagnostic.instructions?.steps) {
+              console.error('\n📝 Instrucciones paso a paso:')
+              diagnostic.instructions.steps.forEach((step: string) => {
+                console.error(`   ${step}`)
+              })
+            }
+            console.error('='.repeat(60))
+          } else {
+            toast('No hay productos registrados. Crea tu primer producto.', {
+              duration: 5000,
+            })
           }
-        )
+        } catch (diagError) {
+          console.warn('[ADMIN-PRODUCTOS] ⚠️ No se pudo verificar diagnóstico:', diagError)
+          toast('No hay productos registrados. Crea tu primer producto.', {
+            duration: 5000,
+          })
+        }
       }
 
       setProducts(data)
