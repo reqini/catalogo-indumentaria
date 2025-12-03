@@ -1,6 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Desactivar cache problemático durante build
+  ...(process.env.NEXT_IGNORE_CACHE === 'true' && {
+    experimental: {
+      forceSwcTransforms: true,
+    },
+  }),
   // Exponer variables de entorno de Vercel al cliente
   env: {
     NEXT_PUBLIC_VERCEL_ENV: process.env.VERCEL_ENV || 'development',
@@ -87,10 +93,11 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ['framer-motion', 'lucide-react', 'recharts'],
     optimizeCss: true,
+    forceSwcTransforms: true, // Forzar SWC para builds más rápidos y confiables
   },
   compress: true,
   poweredByHeader: false,
-  generateEtags: true,
+  generateEtags: false, // Desactivar ETags para evitar cache problemático
   swcMinify: true,
   // Optimizaciones de performance
   compiler: {
@@ -100,6 +107,15 @@ const nextConfig = {
             exclude: ['error', 'warn'],
           }
         : false,
+  },
+  // Configuración de build más estricta
+  eslint: {
+    // Ignorar durante builds para evitar fallos por warnings
+    ignoreDuringBuilds: false, // Mantener false para detectar errores reales
+  },
+  typescript: {
+    // No ignorar errores de TypeScript durante build
+    ignoreBuildErrors: false,
   },
   // Removida configuración de webpack para CSS
   // Next.js maneja PostCSS y Tailwind automáticamente cuando detecta postcss.config.js

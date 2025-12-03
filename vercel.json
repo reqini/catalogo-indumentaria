@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "buildCommand": "pnpm prebuild:vercel && pnpm build",
-  "ignoreCommand": "git diff --quiet HEAD^ HEAD .",
+  "buildCommand": "pnpm prebuild:vercel && NEXT_IGNORE_CACHE=true pnpm build",
+  "ignoreCommand": "",
   "devCommand": "pnpm dev",
   "installCommand": "pnpm install --frozen-lockfile",
   "framework": "nextjs",
@@ -13,6 +13,7 @@
     "autoAlias": false
   },
   "github": {
+    "enabled": true,
     "autoDeployOnPush": true,
     "autoJobCancelation": true,
     "silent": false

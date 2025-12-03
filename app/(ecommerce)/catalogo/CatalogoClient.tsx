@@ -56,23 +56,25 @@ export default function CatalogoClient() {
   }, [products, filters.nombre, filters.precio])
 
   // Debounce para búsqueda por nombre (evitar llamadas excesivas)
-  const debouncedFetch = useCallback(
-    debounce(async (filtersToUse: Filters) => {
-      setLoading(true)
-      try {
-        const data = await getProducts({
-          categoria: filtersToUse.categoria || undefined,
-          color: filtersToUse.color || undefined,
-        })
-        setProducts(data || [])
-      } catch (error) {
-        console.error('Error fetching products:', error)
-        setProducts([])
-      } finally {
-        setLoading(false)
-      }
-    }, 300),
-    []
+  // Usar useMemo para crear función debounced estable
+  const debouncedFetch = useMemo(
+    () =>
+      debounce(async (filtersToUse: Filters) => {
+        setLoading(true)
+        try {
+          const data = await getProducts({
+            categoria: filtersToUse.categoria || undefined,
+            color: filtersToUse.color || undefined,
+          })
+          setProducts(data || [])
+        } catch (error) {
+          console.error('Error fetching products:', error)
+          setProducts([])
+        } finally {
+          setLoading(false)
+        }
+      }, 300),
+    [] // Debounce function es estable, no necesita dependencias
   )
 
   useEffect(() => {
@@ -96,7 +98,9 @@ export default function CatalogoClient() {
       }
       fetchProducts()
     }
-  }, [filters.categoria, filters.color, debouncedFetch])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // debouncedFetch es estable y no necesita estar en dependencias
+  }, [filters.categoria, filters.color])
 
   return (
     <main className="min-h-screen bg-white">

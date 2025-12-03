@@ -6,21 +6,37 @@
   html {
     scroll-behavior: smooth;
   }
-  
+
   body {
     @apply bg-white text-black;
+    /* Fuentes se cargan vía next/font/google - NO usar @import aquí */
+    font-family:
+      var(--font-inter),
+      'Inter',
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      'Roboto',
+      'Oxygen',
+      'Ubuntu',
+      'Cantarell',
+      'Fira Sans',
+      'Droid Sans',
+      'Helvetica Neue',
+      sans-serif;
   }
-  
+
   .dark body {
     @apply bg-dark-bg text-dark-text;
   }
-  
+
   * {
-    @apply focus-visible:outline-2 focus-visible:outline-black dark:focus-visible:outline-white focus-visible:outline-offset-2;
+    @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black dark:focus-visible:outline-white;
   }
 }
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Montserrat:wght@300;400;500;600;700;800&display=swap');
+/* REMOVIDO: @import de Google Fonts - Se usa next/font/google en lib/fonts.ts */
+/* Esto evita descargas de fuentes en build time y mejora performance */
 
 :root {
   --foreground-rgb: 0, 0, 0;
@@ -40,11 +56,7 @@ html {
 
 body {
   color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
+  background: linear-gradient(to bottom, transparent, rgb(var(--background-end-rgb)))
     rgb(var(--background-start-rgb));
   font-family: 'Inter', 'Montserrat', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -77,8 +89,9 @@ body {
 
 /* Smooth transitions */
 * {
-  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform;
+  transition-property:
+    color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow,
+    transform;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 150ms;
 }
-
